@@ -67,7 +67,7 @@ public:
     bool is_autosomal(std::string &reference_name);
     void load_bam_file(const std::string& filename, const bool& verbose = false);
     void load_autosomal_reference(const std::string &reference_genome, const std::string &reference_filename, const bool& verbose = false);
-    void write_template_lengths(std::ostream& os);
+    void write_template_metrics(std::ostream& os);
     void write_table_column_headers(std::ostream& os);
     void write_table_columns(std::ostream& os);
 };

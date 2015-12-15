@@ -51,8 +51,8 @@ void print_usage() {
               << "    filename will be the BAM file with \".summary\" appended." << std::endl << std::endl
 
               << "-t|--template-metrics-file" << std::endl
-              << "    The file to which to write observed template lengths. The default" << std::endl
-              << "    filename will be the BAM file with \".template_lengths\" appended." << std::endl << std::endl
+              << "    The file to which to write template length metrics. The default" << std::endl
+              << "    filename will be the BAM file with \".template_metrics\" appended." << std::endl << std::endl
 
               << "-p|--peak-file" << std::endl
               << "    The optional BED file containing peaks called for the nonduplicate, " << std::endl
@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
     // construct it from the source BAM filename
     if (template_metrics_filename.empty()) {
         template_metrics_filename = basename(source);
-        template_metrics_filename += ".template_lengths";
+        template_metrics_filename += ".template_metrics";
     }
 
     // Open the template size file here to make sure we can, before
@@ -287,7 +287,7 @@ int main(int argc, char **argv) {
     peak_metrics_file.close();
     std::cout << std::endl << "Peak metrics written to \"" << peak_metrics_filename << "\"" << std::endl;
 
-    metrics.write_template_lengths(template_metrics_file);
+    metrics.write_template_metrics(template_metrics_file);
     template_metrics_file.close();
     std::cout << "Template size metrics written to \"" << template_metrics_filename << "\"" << std::endl;
 

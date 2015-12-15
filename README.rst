@@ -12,7 +12,7 @@ basic checks, including:
 * the number of optical or PCR duplicates
 * the number of reads mapping to autosomal or mitochondrial references
 * the ratio of short to mononucleosomal fragment counts
-* the number of reads meeting MAPQ quality thresholds, from 5-30
+* mapping quality
 
 If you also have a file of peaks called on your data, that file can
 also be examined to report read coverage of the peaks.
@@ -32,7 +32,8 @@ To build ataqc, you need:
 * C++11 compiler (gcc 4.7 or newer, or clang on OS X)
 * htslib
 
-To run the plotting scripts, you will need R, with the following packages installed:
+To run the plotting scripts, you will need R, with the following
+packages installed:
 
 * RColorBrewer
 * ggplot2
@@ -98,7 +99,12 @@ Running
 The main program is ataqc. Run ``ataqc --help`` for complete
 instructions.
 
-It prints a human readable summary to its standard output. A table of that information is written to a file (the `.summary` file). A table of template length metrics is written to the `.template_lengths` output file. A file of peaks ranked by the number of reads overlapping them, containing several other metrics, is written to the `.peak_metrics` file.
+It prints a human readable summary to its standard output. A table of
+that information is written to a file (the `.summary` file). A table
+of template length metrics is written to the `.template_metrics`
+output file. A file of peaks ranked by the number of reads overlapping
+them, containing several other metrics, is written to the
+`.peak_metrics` file.
 
 These output files can be plotted with three R scripts:
 

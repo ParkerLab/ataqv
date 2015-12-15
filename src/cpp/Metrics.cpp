@@ -202,7 +202,7 @@ void Metrics::add(const bam_hdr_t* header, const bam1_t* record, const bool& ver
 
                     // record the template sizes of perfect reads, so we
                     // can plot nucleosomal periodicity
-                    template_length = abs(record->core.isize) - 8;  // remove four bases of transposase on each end
+                    template_length = abs(record->core.isize) - 8;  // on each end of the fragment, remove four bases to transposase integration point
                     if (template_length <= 1000) {
                         template_length_counts[template_length]++;
                     }
@@ -365,7 +365,7 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
     return os;
 }
 
-void Metrics::write_template_lengths(std::ostream& os) {
+void Metrics::write_template_metrics(std::ostream& os) {
     // write a file containing for each observed template length, the
     // count of reads with that length, and the fraction of perfect
     // autosomal reads they represent
