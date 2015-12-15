@@ -17,13 +17,13 @@ suppressMessages(library("gtools"))
 argv <- commandArgs(TRUE)
 
 df = read.delim(file=argv[1], header=TRUE, sep="\t")
-df <- subset(df, select=grep("Sample|Group|Percentage|Ratio", names(df)))
+df <- subset(df, select=grep("Sample|Group|percentage|ratio", names(df)))
 df$Sample <- factor(df$Sample)
 df$Group <- factor(df$Group)
 
 pdf_name <- paste0(argv[1], ".pdf")
 pdf(file=pdf_name, width=11.5, height=8)
-for (variable in grep("Percentage|Ratio", names(df), perl=TRUE, value=TRUE)) {
+for (variable in grep("percentage|ratio", names(df), perl=TRUE, value=TRUE)) {
     cat(paste("Plotting", variable, "\n"))
     p <- ggplot(df, aes_string(x="Sample", y=variable, color="Group", label="Group"))
     p <- p + scale_colour_discrete(name="Group", breaks=mixedsort(levels(df$Group)), label=mixedsort(levels(df$Group)))

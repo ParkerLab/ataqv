@@ -37,7 +37,7 @@ public:
     ull qcfailed_reads = 0;
     ull secondary_reads = 0;
     ull supplementary_reads = 0;
-    ull not_properly_paired_and_mapped_reads = 0;
+    ull reads_mapped_and_paired_but_improperly = 0;
     ull unclassified_reads = 0;
 
     ull total_mitochondrial_reads = 0;
@@ -56,14 +56,7 @@ public:
     float tf_fraction = 0.0;
     float mononucleosomal_fraction = 0.0;
 
-    std::map<int, ull> mapq_threshold_counts = {
-        {5, 0},
-        {10, 0},
-        {15, 0},
-        {20, 0},
-        {25, 0},
-        {30, 0}
-    };
+    std::map<int, ull> mapq_counts;
 
     // Constructors
     Metrics();

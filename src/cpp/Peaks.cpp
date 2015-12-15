@@ -174,24 +174,24 @@ std::ostream& operator<<(std::ostream& os, const PeakMetrics& m) {
     os << "PEAK METRICS" << std::endl
        << "------------" << std::endl
        << "Peak count: " << m.peaks.size() << std::endl
-       << "Perfect reads that overlapped peaks: "  << percentage_string(m.reads_in_peaks, m.metrics.perfect_reads, " (", "% of all perfect reads)") << std::endl
+       << "Perfect reads that overlapped peaks: "  << percentage_string(m.reads_in_peaks, m.metrics.perfect_reads, 3, " (", "% of all perfect reads)") << std::endl
        << "Number of perfect reads overlapping the top 10,000 peaks: " << std::endl
-       << std::setw(22) << std::right << "Top peak: " << std::fixed << percentage_string(m.top_peak_count, m.metrics.perfect_reads, " (", "% of all perfect reads)") << std::endl
-       << std::setw(22) << std::right << "Top 10 peaks: " << std::fixed << percentage_string(m.top_10_peak_count, m.metrics.perfect_reads, " (", "% of all perfect reads)") << std::endl
-       << std::setw(22) << std::right << "Top 100 peaks: "<< std::fixed << percentage_string(m.top_100_peak_count, m.metrics.perfect_reads, " (", "% of all perfect reads)") << std::endl
-       << std::setw(22) << std::right << "Top 1000 peaks: " << std::fixed << percentage_string(m.top_1000_peak_count, m.metrics.perfect_reads, " (", "% of all perfect reads)") << std::endl
-       << std::setw(22) << std::right << "Top 10,000 peaks: " << std::fixed << percentage_string(m.top_10000_peak_count, m.metrics.perfect_reads, " (", "% of all perfect reads)") << std::endl;
+       << std::setfill(' ') << std::setw(22) << std::right << "Top peak: " << std::fixed << percentage_string(m.top_peak_count, m.metrics.perfect_reads, 3, " (", "% of all perfect reads)") << std::endl
+       << std::setfill(' ') << std::setw(22) << std::right << "Top 10 peaks: " << std::fixed << percentage_string(m.top_10_peak_count, m.metrics.perfect_reads, 3, " (", "% of all perfect reads)") << std::endl
+       << std::setfill(' ') << std::setw(22) << std::right << "Top 100 peaks: "<< std::fixed << percentage_string(m.top_100_peak_count, m.metrics.perfect_reads, 3, " (", "% of all perfect reads)") << std::endl
+       << std::setfill(' ') << std::setw(22) << std::right << "Top 1000 peaks: " << std::fixed << percentage_string(m.top_1000_peak_count, m.metrics.perfect_reads, 3, " (", "% of all perfect reads)") << std::endl
+       << std::setfill(' ') << std::setw(22) << std::right << "Top 10,000 peaks: " << std::fixed << percentage_string(m.top_10000_peak_count, m.metrics.perfect_reads, 3, " (", "% of all perfect reads)") << std::endl;
     return os;
 }
 
 void PeakMetrics::write_table_column_headers(std::ostream& os) {
-    os << "Peak Count" << "\t"
-       << "Perfect Reads That Overlapped Peaks" << "\t"
-       << "Perfect Reads Overlapping Top Peak" << "\t"
-       << "Perfect Reads Overlapping Top 10 Peaks" << "\t"
-       << "Perfect Reads Overlapping Top 100 Peaks" << "\t"
-       << "Perfect Reads Overlapping Top 1000 Peaks" << "\t"
-       << "Perfect Reads Overlapping Top 10000 Peaks";
+    os << "Peak count" << "\t"
+       << "Perfect reads that overlapped peaks" << "\t"
+       << "Perfect reads overlapping top peak" << "\t"
+       << "Perfect reads overlapping top 10 peaks" << "\t"
+       << "Perfect reads overlapping top 100 peaks" << "\t"
+       << "Perfect reads overlapping top 1000 peaks" << "\t"
+       << "Perfect reads overlapping top 10000 peaks";
 }
 
 void PeakMetrics::write_table_columns(std::ostream& os) {

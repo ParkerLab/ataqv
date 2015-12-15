@@ -2,7 +2,11 @@
 # VARIABLES
 #
 
-VERSION = 0.1.2
+VERSION_MAJOR = 0
+VERSION_MINOR = 1
+VERSION_PATCH = 3
+
+VERSION = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
 
 # PATHS
 SRC_DIR = src
@@ -14,9 +18,7 @@ SRC_CPP := $(wildcard $(CPP_DIR)/*.cpp)
 OBJECTS := $(patsubst $(CPP_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRC_CPP))
 SCRIPTS := $(wildcard $(SCRIPTS_DIR)/*)
 
-INCLUDES  := $(addprefix -I,$(SRC_DIR))
-
-MODULES_ROOT = /lab/sw/modules
+INCLUDES := $(addprefix -I,$(SRC_DIR))
 
 # template for environment module file
 define MODULEFILE
@@ -36,6 +38,9 @@ module-whatis "Installation directory: $$modroot"
 endef
 export MODULEFILE
 
+MODULEFILES_ROOT = /lab/sw/modulefiles
+MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqc/$(VERSION)
+MODULES_ROOT = /lab/sw/modules
 
 #
 # FLAGS
@@ -47,11 +52,9 @@ ifeq ($(UNAME_S),Linux)  # Lab server: RHEL6
 	HTSLIB = $(MODULES_ROOT)/htslib/1.2.1
 	CXXFLAGS += -D LINUX -pthread -O3 -g
 	INCLUDES += -I $(HTSLIB)/include
-	LDFLAGS = -static # -Wl,-rpath $(HTSLIB)/lib
+	LDFLAGS = -static
 	LDLIBS = -L $(HTSLIB)/lib -lhts -lz
 	PREFIX = $(MODULES_ROOT)/ataqc/$(VERSION)
-	MODULEFILES_ROOT = /lab/sw/modulefiles
-	MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqc/$(VERSION)
 endif
 ifeq ($(UNAME_S),Darwin)  # Mac with Homebrew
 	CXXFLAGS += -D OSX -O3
@@ -85,8 +88,19 @@ $(BUILD_DIR):
 $(BUILD_DIR)/ataqc: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $^ $(LDLIBS) $(LDFLAGS)
 
-$(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp
+$(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(CPP_DIR)/Version.hpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ -c $<
+
+$(CPP_DIR)/Version.hpp: Makefile
+	@echo '//' >$@
+	@echo '// Copyright 2015 The Parker Lab at the University of Michigan' >>$@
+	@echo '//' >>$@
+	@echo '// Licensed under Version 3 of the GPL or any later version' >>$@
+	@echo '//' >>$@
+	@echo >>$@
+	@echo '#define VERSION_MAJOR $(VERSION_MAJOR)' >>$@
+	@echo '#define VERSION_MINOR $(VERSION_MINOR)' >>$@
+	@echo '#define VERSION_PATCH $(VERSION_PATCH)' >>$@
 
 clean:
 	@rm -rf $(BUILD_DIR)

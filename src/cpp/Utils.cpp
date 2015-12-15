@@ -9,6 +9,16 @@
 
 #include "Utils.hpp"
 
+std::string version_string() {
+    std::stringstream ss;
+    ss << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH;
+    return ss.str();
+}
+
+std::string basename(const std::string& path) {
+    return path.substr(path.find_last_of("/\\") + 1);
+}
+
 float fraction(const float& numerator, const float& denominator) {
     return(denominator == 0 ? 0.0 : (numerator / denominator));
 }
@@ -17,8 +27,9 @@ float percentage(const float& numerator, const float& denominator) {
     return(denominator == 0 ? 0.0 : (100.0 * numerator / denominator));
 }
 
-std::string percentage_string(const ull& numerator, const ull& denominator, const std::string& prefix, const std::string& suffix) {
+std::string percentage_string(const ull& numerator, const ull& denominator, const int& precision, const std::string& prefix, const std::string& suffix) {
     std::stringstream s;
+    s.precision(precision);
     s << numerator << prefix << std::fixed << percentage(numerator, denominator) << suffix;
     return s.str();
 }
@@ -32,8 +43,8 @@ std::vector<std::string> tokenize(const std::string& str, const std::string& del
     std::vector<std::string> tokens;
     std::string token;
 
-    auto start = 0;
-    auto end = str.find_first_of(delimiters);
+    size_t start = 0;
+    size_t end = str.find_first_of(delimiters);
     //
     while (start != std::string::npos || end != std::string::npos) {
         token = str.substr(start, end);
@@ -72,3 +83,11 @@ bool sort_strings_numerically(const std::string& s1, const std::string& s2) {
     }
     return s1 < s2;
 };
+
+std::string record_to_string(const bam_hdr_t* header, const bam1_t* record) {
+        kstring_t record_string;
+        record_string.l = record_string.m = 0;
+        record_string.s = NULL;
+        sam_format1(header, record, &record_string);
+        return std::string(record_string.s);
+}

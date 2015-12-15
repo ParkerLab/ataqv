@@ -18,15 +18,6 @@
 #include "Types.hpp"
 #include "Utils.hpp"
 
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 1
-#define VERSION_PATCH 2
-
-std::string version_string() {
-    std::stringstream ss;
-    ss << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH;
-    return ss.str();
-}
 
 void print_version() {
     std::cout << version_string() << std::endl;
@@ -141,7 +132,7 @@ int main(int argc, char **argv) {
         {"verbose", no_argument, NULL, 'v'},
         {"version", no_argument, NULL, 0},
         {"summary-file", required_argument, NULL, 's'},
-        {"template-metrics-file", required_argument, NULL, 'f'},
+        {"template-metrics-file", required_argument, NULL, 't'},
         {"peak-file", required_argument, NULL, 'p'},
         {"peak-overlap-file", required_argument, NULL, 'o'},
         {"peak-metrics-file", required_argument, NULL, 'm'},
@@ -151,7 +142,7 @@ int main(int argc, char **argv) {
     };
 
     // parse the command line arguments
-    while ((c = getopt_long(argc, argv, "0a:f:g:m:p:o:s:t:u:vh?", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "0a:g:m:p:o:s:t:u:vh?", long_options, &option_index)) != -1) {
         switch (c) {
         case 'h':
         case '?':
@@ -160,7 +151,7 @@ int main(int argc, char **argv) {
         case 'v':
             verbose = true;
             break;
-        case 'f':
+        case 't':
             template_metrics_filename = optarg;
             break;
         case 'm':
@@ -221,7 +212,7 @@ int main(int argc, char **argv) {
     // if the filename for the template size counts wasn't specified,
     // construct it from the source BAM filename
     if (summary_filename.empty()) {
-        summary_filename = source;
+        summary_filename = basename(source);
         summary_filename += ".summary";
     }
 
@@ -236,7 +227,7 @@ int main(int argc, char **argv) {
     // if the filename for the template size counts wasn't specified,
     // construct it from the source BAM filename
     if (template_metrics_filename.empty()) {
-        template_metrics_filename = source;
+        template_metrics_filename = basename(source);
         template_metrics_filename += ".template_lengths";
     }
 
@@ -251,7 +242,7 @@ int main(int argc, char **argv) {
     // if the filename for the peak read counts wasn't specified,
     // construct it from the source BAM filename
     if (peak_metrics_filename.empty()) {
-        peak_metrics_filename = source;
+        peak_metrics_filename = basename(source);
         peak_metrics_filename += ".peak_metrics";
     }
 

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <set>
 
 #include "Exceptions.hpp"
 #include "Metrics.hpp"
@@ -80,8 +81,6 @@ bool Metrics::is_autosomal(std::string& reference_name) {
 void Metrics::load_autosomal_reference(const std::string& reference_genome, const std::string& reference_filename, const bool& verbose) {
     std::ifstream reference_file;
     std::string reference_name;
-    ull start;
-    ull end;
 
     reference_file.open(reference_filename.c_str());
     if (reference_file.fail() || !reference_file.is_open()) {
@@ -113,12 +112,20 @@ void Metrics::load_autosomal_reference(const std::string& reference_genome, cons
     }
 }
 
+///
+/// Measure and record a single read
+///
 void Metrics::add(const bam_hdr_t* header, const bam1_t* record, const bool& verbose) {
     std::string reference_name;
     std::string chrM("chrM");
     ull template_length = 0;
 
     total_reads++;
+
+    //
+    // Record the read's quality
+    //
+    mapq_counts[record->core.qual]++;
 
     if (IS_DUP(record)) {
         duplicate_reads++;
@@ -160,20 +167,21 @@ void Metrics::add(const bam_hdr_t* header, const bam1_t* record, const bool& ver
         unmapped_reads++;
     } else if (IS_MATE_UNMAPPED(record)) {
         unmapped_mate_reads++;
-    } else if (IS_PAIRED_AND_MAPPED(record) && IS_PROPERLYPAIRED(record)) {
-        properly_paired_and_mapped_reads++;
-    } else if (!(IS_PAIRED_AND_MAPPED(record) && IS_PROPERLYPAIRED(record))) {
-        // OK, it didn't map in a proper pair, but neither did either
-        // read get marked unmapped. Good stuff. :^/
-        not_properly_paired_and_mapped_reads++;
+    } else if (IS_PAIRED_AND_MAPPED(record)) {
+        if (IS_PROPERLYPAIRED(record)) {
+            properly_paired_and_mapped_reads++;
+        } else {
+            // OK, the read was paired, and mapped, but not in a
+            // proper pair. Some possibilities: the reads mapped too
+            // far from each other (maybe on different chromosomes),
+            // or were both on the same strand.
+            reads_mapped_and_paired_but_improperly++;
+        }
     } else {
         // Most cases should have been caught by now, so let's
         // make a special note of any unexpected oddballs.
         unclassified_reads++;
-        kstring_t record_string;
-        record_string.l = record_string.m = 0; record_string.s = NULL;
-        sam_format1(header, record, &record_string);
-        std::cerr << "Unclassified read: " << record_string.s << std::endl;
+        std::cerr << "Unclassified read: " << record_to_string(header, record) << std::endl;
     }
 
     // if the read mapped, then there should be a valid target ID
@@ -209,19 +217,12 @@ void Metrics::add(const bam_hdr_t* header, const bam1_t* record, const bool& ver
             }
         }
     }
-
-    // update the counts of reads above predefined MAPQ thresholds:
-    // for each threshold defined in mapq_threshold_counts, increment
-    // its count if this read's MAPQ >= the threshold
-    for (auto it : mapq_threshold_counts) {
-        uint8_t qual = *bam_get_qual(record);
-        if (it.first <= qual) {
-            mapq_threshold_counts[it.first]++;
-        }
-    }
 }
 
 
+///
+/// Measure all the reads in a BAM file
+///
 void Metrics::load_bam_file(const std::string& filename, const bool& verbose) {
     int r;
     samFile *in = 0;
@@ -260,34 +261,40 @@ void Metrics::load_bam_file(const std::string& filename, const bool& verbose) {
 
 
 
+///
+/// Present the Metrics in plain text
+///
 std::ostream& operator<<(std::ostream& os, const Metrics& m) {
-    os << "Sample: " << m.sample << " Group: " << m.group << " Reference genome: " << m.reference_genome << std::endl << std::endl;
+    os << "ataqc " << version_string() << std::endl << std::endl
+       << "Sample: " << m.sample  << std::endl
+       << "Group: " << m.group  << std::endl
+       << "Reference genome: " << m.reference_genome << std::endl << std::endl
 
-    os << "READ METRICS" << std::endl
+       << "READ METRICS" << std::endl
        << "------------" << std::endl
-       << "Total reads: " << m.total_reads << std::endl
-       << "First reads: " << m.first_reads << std::endl
-       << "Second reads: " << m.second_reads << std::endl
+       << "       Total reads: " << m.total_reads << std::endl
+       << "       First reads: " << percentage_string(m.first_reads, m.total_reads) << std::endl
+       << "      Second reads: " << percentage_string(m.second_reads, m.total_reads) << std::endl
+       << "     Reverse reads: " << percentage_string(m.reverse_reads, m.total_reads) << std::endl
+       << "Reverse mate reads: " << percentage_string(m.reverse_mate_reads, m.total_reads) << std::endl << std::endl
        << "Properly paired and mapped reads: " << percentage_string(m.properly_paired_and_mapped_reads, m.total_reads) << std::endl
+       << "Reads that paired and mapped but not properly: " << percentage_string(m.reads_mapped_and_paired_but_improperly, m.total_reads) << std::endl
        << "Unpaired reads: " << percentage_string(m.unpaired_reads, m.total_reads) << std::endl
        << "Unmapped reads: " << percentage_string(m.unmapped_reads, m.total_reads) << std::endl
        << "Unmapped mate reads: " << percentage_string(m.unmapped_mate_reads, m.total_reads) << std::endl
-       << "Reverse reads: " << percentage_string(m.reverse_reads, m.total_reads) << std::endl
-       << "Reverse mate reads: " << percentage_string(m.reverse_mate_reads, m.total_reads) << std::endl
        << "Reads not passing quality controls: " << percentage_string(m.qcfailed_reads, m.total_reads) << std::endl
        << "Secondary reads: " << percentage_string(m.secondary_reads, m.total_reads) << std::endl
        << "Supplementary reads: " << percentage_string(m.supplementary_reads, m.total_reads) << std::endl
-       << "Reads that were not properly paired and mapped, but not marked unmapped: " << percentage_string(m.not_properly_paired_and_mapped_reads, m.total_reads) << std::endl
        << "Unclassified reads: " << percentage_string(m.unclassified_reads, m.total_reads) << std::endl
-       << "Total duplicate reads: " << percentage_string(m.duplicate_reads, m.total_reads, " (", "% of all reads)") << std::endl << std::endl
+       << "Duplicate reads: " << percentage_string(m.duplicate_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl << std::endl
 
        << "AUTOSOMAL/MITOCHONDRIAL METRICS" << std::endl
        << "-------------------------------" << std::endl
-       << "Total autosomal reads: " << percentage_string(m.total_autosomal_reads, m.total_reads, " (", "% of all reads)") << std::endl
-       << "Total mitochondrial reads: " << percentage_string(m.total_mitochondrial_reads, m.total_reads, " (", "% of all reads)") << std::endl
-       << "Duplicate autosomal reads: " << percentage_string(m.duplicate_autosomal_reads, m.total_autosomal_reads, " (", "% of all autosomal reads)") << std::endl
-       << "Duplicate mitochondrial reads: " << percentage_string(m.duplicate_mitochondrial_reads, m.total_mitochondrial_reads, " (", "% of all mitochondrial reads)") << std::endl
-       << "Perfect -- nonduplicate, properly paired and uniquely mapped autosomal -- reads: " << percentage_string(m.perfect_reads, m.total_autosomal_reads, " (", "% of all autosomal reads)") << std::endl << std::endl;
+       << "Total autosomal reads: " << percentage_string(m.total_autosomal_reads, m.total_reads, 3,  " (", "% of all reads)") << std::endl
+       << "Total mitochondrial reads: " << percentage_string(m.total_mitochondrial_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl
+       << "Duplicate autosomal reads: " << percentage_string(m.duplicate_autosomal_reads, m.total_autosomal_reads, 3, " (", "% of all autosomal reads)") << std::endl
+       << "Duplicate mitochondrial reads: " << percentage_string(m.duplicate_mitochondrial_reads, m.total_mitochondrial_reads, 3, " (", "% of all mitochondrial reads)") << std::endl
+       << "Perfect -- nonduplicate, properly paired and uniquely mapped autosomal -- reads: " << percentage_string(m.perfect_reads, m.total_autosomal_reads, 3, " (", "% of all autosomal reads)") << std::endl << std::endl;
 
     os << "SHORT/MONONUCLEOSOMAL FRAGMENT RATIO" << std::endl
        << "------------------------------------" << std::endl
@@ -295,12 +302,66 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
        << "Fraction of perfect reads in templates 150-200bp long: " << std::fixed << m.mononucleosomal_fraction << std::endl
        << "Ratio of those fractions (30-80/150-200): " << std::fixed << fraction(m.tf_fraction, m.mononucleosomal_fraction) << std::endl << std::endl;
 
+    double average_mapq = 0;
+    std::set<int> mapq_values;
+
+    for (auto it : m.mapq_counts) {
+        mapq_values.insert(it.first);
+        average_mapq += it.first * it.second;
+    }
+    average_mapq /= m.total_reads;
+
     os << "MAPPING QUALITY" << std::endl
        << "---------------" << std::endl
-       << "Reads with MAPQ >= ..." << std::endl;
-    for (auto it : m.mapq_threshold_counts) {
-        os << std::setfill(' ') << std::setw(7) << std::right << it.first << ": " << std::left << percentage_string(it.second, m.total_reads) << std::endl;
+       << "Average MAPQ: " << std::fixed << average_mapq << std::endl
+       << "MAPQ values seen: ";
+
+    int last_value = -1;
+    int last_printed = -1;
+    for (auto it : mapq_values) {
+        if (last_value < 0) {
+            os << it;
+            last_printed = it;
+        } else if (it - last_value > 1) {
+            if (last_printed != last_value) {
+                os << "-" << last_value;
+            }
+            os << ", " << it;
+            last_printed = it;
+        }
+        last_value = it;
     }
+    os << std::endl;
+
+    os << "Reads with MAPQ >=..." << std::endl;
+    for (int threshold = 5; threshold <= 30; threshold += 5) {
+        ull count = 0;
+        for (auto it : m.mapq_counts) {
+            if (it.first >= threshold) {
+                count += it.second;
+            }
+        }
+        os << std::setfill(' ') << std::setw(20) << std::right << threshold << ": " << percentage_string(count, m.total_reads) << std::endl;
+    }
+
+    os << "MAPQ distribution:" << std::endl;
+    for (auto it : mapq_values) {
+        ull count;
+        try {
+            count = m.mapq_counts.at(it);
+        } catch (std::out_of_range) {
+            count = 0;
+        }
+        float count_length = 20 * fraction(count, m.total_reads);
+        std::string bar(count_length, '*');
+
+        os << std::setfill(' ')
+           << std::right << std::setw(20) << it << ": "
+           << std::left << std::setw(24) << percentage_string(count, m.total_reads, 3)
+           << std::left << "|" << std::setw(20) << bar << "|"
+           << std::endl;
+    }
+
     return os;
 }
 
@@ -324,43 +385,45 @@ void Metrics::write_template_lengths(std::ostream& os) {
 void Metrics::write_table_column_headers(std::ostream& os) {
     os << "Sample" << "\t"
        << "Group" << "\t"
-       << "Total Reads" << "\t"
-       << "First reads: " << "\t"
-       << "Second reads: " << "\t"
-       << "Properly Paired and Mapped Reads" << "\t"
-       << "Properly Paired and Mapped Reads as Percentage of All Reads" << "\t"
-       << "Unpaired Reads" << "\t"
-       << "Unpaired Reads as Percentage of All Reads" << "\t"
-       << "Unmapped Reads" << "\t"
-       << "Unmapped Reads as Percentage of All Reads" << "\t"
-       << "Unmapped Mate Reads" << "\t"
-       << "Unmapped Mate Reads as Percentage of All Reads" << "\t"
-       << "Reverse Reads" << "\t"
-       << "Reverse Reads as Percentage of All Reads" << "\t"
-       << "Reverse Mate Reads" << "\t"
-       << "Reverse Mate Reads as Percentage of All Reads" << "\t"
-       << "Reads Not Passing Quality Controls" << "\t"
-       << "Reads Not Passing Quality Controls as Percentage of All Reads" << "\t"
-       << "Secondary Reads" << "\t"
-       << "Secondary Reads as Percentage of All Reads" << "\t"
-       << "Supplementary Reads" << "\t"
-       << "Supplementary Reads as Percentage of All Reads" << "\t"
-       << "Reads That Were Not Properly Paired And Mapped But Not Marked Unmapped" << "\t"
-       << "Reads That Were Not Properly Paired And Mapped But Not Marked Unmapped as Percentage of All Reads" << "\t"
-       << "Unclassified Reads" << "\t"
-       << "Unclassified Reads as Percentage of All Reads" << "\t"
-       << "Total Autosomal Reads" << "\t"
-       << "Total Autosomal Reads as Percentage of All Reads" << "\t"
-       << "Total Mitochondrial Reads" << "\t"
-       << "Total Mitochondrial Reads as Percentage of All Reads" << "\t"
-       << "Total Duplicate Reads" << "\t"
-       << "Total Duplicate Reads as Percentage of All Reads" << "\t"
-       << "Duplicate Autosomal Reads" << "\t"
-       << "Duplicate Autosomal Reads as Percentage of All Autosomal Reads" << "\t"
-       << "Duplicate Mitochondrial Reads" << "\t"
-       << "Duplicate Mitochondrial Reads as Percentage of All Mitochondrial Reads" << "\t"
-       << "Perfect (Nonduplicate, Properly Paired And Uniquely Mapped, Autosomal) Reads" << "\t"
-       << "Perfect (Nonduplicate, Properly Paired And Uniquely Mapped, Autosomal) Reads as Percentage of All Autosomal Reads" << "\t"
+       << "Total reads" << "\t"
+       << "First reads " << "\t"
+       << "First reads as percentage of all reads" << "\t"
+       << "Second reads " << "\t"
+       << "Second reads as percentage of all reads" << "\t"
+       << "Reverse reads" << "\t"
+       << "Reverse reads as percentage of all reads" << "\t"
+       << "Reverse mate reads" << "\t"
+       << "Reverse mate reads as percentage of all reads" << "\t"
+       << "Properly paired and mapped reads" << "\t"
+       << "Properly paired and mapped reads as percentage of all reads" << "\t"
+       << "Reads that paired and mapped but not properly" << "\t"
+       << "Reads that paired and mapped but not properly as percentage of all reads" << "\t"
+       << "Unpaired reads" << "\t"
+       << "Unpaired reads as percentage of all reads" << "\t"
+       << "Unmapped reads" << "\t"
+       << "Unmapped reads as percentage of all reads" << "\t"
+       << "Unmapped mate reads" << "\t"
+       << "Unmapped mate reads as percentage of all reads" << "\t"
+       << "Reads not passing quality controls" << "\t"
+       << "Reads not passing quality controls as percentage of all reads" << "\t"
+       << "Secondary reads" << "\t"
+       << "Secondary reads as percentage of all reads" << "\t"
+       << "Supplementary reads" << "\t"
+       << "Supplementary reads as percentage of all reads" << "\t"
+       << "Unclassified reads" << "\t"
+       << "Unclassified reads as percentage of all reads" << "\t"
+       << "Total autosomal reads" << "\t"
+       << "Total autosomal reads as percentage of all reads" << "\t"
+       << "Total mitochondrial reads" << "\t"
+       << "Total mitochondrial reads as percentage of all reads" << "\t"
+       << "Total duplicate reads" << "\t"
+       << "Total duplicate reads as percentage of all reads" << "\t"
+       << "Duplicate autosomal reads" << "\t"
+       << "Duplicate autosomal reads as percentage of all autosomal reads" << "\t"
+       << "Duplicate mitochondrial reads" << "\t"
+       << "Duplicate mitochondrial reads as percentage of all mitochondrial reads" << "\t"
+       << "Perfect (nonduplicate, properly paired and uniquely mapped, autosomal) reads" << "\t"
+       << "Perfect (nonduplicate, properly paired and uniquely mapped, autosomal) reads as percentage of all autosomal reads" << "\t"
        << "Fraction of perfect reads in templates 30-80bp long" << "\t"
        << "Fraction of perfect reads in templates 150-200bp long" << "\t"
        << "Ratio of perfect read template fractions (30-80/150-200)";
@@ -371,27 +434,29 @@ void Metrics::write_table_columns(std::ostream& os) {
        << group << "\t"
        << total_reads << "\t"
        << first_reads << "\t"
+       << std::fixed << percentage(first_reads, total_reads) << "\t"
        << second_reads << "\t"
+       << std::fixed << percentage(second_reads, total_reads) << "\t"
+       << reverse_reads << "\t"
+       << std::fixed << percentage(reverse_reads, total_reads) << "\t"
+       << reverse_mate_reads << "\t"
+       << std::fixed << percentage(reverse_mate_reads, total_reads) << "\t"
        << properly_paired_and_mapped_reads << "\t"
        << std::fixed << percentage(properly_paired_and_mapped_reads, total_reads) << "\t"
+       << reads_mapped_and_paired_but_improperly << "\t"
+       << std::fixed << percentage(reads_mapped_and_paired_but_improperly, total_reads) << "\t"
        << unpaired_reads << "\t"
        << std::fixed << percentage(unpaired_reads, total_reads) << "\t"
        << unmapped_reads << "\t"
        << std::fixed << percentage(unmapped_reads, total_reads) << "\t"
        << unmapped_mate_reads << "\t"
        << std::fixed << percentage(unmapped_mate_reads, total_reads) << "\t"
-       << reverse_reads << "\t"
-       << std::fixed << percentage(reverse_reads, total_reads) << "\t"
-       << reverse_mate_reads << "\t"
-       << std::fixed << percentage(reverse_mate_reads, total_reads) << "\t"
        << qcfailed_reads << "\t"
        << std::fixed << percentage(qcfailed_reads, total_reads) << "\t"
        << secondary_reads << "\t"
        << std::fixed << percentage(secondary_reads, total_reads) << "\t"
        << supplementary_reads << "\t"
        << std::fixed << percentage(supplementary_reads, total_reads) << "\t"
-       << not_properly_paired_and_mapped_reads << "\t"
-       << std::fixed << percentage(not_properly_paired_and_mapped_reads, total_reads) << "\t"
        << unclassified_reads << "\t"
        << std::fixed << percentage(unclassified_reads, total_reads) << "\t"
        << total_autosomal_reads << "\t"
@@ -409,5 +474,4 @@ void Metrics::write_table_columns(std::ostream& os) {
        << std::fixed << tf_fraction << "\t"
        << std::fixed << mononucleosomal_fraction << "\t"
        << std::fixed << fraction(tf_fraction, mononucleosomal_fraction);
-
 }

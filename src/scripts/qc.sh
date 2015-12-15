@@ -23,7 +23,8 @@ GROUP=${3:-${BASE}}
 # Reduce the references in the BAM file to the autosomal chromosomes
 CHROMOSOMES=$(samtools view -H ${BAM} | grep -v '^@PG' | cut -f 2 | grep -v -e _ -e chrM -e chrX -e chrY -e 'VN:' | sed 's/SN://' | xargs echo)
 
-cat >qc-${BAM}.sh <<EOF
+QC="qc-${BAM}.sh"
+cat >"$QC" <<EOF
 
 # swarm:pbs nodes=nodes=1:ppn=4
 
@@ -68,7 +69,7 @@ bamToBed -bedpe -i ${BASE}.ppmau.readsorted.bam > ${BASE}.ppmau.readsorted.bedpe
 
 sort -k1,1 -k2,2n ${BASE}.ppmau.readsorted.bedpe > ${BASE}.ppmau.locsorted.bedpe
 
-intersectBed -a ${PPMAU}.macs2_peaks.broadPeak -b ${BASE}.ppmau.locsorted.bedpe -wb > ${PPMAU}.peak.templates.bed
+intersectBed -sorted -a ${PPMAU}.macs2_peaks.broadPeak -b ${BASE}.ppmau.locsorted.bedpe -wb > ${PPMAU}.peak.templates.bed
 
 # swarm:wait
 
@@ -86,4 +87,10 @@ plot_peak_metrics.R ${BAMMD}.peak_metrics "${SAMPLE} ${GROUP}"
 # Call R to plot the summary metrics
 plot_summary_metrics.R ${BAMMD}.summary "${SAMPLE} ${GROUP}"
 
+EOF
+
+cat <<EOF
+QC script written to $QC. Please review it to make sure things like
+Picard's memory sizing, MACS2 parameters, and the ataqc reference genome
+are all correct for your data.
 EOF
