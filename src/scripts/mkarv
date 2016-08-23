@@ -1,0 +1,197 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import argparse
+import decimal
+import gzip
+import json
+import logging
+import operator
+import os.path
+import re
+import shutil
+import sys
+import tempfile
+import textwrap
+
+
+LOGGING_FORMAT = '%(message)s'
+PROGRAM = 'mkarv'
+PROGRAM_VERSION = '0.1.5'
+
+METADATA_FIELDS = [
+    'name',
+    'organism',
+    'library',
+    'description',
+    'original_url',
+    'web_url',
+]
+
+METRICS_EXTENSION_RE = re.compile('\.json(\.gz)?$')
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
+def open_maybe_gzipped(filename):
+    """
+    Open a possibly gzipped file.
+
+    Parameters
+    ----------
+    filename: str
+        The name of the file to open.
+
+    Returns
+    -------
+    file
+        An open file object.
+    """
+    with open(filename, 'rb') as test_read:
+        byte1, byte2 = test_read.read(1), test_read.read(1)
+        if byte1 and ord(byte1) == 0x1f and byte2 and ord(byte2) == 0x8b:
+            f = gzip.open(filename, mode='rt')
+        else:
+            f = open(filename, 'rt')
+    return f
+
+
+def locate_template_directory(start):
+    start_dir = os.path.abspath(
+        os.path.join(
+            os.path.dirname(start),
+            os.path.dirname(os.path.islink(start) and os.readlink(start) or start)
+        )
+    )
+    template_dir = os.path.normpath(os.path.join(start_dir, '../web'))
+    return template_dir
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        prog=PROGRAM,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description=textwrap.dedent("""
+
+        Given one or more ataqc metrics files in JSON format, creates
+        an instance of the ataqc result visualization tool. The web
+        application is copied into the named directory, and the JSON
+        results are translated for it. The resulting directory can be
+        loaded into a web browser locally by opening the index.html
+        file, or published with a web server like Apache or nginx.
+
+        \0""")
+    )
+
+    parser.add_argument('-f', '--force', action='store_true', help='Overwrite the output directory if it exists.')
+
+    parser.add_argument('-t', '--template-directory', default=locate_template_directory(sys.argv[0]), help=("""The location of the web app directory template."""))
+
+    parser.add_argument('-v', '--verbose', action='store_true', help='Talk more.')
+    parser.add_argument('--version', action='version', version=PROGRAM_VERSION)
+    parser.add_argument('directory', help=('The path to the directory where the web app will be created.'))
+    parser.add_argument('metrics', nargs='*', help='One or more ataqc metrics files in JSON format.')
+
+    return parser.parse_args()
+
+
+def add_peak_percentiles(logger, metrics):
+    peaks = metrics['peaks']
+
+    peak_percentiles = {
+        'cumulative_fraction_of_hqaa': [],
+        'cumulative_fraction_of_territory': []
+    }
+
+    if peaks:
+        peak_count = len(peaks)
+        percentile_indexes = [int(peak_count * (percentile / 100.0)) for percentile in range(1, 101)]
+
+        hqaa = decimal.Decimal(metrics['hqaa'])
+        total_peak_territory = decimal.Decimal(metrics['total_peak_territory'])
+
+        # sort by overlapping reads
+        peaks = sorted(peaks, key=operator.itemgetter(1), reverse=True)
+        percentile_peaks = [peak for index, peak in enumerate(peaks, 1) if index in percentile_indexes]
+
+        cumulative_hqaa_in_peaks = decimal.Decimal(0)
+        for peak in percentile_peaks:
+            cumulative_hqaa_in_peaks += decimal.Decimal(peak[1]) / hqaa
+            peak_percentiles['cumulative_fraction_of_hqaa'].append(cumulative_hqaa_in_peaks)
+
+        # sort by peak size
+        peaks = sorted(peaks, key=operator.itemgetter(2), reverse=True)
+        percentile_peaks = [peak for index, peak in enumerate(peaks, 1) if index in percentile_indexes]
+        cumulative_territory = decimal.Decimal(0)
+        for peak in percentile_peaks:
+            cumulative_territory += decimal.Decimal(peak[2]) / total_peak_territory
+            peak_percentiles['cumulative_fraction_of_territory'].append(cumulative_territory)
+    else:
+        logger.info('  No peaks found in metrics.')
+
+    metrics['peak_percentiles'] = peak_percentiles
+
+
+def calculate_mean_mapq(logger, metrics):
+    metrics['mean_mapq'] = sum([mc[0] * mc[1] for mc in metrics['mapq_counts']]) / float(metrics['total_reads'])
+
+
+if __name__ == '__main__':
+    args = parse_arguments()
+
+    loglevel = args.verbose and logging.DEBUG or logging.INFO
+    logging.basicConfig(level=loglevel, format=LOGGING_FORMAT)
+    logger = logging.getLogger(PROGRAM)
+
+    if os.path.exists(args.directory):
+        if not args.force:
+            logger.error("""Output directory {} already exists. I won't overwrite it unless given the --force argument.""".format(args.directory))
+            sys.exit(1)
+        else:
+            backup_dir = tempfile.mkdtemp(prefix=args.directory + '.', dir=os.path.dirname(args.directory))
+            logger.info('Moving existing directory {} to {}.'.format(args.directory, backup_dir))
+            os.rename(args.directory, backup_dir)
+
+    logger.info('Copying web visualizer template directory to {}'.format(args.directory))
+    shutil.copytree(args.template_directory, args.directory)
+
+    data_directory = os.path.join(args.directory, 'data')
+    logger.info('Creating data directory {}'.format(data_directory))
+    os.makedirs(data_directory, 0755)
+
+    data = {}
+
+    for metrics_filename in args.metrics:
+        logger.info('Adding metrics file {}'.format(metrics_filename))
+        mf = open_maybe_gzipped(metrics_filename)
+        try:
+            metrics = json.load(mf)['metrics']
+        except ValueError as e:
+            logger.error('Could not add metrics file {}: {}'.format(metrics_filename, e))
+            continue
+
+        name = metrics['name']
+
+        calculate_mean_mapq(logger, metrics)
+        add_peak_percentiles(logger, metrics)
+        del metrics['peaks']
+        del metrics['peaks_fields']
+
+        original_metrics_filename = os.path.join(data_directory, os.path.basename(metrics_filename))
+        metrics['original_url'] = os.path.join('data', os.path.basename(metrics_filename))
+
+        logger.debug('  Copying original metrics file to {}'.format(original_metrics_filename))
+        shutil.copy(metrics_filename, original_metrics_filename)
+
+        data[name] = metrics
+
+    data_filename = os.path.join(args.directory, 'js/data.js')
+    logger.info('Writing ataqc data to {}'.format(data_filename))
+    with open(data_filename, 'w') as data_file:
+        data_file.write('ataqc.metrics = {};'.format(json.dumps(data, sort_keys=True, indent=2, separators=[',', ':'], cls=DecimalEncoder)))

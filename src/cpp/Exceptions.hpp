@@ -1,5 +1,5 @@
 //
-// Copyright 2015 The Parker Lab at the University of Michigan
+// Copyright 2015 Stephen Parker
 //
 // Licensed under Version 3 of the GPL or any later version
 //
@@ -12,8 +12,8 @@
 
 class FileException: public std::runtime_error {
 public:
-    FileException() : std::runtime_error("") { }
-    FileException(std::string msg) : std::runtime_error(msg) { }
+    explicit FileException() : std::runtime_error("") { }
+    explicit FileException(const std::string& msg) : std::runtime_error(msg) { }
 };
 
 #endif  // EXCEPTIONS_HPP

@@ -1,5 +1,5 @@
 //
-// Copyright 2015 The Parker Lab at the University of Michigan
+// Copyright 2015 Stephen Parker
 //
 // Licensed under Version 3 of the GPL or any later version
 //
@@ -11,7 +11,7 @@
 #include <htslib/kstring.h>
 
 ///
-/// Most of these conditions were shamelessly lifted from samtools
+/// Most of these conditions are taken directly from samtools
 ///
 #define IS_DUP(bam) (bam->core.flag & BAM_FDUP)
 #define IS_MATE_REVERSE(bam) (bam->core.flag & BAM_FMREVERSE)
@@ -19,7 +19,7 @@
 #define IS_ORIGINAL(bam) ((bam->core.flag & (BAM_FSECONDARY|BAM_FSUPPLEMENTARY)) == 0)
 #define IS_PAIRED(bam) (bam->core.flag & BAM_FPAIRED)
 #define IS_PAIRED_AND_MAPPED(bam) ((bam->core.flag & BAM_FPAIRED) && !(bam->core.flag & BAM_FUNMAP) && !(bam->core.flag & BAM_FMUNMAP))
-#define IS_PROPERLYPAIRED(bam) ((bam->core.flag & (BAM_FPAIRED|BAM_FPROPER_PAIR)) == (BAM_FPAIRED|BAM_FPROPER_PAIR) && !(bam->core.flag & BAM_FUNMAP))
+#define IS_PROPERLYPAIRED(bam) ((bam->core.flag & (BAM_FPAIRED|BAM_FPROPER_PAIR)) == (BAM_FPAIRED|BAM_FPROPER_PAIR) && !(bam->core.flag & BAM_FUNMAP) && !(bam->core.flag & BAM_FMUNMAP))
 #define IS_QCFAIL(bam) (bam->core.flag & BAM_FQCFAIL)
 #define IS_READ1(bam) (bam->core.flag & BAM_FREAD1)
 #define IS_READ2(bam) (bam->core.flag & BAM_FREAD2)

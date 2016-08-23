@@ -1,0 +1,696 @@
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: normal;
+    font-weight: 400;
+    src: local("Source Sans Pro"), url("../fonts/sourcesanspro-regular.woff");
+}
+
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: normal;
+    font-weight: 600;
+    src: local("Source Sans Pro SemiBold"), url("../fonts/sourcesanspro-semibold.woff");
+}
+
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: italic;
+    font-weight: 400;
+    src: local("Source Sans Pro"), url("../fonts/sourcesanspro-regularit.woff");
+}
+
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: italic;
+    font-weight: 600;
+    src: local("Source Sans Pro SemiBold Italic"), url("../fonts/sourcesanspro-semiboldit.woff");
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+html {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: calc(1em + 0.1vw);
+    color: #393930;
+}
+
+body {
+    min-width: 480px;
+    min-height: 800px;
+    position: relative;
+}
+
+button {
+    outline: none;
+    border-radius: 4px;
+    border: 1px solid #06c;
+    background: #06c;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+a {
+    color: #037;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin: 0.5em 1em 1em 1em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0 0 0.25em 0;
+    padding: 0;
+    line-height: 1;
+}
+
+button:focus {
+    outline: none;
+}
+
+table {
+    border-collapse: collapse;
+    margin-bottom: 2em;
+    width: 100%;
+}
+
+thead {
+    background: #fafafc;
+    border: 1px solid #f0f0f3;
+}
+
+tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+tbody tr {
+    opacity: 0.75;
+}
+
+#tables tr.highlight {
+    background-color: #fff9e0;
+    opacity: 1;
+}
+
+th {
+    position: relative;
+    background: #f0f0f3;
+    padding: 0.25em 20px 0.25em 0.25em;
+    font-weight: normal;
+    text-align: left;
+    vertical-align: bottom;
+    border-right: 1px solid #ccc;
+    white-space: nowrap;
+    background-clip: padding-box;
+}
+
+th button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    text-transform: none;
+}
+
+th button span {
+    white-space: normal;
+    display: inline-block;
+}
+
+table.data th,
+table.data th button {
+    text-align: right;
+}
+
+table.data th.name,
+table.data th.name button {
+    text-align: left;
+}
+
+th:last-child {
+    border-right: none;
+}
+
+td {
+    padding: 0.25em 20px 0.25em 0.25em;
+    text-align: left;
+    vertical-align: top;
+}
+
+table.data td + td {
+    text-align: right;
+}
+
+ul {
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    padding: 0 0.5em;
+}
+
+.badge {
+    position: absolute;
+    top: -4px;
+    right: -18px;
+    height: 20px;
+    width: 20px;
+    visibility: hidden;
+}
+
+.visible {
+    visibility: visible;
+}
+
+.busy {
+    cursor: wait !important;
+}
+
+.cleaner {
+    flex: 0 0 2em;
+    text-align: right;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: #000;
+    margin: 0;
+    padding: 0 0 0 0.5em;
+}
+
+.cleaner:hover {
+    background: transparent;
+    color: #f00;
+}
+
+.controls {
+    display: flex;
+}
+
+.controls button,
+.controls .inputbox {
+    flex: 0 0 auto;
+    margin: 0 0.25em 0.25em 0;
+}
+
+.help {
+    position: absolute;
+    z-index: 9999;
+    opacity: 1;
+    left: -9999em;
+    top: -9999em;
+    width: 50vw;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #fff;
+    color: #444;
+    box-shadow: 0 0 20px 4px rgba(0, 0, 0, 0.5);
+}
+
+.help h2 {
+    display: flex;
+    background: #037;
+    padding: 1em;
+    color: #fff;
+}
+
+.help h2 .cleaner {
+    color: #fff;
+}
+
+.help h2 > div {
+    flex: 1;
+}
+
+.help p {
+    margin: 1em;
+}
+
+.visibleHelp {
+    left: 25vw;
+    top: 10vw;
+}
+
+.inputbox {
+    position: relative;
+    width: auto;
+    display: flex;
+    border:solid 1px #ccc;
+    border-radius: 4px;
+    padding: 0.25em;
+}
+
+.inputbox input {
+    flex: 1 1 auto;
+    border: none;
+    outline: none;
+}
+
+.instruction {
+    font-style: italic;
+}
+
+.max {
+    font-weight: 600;
+    color: #c93;
+}
+
+.rj, th.rj button {
+    text-align: right;
+}
+
+.sort {
+    border: none;
+    display: block;
+    text-decoration: none;
+    background-color: transparent !important;
+    position: relative;
+}
+
+.sort:hover {
+    background-color: transparent !important;
+}
+
+.sort:focus {
+    outline: none;
+}
+
+.sort:after {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    content:"";
+    position: absolute;
+    right: -14px;
+}
+
+.sort.asc:after {
+    width: 10px;
+    height:10px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #000;
+    content:"";
+    bottom: 0px;
+}
+
+.sort.desc:after {
+    width: 10px;
+    height: 10px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid #000;
+    content:"";
+    bottom: 8px;
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    margin-bottom: 0;
+    padding: 0 0 0 1em;
+    background: #037;
+}
+
+.tabs h1 {
+    font-size: 1.5em;
+    font-weight: 400;
+    margin-bottom: 0;
+    text-transform: uppercase;
+}
+
+.tabs li {
+    flex: 0 1 auto;
+    margin: 0;
+    padding: 0 2em 0 0;
+}
+
+.tabs a {
+    position: relative;
+    display: block;
+    padding: 0 0 0.2em 0;
+    text-decoration: none;
+    outline: none;
+    color: #ccc;
+    border-bottom: 10px solid rgba(0, 0, 0, 0);
+    text-shadow: none;
+    -webkit-transition: 200ms linear 0s;
+    -moz-transition: 200ms linear 0s;
+    -o-transition: 200ms linear 0s;
+    transition: 200ms linear 0s;
+}
+
+.tabs a.glow
+{
+    text-shadow: 0px 0px 2px #fff, 0px 0px 12px #fff;
+    -webkit-transition: 200ms linear 0s;
+    -moz-transition: 200ms linear 0s;
+    -o-transition: 200ms linear 0s;
+    transition: 200ms linear 0s;
+}
+
+.tabs .active a {
+    color: #fff;
+    border-bottom: 10px solid #fff;
+}
+
+.tabs li:hover {
+    color: #039;
+    transition: all 100ms;
+}
+
+.tabbodies {
+    display: block;
+}
+
+.tabbody {
+    position: absolute;
+    top: -99999em;
+    left: -99999em;
+    width: 100%;
+    display: block;
+    opacity: 0;
+    flex-direction: row;
+    padding: 1em;
+    height: 100%;
+}
+
+.tabbody.active {
+    position: relative;
+    top: 0;
+    left: 0;
+    display: block;
+    opacity: 1;
+    transition: opacity 200ms;
+}
+
+.warning {
+    font-style: italic;
+    color: #f90;
+}
+
+#banner {
+    padding: 1.5em 0.5em 0 0.5em;
+    background: #037;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+}
+
+#banner > * {
+    flex: 1;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+#banner > h1 {
+    font-size: 1.5em;
+    text-align: right;
+    padding: 0 0 0.2em 0;
+    margin: 0;
+}
+
+#banner a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.footer {
+    padding: 1em;
+    text-align: right;
+    width: 100%;
+}
+
+#active_experiments {
+    padding: 1em 1em 0 1em;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#active_experiments li.experiment {
+    flex: 0 1 15%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    border-radius: 4px;
+    padding: 0.25em 0.25em 0.25em 0.5em;
+    margin: 0.25em 0.5em 0.25em 0;
+}
+
+#active_experiments li.experiment {
+    border-radius: 4px;
+    padding: 0.25em 0.25em 0.25em 0.25em;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+#active_experiments li > div {
+    flex: 1;
+}
+
+#active_experiments .fa,
+#experiments .active .fa {
+    color: #777;
+}
+
+#experiments {
+    flex: 1 1 auto;
+    position: relative;
+}
+
+#experiments a.name {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 0.25em 0.25em 0.25em 0.25em;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+#experiments td.organism{
+    white-space: nowrap;
+}
+
+#active_experiments li.experiment,
+tr.active a.name {
+    background: #dfdfe3;
+    color: #444;
+}
+
+#experiments .active {
+    opacity: 1;
+}
+
+#active_experiments li.experiment:hover,
+#experiments a:hover {
+    background: #dfdfe3;
+}
+
+#experiments th {
+    text-align: left;
+}
+
+#experiments th:first-child {
+    padding: 0.25em 0.25em 0.25em 0.25em;
+}
+
+
+#experiments td {
+    text-align: left;
+}
+
+#experiments td:first-child {
+    padding-left: 0;
+}
+
+#removeAllExperiments {
+    display: none;
+}
+
+#tables {
+    display: none;
+}
+
+#tables th[colspan] {
+    background: transparent;
+    text-align: center;
+}
+
+#plots {
+    position: relative;
+    display: none;
+}
+
+.plotContainer {
+    position: relative;
+    margin: 0 0 2em 0;
+}
+
+.plotContainer > div {
+    margin: 1em 0;
+}
+
+.plotbox {
+    position: relative;
+    width: 100%;
+}
+
+.plot {
+    position: relative;
+    width: 90vw;
+    height: 30vh;
+}
+
+.dygraph-label {
+    font-size: 1em;
+}
+
+.legend {
+    position: relative;
+    font-size: 0.75rem;
+    padding: 2em;
+}
+
+.legend > div {
+    padding: 0 0 1em 2em;
+    font-weight: 600;
+}
+
+.legend > ul {
+    list-style: none;
+    margin: 0 2em;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.legend li {
+    flex: 0 1 20%;
+    display: flex;
+}
+
+.legend li {
+    cursor: pointer;
+    opacity: 0.75;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.legend li.highlight {
+    font-weight: 600;
+    font-size: 0.8rem;
+    opacity: 1;
+    border: 1px solid #777;
+    border-radius: 4px;
+}
+
+.legendSeries {
+    flex: 1 1 30%;
+    padding: 0.25em 0 0.25em 1em;
+}
+
+.legendValue {
+    flex: 1 1 30%;
+    text-align: right;
+    padding: 0.25em 2em 0.25em 0;
+}
+
+@media print {
+    @page {
+        size: letter landscape;
+    }
+
+    * {
+        widows: 3;
+        orphans: 3;
+    }
+
+    html, body {
+        color: #000;
+        font-size: 0.75em;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+    }
+
+    .cleaner {
+        display: none;
+    }
+
+    #banner {
+        display: none;
+    }
+
+    .footer {
+        position: fixed;
+        bottom: 0;
+    }
+
+    #tabs, #active_experiments, .controls {
+        display: none;
+    }
+
+    .tabbody {
+        padding: 1em 0;
+    }
+
+    tr {
+        page-break-inside: avoid;
+    }
+
+    tbody tr {
+        opacity: 1;
+    }
+
+    #tables tr.highlight {
+        background-color: transparent;
+        opacity: 1;
+    }
+
+    .tableContainer h2 + table {
+        page-break-before: avoid;
+        break-before: avoid;
+    }
+
+    .tableContainer {
+        page-break-inside: avoid;
+    }
+
+    .plotContainer + .plotContainer {
+        page-break-before: always;
+    }
+
+    .plot {
+        width: 90%;
+        height: 30%;
+    }
+
+    .legend {
+        font-size: 1em;
+    }
+
+    .legend li {
+        opacity: 1;
+    }
+
+    .dygraph-label, .dygraph-axis-label {
+        font-size: 0.75em;
+    }
+}
