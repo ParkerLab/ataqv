@@ -149,10 +149,11 @@ ataqc can produce some additional metrics using that.
 
 Verifying ataqc results with data from a variety of common tools is on
 our to-do list, but so far, we've only used `bwa`_, `Picard's
-MarkDuplicates`_, and `MACS2`_ for these steps. An example pipeline is
-provided in the included ``qc.sh`` script, which starts with a BAM
-file of aligned reads, marks duplicates and calls peaks, then runs
-ataqc and produces a web viewer for the output.
+MarkDuplicates`_, and `MACS2`_ for these steps. A pipeline like ours
+can be generated with the included ``make_ataqc_pipeline`` script. Its
+output product starts from a BAM file of aligned reads, marks
+duplicates and calls peaks, then runs ataqc and produces a web viewer
+for the output.
 
 Running
 =======
@@ -171,15 +172,29 @@ create a local instance of the result viewer. A web server is not
 required, though you can use one to publish your result viewer
 instance.
 
-Here's a simple example, which assumes you've already aligned your
-reads and called peaks on them::
+Example
+=======
 
-  ataqc --peak-file example.macs2_peaks.broadPeak --metrics-file example.json.gz example.bam > example.ataqc.out
+The ataqc Git repository includes an ``example`` subdirectory,
+containing a script that will set up and run our entire ATAC-seq
+pipeline on some sample data.
 
-  mkarv examplearv example.json.gz
+You'll need to have installed ataqc itself, plus Picard tools,
+samtools, and MACS2 to run the pipeline. On a Mac, you can obtain
+everything with::
 
-  open examplearv/index.html  # assuming you're on a Mac -- on Linux try xdg-open or firefox instead of "open"
+  $ brew install ataqc picard-tools samtools
+  $ pip install MACS2
 
+On Linux, installation of the dependencies is probably specific to
+your environment and is left as an exercise for the reader. On Debian,
+``apt-get install picard-tools samtools`` followed by installing MACS2
+with ``pip install MACS2`` should be enough.
+
+Once you have the prerequisite programs installed, you can run the
+example pipeline with::
+
+  $ run_ataqc_example /output/path
 
 Comparing your results to others
 ================================

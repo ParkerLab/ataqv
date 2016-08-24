@@ -194,4 +194,4 @@ if __name__ == '__main__':
     data_filename = os.path.join(args.directory, 'js/data.js')
     logger.info('Writing ataqc data to {}'.format(data_filename))
     with open(data_filename, 'w') as data_file:
-        data_file.write('ataqc.metrics = {};'.format(json.dumps(data, sort_keys=True, indent=2, separators=[',', ':'], cls=DecimalEncoder)))
+        data_file.write('ataqc.setMetrics({});'.format(json.dumps(data, sort_keys=True, indent=2, separators=[',', ':'], cls=DecimalEncoder)))

@@ -180,7 +180,7 @@ li {
 }
 
 .cleaner {
-    flex: 0 0 2em;
+    flex: 0 0 auto;
     text-align: right;
     font-weight: 600;
     border: none;
@@ -199,7 +199,7 @@ li {
     display: flex;
 }
 
-.controls button,
+.controls > button,
 .controls .inputbox {
     flex: 0 0 auto;
     margin: 0 0.25em 0.25em 0;
@@ -404,6 +404,39 @@ li {
     color: #f90;
 }
 
+*[data-hovertext]:hover {
+    position: relative;
+}
+
+*[data-hovertext]:hover::after {
+    position: absolute;
+    left: 0;
+    top: 110%;
+    min-width: 20em;
+    max-width: 100%;
+    min-height: 2em;
+    max-height: 20em;
+    display: block;
+    content: attr(data-hovertext);
+    text-align: left;
+    font-weight: normal;
+    font-style: italic;
+    white-space: normal;
+    padding: 0.5em;
+    color: #444;
+    z-index: 20;
+    border-radius: 5px;
+    box-shadow: 0 0 20px 4px rgba(0, 0, 0, 0.5);
+    background: #fff;
+}
+
+th:last-child[data-hovertext]:hover::after,
+td:last-child[data-hovertext]:hover::after,
+*[data-hovertext].hoverLeft:hover::after {
+    left: auto;
+    right: 0;
+}
+
 #banner {
     padding: 1.5em 0.5em 0 0.5em;
     background: #037;
@@ -475,11 +508,17 @@ li {
 }
 
 #experiments a.name {
-    display: inline-block;
+    position: relative;
+    display: block;
     border-radius: 4px;
-    padding: 0.25em 0.25em 0.25em 0.25em;
+    padding: 0.25em 2em 0.25em 0.25em;
     text-decoration: none;
     white-space: nowrap;
+}
+
+#experiments a.name .cleaner {
+    position: absolute;
+    right: 0.25em;
 }
 
 #experiments td.organism{
@@ -523,7 +562,8 @@ tr.active a.name {
 }
 
 #tables {
-    display: none;
+    display: block;
+    visibility: hidden;
 }
 
 #tables th[colspan] {
@@ -533,7 +573,8 @@ tr.active a.name {
 
 #plots {
     position: relative;
-    display: none;
+    display; flex;
+    visibility: hidden;
 }
 
 .plotContainer {
@@ -567,7 +608,7 @@ tr.active a.name {
 }
 
 .legend > div {
-    padding: 0 0 1em 2em;
+    padding: 0 0 1em 2.25em;
     font-weight: 600;
 }
 
@@ -580,35 +621,59 @@ tr.active a.name {
 }
 
 .legend li {
-    flex: 0 1 20%;
+    position: relative;
+    flex: 0 1 50%;
     display: flex;
-}
-
-.legend li {
+    justify-content: space-between;
     cursor: pointer;
     opacity: 0.75;
-    padding: 0;
-    border: 1px solid transparent;
-    border-radius: 4px;
+    padding: 0 5em 0 0;
 }
 
 .legend li.highlight {
     font-weight: 600;
-    font-size: 0.8rem;
     opacity: 1;
-    border: 1px solid #777;
-    border-radius: 4px;
 }
 
 .legendSeries {
-    flex: 1 1 30%;
-    padding: 0.25em 0 0.25em 1em;
+    flex: 0 0 50%;
+    padding: 0.25em 0 0.25em 0.25em;
+    border-bottom: 1px solid #ccc;
+}
+
+.highlight .legendSeries {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-top: 1px solid #777;
+    border-bottom: 1px solid #777;
+    border-left: 1px solid #777;
 }
 
 .legendValue {
-    flex: 1 1 30%;
+    flex: 0 0 50%;
     text-align: right;
-    padding: 0.25em 2em 0.25em 0;
+    padding: 0.25em 0.25em 0.25em 0;
+    border-bottom: 1px solid #ccc;
+}
+
+.highlight .legendValue {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top: 1px solid #777;
+    border-right: 1px solid #777;
+    border-bottom: 1px solid #777;
+}
+
+@media screen and (min-width: 1024px) {
+    .legend li {
+        flex: 0 1 25%;
+    }
+}
+
+@media screen and (min-width: 1600px) {
+    .legend li {
+        flex: 0 1 15%;
+    }
 }
 
 @media print {

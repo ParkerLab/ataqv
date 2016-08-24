@@ -1,0 +1,108 @@
+#!/bin/bash
+
+#
+# qc.sh: run quality checks on ATAC-seq data
+#
+
+# The lines starting with 'drmr:' are directives for our pipeline
+# system (https://github.com/ParkerLab/drmr/). You can ignore them and
+# run the output of this script as an ordinary shell script, but if
+# you have more than a few files to analyze, and a cluster or large
+# lab server to run on, you can use drmr to easily submit the
+# generated pipeline to a workload management system like Slurm or
+# PBS, which will get you results faster.
+
+function perror() {
+    >&2 printf "$1\n"
+}
+
+PICARD="$(which picard)"
+if [ -z "$PICARD" ]
+then
+    PICARD="$(which picard-tools)"
+    if [ -z "$PICARD" ]
+    then
+        if [[ "$PICARD_HOME" && -r "${PICARD_HOME}/picard.jar" ]]
+        then
+            PICARD="java -Xmx1g -Xms1g -jar $PICARD_HOME/picard.jar"
+        else
+            perror "Please put the 'picard' script on your PATH, or set the PICARD_HOME environment variable to the directory containing picard.jar."
+            exit 1
+        fi
+    fi
+fi
+
+SAMTOOLS="$(which samtools)"
+if [ -z "$SAMTOOLS" ]
+then
+    perror "Could not find samtools. Please put it on your PATH."
+    exit 1
+fi
+
+MACS2="$(which macs2)"
+if [ -z "$MACS2" ]
+then
+    perror "Could not find macs2. Please put it on your PATH."
+    exit 1
+fi
+
+set -e
+
+BAM=$1
+ORGANISM=$2
+EXPERIMENT_DESCRIPTION=$3
+LIBRARY_DESCRIPTION=$4
+
+if [ -z "$BAM" ]
+then
+    perror "Please supply a BAM file for the pipeline."
+    exit 1
+fi
+
+BASE=$(basename $BAM .bam)
+BAMMD=${BASE}.md.bam
+HQAA=${BASE}.hqaa.bam
+
+# Reduce the references in the BAM file to the autosomal chromosomes
+CHROMOSOMES=$(samtools view -H ${BAM} | grep -v '^@PG' | cut -f 2 | grep -v -e _ -e chrM -e chrX -e chrY -e 'VN:' | sed 's/SN://' | xargs echo)
+
+QC="qc-${BAM}.sh"
+cat >"$QC" <<EOF
+#!/bin/bash
+
+# drmr:job processors=4 memory=8gb
+
+# create a BAM file of all the original data, with duplicates marked
+${PICARD} MarkDuplicates I=${BAM} O=${BAMMD} ASSUME_SORTED=true METRICS_FILE=${BAMMD}.markdup.metrics VALIDATION_STRINGENCY=LENIENT
+
+# drmr:wait
+
+# drmr:job processors=1
+
+# index the BAM file with duplicates marked, so we can prune it
+samtools index ${BAMMD}
+
+# drmr:wait
+
+# extract the properly paired and mapped autosomal reads with good quality
+samtools view -b -h -f 3 -F 4 -F 256 -F 1024 -F 2048 -q 30 ${BAMMD} $CHROMOSOMES > ${HQAA}
+
+# drmr:wait
+
+# Call broad peaks with macs2 (change genome size as needed for your data)
+macs2 callpeak -t ${HQAA} -f BAM -n ${HQAA}.macs2 -g 'hs' --nomodel --shift -100 --extsize 200 -B --broad
+
+# drmr:wait
+
+# Run ataqc
+ataqc --peak-file ${HQAA}.macs2_peaks.broadPeak --metrics-file ${BAMMD}.json --organism "${ORGANISM}" --library "${LIBRARY_DESCRIPTION}" --description "$EXPERIMENT_DESCRIPTION"  ${BAMMD} > ${BAMMD}.ataqc.out
+
+# drmr:wait
+
+mkarv ${BAMMD}.web ${BAMMD}.json
+
+EOF
+
+cat <<EOF
+QC script written to $QC.
+EOF

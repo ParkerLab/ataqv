@@ -105,26 +105,26 @@
                                                 Experiment
                                             </button>
                                         </th>
-                                        <th data-metric="total_reads" data-metrictype="integer">
-                                            <button class="sort" data-sort="total_reads" title="Total reads from experiment"><span>Total reads</span></button>
+                                        <th data-metric="total_reads" data-metrictype="integer" data-hovertext="The total number of reads from the experiment.">
+                                            <button class="sort" data-sort="total_reads"><span>Total reads</span></button>
                                         </th>
-                                        <th data-metric="properly_paired_and_mapped_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="properly_paired_and_mapped_reads" title="Properly paired and mapped reads, as a percentage of all reads."><span>Properly paired and mapped&nbsp;(%)</span></button>
+                                        <th data-metric="properly_paired_and_mapped_reads" data-percentage="total_reads" data-hovertext="Properly paired and mapped reads, as a percentage of all reads.">
+                                            <button class="sort" data-sort="properly_paired_and_mapped_reads"><span>Properly paired and mapped&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="secondary_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="secondary_reads" title="Alternate alignments of reads, of lower quality than their primary alignments."><span>Secondary&nbsp;(%)</span></button>
+                                        <th data-metric="secondary_reads" data-percentage="total_reads" data-hovertext="Alternate alignments of reads, of lower quality than their primary alignments.">
+                                            <button class="sort" data-sort="secondary_reads"><span>Secondary&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="supplementary_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="supplementary_reads" title="Aligned segments of reads mapped in chimeric alignments."><span>Supplementary&nbsp;(%)</span></button>
+                                        <th data-metric="supplementary_reads" data-percentage="total_reads" data-hovertext="Aligned segments of reads mapped in chimeric alignments.">
+                                            <button class="sort" data-sort="supplementary_reads" ><span>Supplementary&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="duplicate_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="duplicate_reads" title="Duplicate alignments as a percentage of total reads."><span>Duplicate&nbsp;(%)</span></button>
+                                        <th data-metric="duplicate_reads" data-percentage="total_reads" data-hovertext="Duplicate alignments as a percentage of total reads.">
+                                            <button class="sort" data-sort="duplicate_reads"><span>Duplicate&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="mean_mapq">
-                                            <button class="sort" data-sort="mean_mapq" title="The mean mapping quality of the experiment's reads."><span>Mean mapping quality</span></button>
+                                        <th data-metric="mean_mapq" data-hovertext="The mean mapping quality of the experiment's reads.">
+                                            <button class="sort" data-sort="mean_mapq"><span>Mean mapping quality</span></button>
                                         </th>
-                                        <th data-metric="median_mapq" data-metrictype="integer">
-                                            <button class="sort" data-sort="median_mapq" title="The median mapping quality of the experiment's reads."><span>Median mapping quality</span></button>
+                                        <th data-metric="median_mapq" data-metrictype="integer" data-hovertext="The median mapping quality of the experiment's reads.">
+                                            <button class="sort" data-sort="median_mapq"><span>Median mapping quality</span></button>
                                         </th>
                                     </tr>
                                 </thead>
@@ -143,11 +143,11 @@
                                                 Experiment
                                             </button>
                                         </th>
-                                        <th data-metric="hqaa" data-percentage="total_reads">
-                                            <button class="sort" data-sort="hqaa" title="High quality autosomal alignments, as a percentage of all reads. We define these as the primary (not marked duplicate, supplementary, or secondary) alignments of reads properly paired and mapped to autosomes with mapping quality of at least 30. If this metric seems low, look for mitochondrial contamination in the reference metrics below."><span>High quality autosomal alignments&nbsp;(%)</span></button>
+                                        <th data-metric="hqaa" data-percentage="total_reads"  data-hovertext="High quality autosomal alignments, as a percentage of all reads. We define these as the primary (not marked duplicate, supplementary, or secondary) alignments of reads properly paired and mapped to autosomes with mapping quality of at least 30. If this metric seems low, look for mitochondrial contamination in the reference metrics below.">
+                                            <button class="sort" data-sort="hqaa"><span>High quality autosomal alignments&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="short_mononucleosomal_ratio">
-                                            <button class="sort" data-sort="short_mononucleosomal_ratio" title="The ratio of fragments 50-100bp long to fragments 150-200bp long. This can indicate under- or over-transposition -- which should also be apparent on the fragment length distribution plot."><span>Short-to-mononucleosomal ratio</span></button>
+                                        <th data-metric="short_mononucleosomal_ratio" data-hovertext="The ratio of fragments 50-100bp long to fragments 150-200bp long. This can indicate under- or over-transposition -- which should also be apparent on the fragment length distribution plot.">
+                                            <button class="sort" data-sort="short_mononucleosomal_ratio"><span>Short-to-mononucleosomal ratio</span></button>
                                         </th>
                                     </tr>
                                 </thead>
@@ -164,20 +164,20 @@
                                         <th data-metric="name" class="name">
                                             <button class="sort" data-sort="name"><span>Experiment</span></button>
                                         </th>
-                                        <th data-metric="unmapped_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="unmapped_reads" title="Unmapped reads, as a percentage of all reads."><span>Unmapped&nbsp;(%)</span></button>
+                                        <th data-metric="unmapped_reads" data-percentage="total_reads" data-hovertext="Unmapped reads, as a percentage of all reads.">
+                                            <button class="sort" data-sort="unmapped_reads"><span>Unmapped&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="unmapped_mate_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="unmapped_mate_reads" title="Unmapped mate reads, as a percentage of all reads."><span>Unmapped mate&nbsp;(%)</span></button>
+                                        <th data-metric="unmapped_mate_reads" data-percentage="total_reads" data-hovertext="Unmapped mate reads, as a percentage of all reads.">
+                                            <button class="sort" data-sort="unmapped_mate_reads"><span>Unmapped mate&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="qcfailed_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="qcfailed_reads" title="Reads failing quality controls, as a percentage of all reads."><span>QC&nbsp;fail&nbsp;(%)</span></button>
+                                        <th data-metric="qcfailed_reads" data-percentage="total_reads" data-hovertext="Reads failing quality controls, as a percentage of all reads.">
+                                            <button class="sort" data-sort="qcfailed_reads"><span>QC&nbsp;fail&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="unpaired_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="unpaired_reads" title="Unpaired reads, as a percentage of all reads."><span>Unpaired&nbsp;(%)</span></button>
+                                        <th data-metric="unpaired_reads" data-percentage="total_reads" data-hovertext="Unpaired reads, as a percentage of all reads.">
+                                            <button class="sort" data-sort="unpaired_reads"><span>Unpaired&nbsp;(%)</span></button>
                                         </th>
-                                        <th data-metric="reads_mapped_with_zero_quality" data-percentage="total_reads">
-                                            <button class="sort" data-sort="reads_mapped_with_zero_quality" title="Alignments with mapping quality of zero, as a percentage of all reads."><span>Zero mapping quality&nbsp;(%)</span></button>
+                                        <th data-metric="reads_mapped_with_zero_quality" data-percentage="total_reads" data-hovertext="Alignments with mapping quality of zero, as a percentage of all reads.">
+                                            <button class="sort" data-sort="reads_mapped_with_zero_quality"><span>Zero mapping quality&nbsp;(%)</span></button>
                                         </th>
                                     </tr>
                                 </thead>
@@ -198,23 +198,23 @@
                                     </tr>
 
                                     <tr>
-                                        <th data-metric="rf_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="rf_reads" title="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand."><span>RF</span></button>
+                                        <th data-metric="rf_reads" data-percentage="total_reads" data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand.">
+                                            <button class="sort" data-sort="rf_reads"><span>RF</span></button>
                                         </th>
-                                        <th data-metric="ff_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="ff_reads" title="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand."><span>FF</span></button>
+                                        <th data-metric="ff_reads" data-percentage="total_reads" data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand.">
+                                            <button class="sort" data-sort="ff_reads"><span>FF</span></button>
                                         </th>
-                                        <th data-metric="rr_reads" data-percentage="total_reads">
-                                            <button class="sort" data-sort="rr_reads" title="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand."><span>RR</span></button>
+                                        <th data-metric="rr_reads" data-percentage="total_reads" data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand.">
+                                            <button class="sort" data-sort="rr_reads"><span>RR</span></button>
                                         </th>
-                                        <th data-metric="reads_with_mate_mapped_to_different_reference" data-percentage="total_reads">
-                                            <button class="sort" data-sort="reads_with_mate_mapped_to_different_reference" title="Each read of the pair mapped to a different reference (chromosome)."><span>on different chromosomes</span></button>
+                                        <th data-metric="reads_with_mate_mapped_to_different_reference" data-percentage="total_reads" data-hovertext="Each read of the pair mapped to a different reference (chromosome).">
+                                            <button class="sort" data-sort="reads_with_mate_mapped_to_different_reference"><span>on different chromosomes</span></button>
                                         </th>
-                                        <th data-metric="reads_with_mate_too_distant" data-percentage="total_reads">
-                                            <button class="sort" data-sort="reads_with_mate_too_distant" title="The reads of the pair aligned to locations that are too far apart to be plausible, given the fragment lengths in the dataset."><span>too far from mate</span></button>
+                                        <th data-metric="reads_with_mate_too_distant" data-percentage="total_reads" data-hovertext="The reads of the pair aligned to locations that are too far apart to be plausible, given the fragment lengths in the dataset.">
+                                            <button class="sort" data-sort="reads_with_mate_too_distant"><span>too far from mate</span></button>
                                         </th>
-                                        <th data-metric="reads_mapped_and_paired_but_improperly" data-percentage="total_reads">
-                                            <button class="sort" data-sort="reads_mapped_and_paired_but_improperly" title="We don't know why these are not marked properly paired and mapped. Sorry. You can have ataqc log problematic reads, so you can try to diagnose them. Let us know what you find."><span>just not properly</span></button>
+                                        <th data-metric="reads_mapped_and_paired_but_improperly" data-percentage="total_reads" data-hovertext="We don't know why these are not marked properly paired and mapped. Sorry. You can have ataqc log problematic reads, so you can try to diagnose them. Let us know what you find.">
+                                            <button class="sort" data-sort="reads_mapped_and_paired_but_improperly"><span>just not properly</span></button>
                                         </th>
                                     </tr>
                                 </thead>
@@ -236,17 +236,17 @@
                                     </tr>
 
                                     <tr>
-                                        <th data-metric="total_autosomal_reads" data-percentage="total_reads" class="rj">
-                                            <button class="sort" data-sort="total_autosomal_reads" title="The number of reads aligned to autosomes, as a percentage of all reads."><span>% of all reads</span></button>
+                                        <th data-metric="total_autosomal_reads" data-percentage="total_reads" class="rj" data-hovertext="The number of reads aligned to autosomes, as a percentage of all reads.">
+                                            <button class="sort" data-sort="total_autosomal_reads"><span>% of all reads</span></button>
                                         </th>
-                                        <th data-metric="duplicate_autosomal_reads" data-percentage="total_autosomal_reads">
-                                            <button class="sort" data-sort="duplicate_autosomal_reads" title="The percentage of reads mapped to autosomes that were duplicates."><span>Duplicates (% of autosomal alignments)</span></button>
+                                        <th data-metric="duplicate_autosomal_reads" data-percentage="total_autosomal_reads" data-hovertext="The percentage of reads mapped to autosomes that were duplicates.">
+                                            <button class="sort" data-sort="duplicate_autosomal_reads"><span>Duplicates (% of autosomal alignments)</span></button>
                                         </th>
-                                        <th data-metric="total_mitochondrial_reads" data-percentage="total_reads" class="rj">
-                                            <button class="sort" data-sort="total_mitochondrial_reads" title="The number of reads aligned to the mitochondrial reference, as a percentage of all reads."><span>% of all reads</span></button>
+                                        <th data-metric="total_mitochondrial_reads" data-percentage="total_reads" class="rj" data-hovertext="The number of reads aligned to the mitochondrial reference, as a percentage of all reads.">
+                                            <button class="sort" data-sort="total_mitochondrial_reads"><span>% of all reads</span></button>
                                         </th>
-                                        <th data-metric="duplicate_mitochondrial_reads" data-percentage="total_mitochondrial_reads">
-                                            <button class="sort" data-sort="duplicate_mitochondrial_reads" title="The percentage of reads mapped to the mitochondrial reference that were duplicates."><span>Duplicates&nbsp;(% of mitochondrial alignments)</span></button>
+                                        <th data-metric="duplicate_mitochondrial_reads" data-percentage="total_mitochondrial_reads" data-hovertext="The percentage of reads mapped to the mitochondrial reference that were duplicates.">
+                                            <button class="sort" data-sort="duplicate_mitochondrial_reads"><span>Duplicates&nbsp;(% of mitochondrial alignments)</span></button>
                                         </th>
                                     </tr>
                                 </thead>
@@ -263,11 +263,11 @@
                                         <th data-metric="name" class="name">
                                             <button class="sort" data-sort="name">Experiment</button>
                                         </th>
-                                        <th data-metric="total_peaks" data-metrictype="integer">
-                                            <button class="sort" data-sort="total_peaks" title="The total number of peaks called.">Total peaks</button>
+                                        <th data-metric="total_peaks" data-metrictype="integer" data-hovertext="The total number of peaks called.">
+                                            <button class="sort" data-sort="total_peaks">Total peaks</button>
                                         </th>
-                                        <th data-metric="hqaa_overlapping_peaks_percent">
-                                            <button class="sort" data-sort="hqaa_overlapping_peaks_percent" title="The percentage of high quality autosomal alignments that overlapped called peaks.">High quality autosomal alignments overlapping peaks&nbsp;(%)</button>
+                                        <th data-metric="hqaa_overlapping_peaks_percent" data-hovertext="The percentage of high quality autosomal alignments that overlapped called peaks.">
+                                            <button class="sort" data-sort="hqaa_overlapping_peaks_percent">High quality autosomal alignments overlapping peaks&nbsp;(%)</button>
                                         </th>
                                     </tr>
                                 </thead>
@@ -297,7 +297,7 @@
                             </div>
                         </div>
                         <div class="plotContainer" id="peakReadCounts">
-                            <h2>Cumulative fraction of high quality autosomal aligments</h2>
+                            <h2>Cumulative fraction of high quality autosomal alignments</h2>
                             <div class="plotbox">
                                 <div class="plot"></div>
                                 <div class="legend"></div>

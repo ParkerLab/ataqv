@@ -1,0 +1,85 @@
+#!/bin/bash
+
+#
+# run_ataqc_example: fetch some example ATAC-seq data and process it
+#
+
+function perror() {
+    >&2 printf "$1\n"
+}
+
+function insufficientdisk() {
+    path=$1
+    spacerequiredk=$2
+    freek="$(df -Pk $path | tail -1 | awk '{print $3}')"
+    if [ $freek -lt $spacerequiredk ]
+    then
+        true
+    else
+        false
+    fi
+}
+
+BAM="SRR891268.chr20.bam"
+BAMSHA="ecec9d17af65d00ba52c8276428a5125ecb4db05"
+BAMURL="https://theparkerlab.med.umich.edu/data/ataqc/$BAM"
+
+MAP="$(which make_ataqc_pipeline)"
+CURL="$(which curl)"
+WGET="$(which wget)"
+
+set -e
+
+if [ -z "$MAP" ]
+then
+    perror "The 'make_ataqc_pipeline' script was not found. Have you installed ataqc?"
+    exit 1
+fi
+
+DIRECTORY=$1
+
+if [ -z "$DIRECTORY" ]
+then
+    perror "Please supply the name of a directory in which to run the example pipeline."
+fi
+
+mkdir -p "${DIRECTORY}" && cd "${DIRECTORY}"
+
+if insufficientdisk "${DIRECTORY}" 1024000
+then
+    perror "The example data is about 500 megabytes. Please free up some disk space."
+    exit 1
+fi
+
+if [ -r "$BAM" ]
+then
+    SHA="$(shasum $BAM | awk '{print $1}')"
+    if [ "$SHA" != "$BAMSHA" ]
+    then
+        rm $BAM
+    fi
+    perror "The example BAM file is already present."
+fi
+
+if [ ! -r "$BAM" ]
+then
+    perror "Retrieving the example data..."
+
+    if [ "${CURL}" ]
+    then
+        ${CURL} -O ${BAMURL}
+    elif [ "${WGET}" ]
+    then
+        ${WGET} ${BAMURL}
+    else
+        perror "Cannot find cURL or wget to retrieve the example data."
+    fi
+fi
+
+make_ataqc_pipeline $BAM "Homo sapiens" "ATAC-seq data from Buenrostro et al." "SRR891268, subsample from chromosome 20"
+
+perror "Running QC pipeline..."
+
+sh "${DIRECTORY}/qc-${BAM}.sh"
+
+perror "QC pipeline complete."
