@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.3.0
+VERSION = 0.4.0
 
 #
 # PATHS
@@ -134,7 +134,7 @@ $(BUILD_DIR):
 $(BUILD_DIR)/ataqc: $(BUILD_DIR)/ataqc.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
-$(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
+$(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP) $(CPP_DIR)/Version.hpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
 
 $(CPP_DIR)/Version.hpp: Makefile
