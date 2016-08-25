@@ -175,9 +175,8 @@ instance.
 Example
 =======
 
-The ataqc Git repository includes an ``example`` subdirectory,
-containing a script that will set up and run our entire ATAC-seq
-pipeline on some sample data.
+The ataqc package includes a script that will set up and run our
+entire ATAC-seq pipeline on some sample data.
 
 You'll need to have installed ataqc itself, plus Picard tools,
 samtools, and MACS2 to run the pipeline. On a Mac, you can obtain
