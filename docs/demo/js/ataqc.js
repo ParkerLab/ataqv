@@ -19,7 +19,7 @@ var ataqc = (function() {
 
     function localStorageAvailable() {
         try {
-            x = '__storage_test__';
+            var x = '__storage_test__';
             window.localStorage.setItem(x, x);
             window.localStorage.removeItem(x);
             return true;
@@ -199,10 +199,6 @@ var ataqc = (function() {
             helpCloser.addEventListener('click', hideHelp, true);
         }
 
-        for (var imager of querySelectorAll('.plotImager')) {
-            imager.addEventListener('click', makePlotImage);
-        }
-
         var addAllButton = document.getElementById('addAllExperiments');
         addAllButton.addEventListener('click', addAllExperiments, true);
 
@@ -215,6 +211,7 @@ var ataqc = (function() {
             }
 
             switch (evt.keyCode) {
+            case 27: hideHelp(); break;
             case 69: activateTab('experimentTabBody'); break;
             case 84: activateTab('tableTabBody'); break;
             case 80: activateTab('plotTabBody'); break;
@@ -247,6 +244,7 @@ var ataqc = (function() {
     function listExperiments(containerID) {
         var experimentID;
         var metadata = [];
+        var cleaner;
 
         var listOptions = {
             item: '<tr><td class=""><a href="#" class="name"></a></td><td class="organism"></td><td class="library"></td><td class="description_with_url"></td><td><a href="#" class="original_url" download>Download</a></td></tr>',
@@ -283,11 +281,14 @@ var ataqc = (function() {
         } else {
             for (experimentID of activeExperimentIDs) {
                 var li = document.createElement('li');
-                li.dataset.hovertext = escapeAttribute(metrics[experimentID].description);
+                var hovertext = escapeAttribute(metrics[experimentID].description);
+                if (hovertext) {
+                    li.dataset.hovertext = hovertext;
+                }
                 li.classList.add('experiment');
                 li.innerHTML = '<div>' + experimentID + '</div>';
 
-                var cleaner = document.createElement('button');
+                cleaner = document.createElement('button');
                 cleaner.classList.add('cleaner');
                 cleaner.innerHTML = '<i class="fa fa-times-circle"></i>';
                 cleaner.dataset.experimentID = experimentID;
@@ -305,7 +306,7 @@ var ataqc = (function() {
                 a.parentNode.parentNode.classList.remove('active');
             } else {
                 a.parentNode.parentNode.classList.add('active');
-                var cleaner = document.createElement('button');
+                cleaner = document.createElement('button');
                 cleaner.classList.add('cleaner');
                 cleaner.innerHTML = '<i class="fa fa-times-circle"></i>';
                 cleaner.dataset.experimentID = a.innerHTML;
@@ -321,6 +322,9 @@ var ataqc = (function() {
             var html;
             var i;
             var series;
+            var experimentMetrics;
+            var hovertext;
+
             if (typeof(data.x) === 'undefined') {
                 if (g.getOption('legend') != 'always') {
                     return '';
@@ -331,24 +335,26 @@ var ataqc = (function() {
                     series = data.series[i];
                     if (!series.isVisible) continue;
 
-                    var experimentMetrics = metrics[series.labelHTML];
-                    var hovertext = escapeAttribute(experimentMetrics.description);
+                    experimentMetrics = metrics[series.labelHTML];
+                    hovertext = escapeAttribute(experimentMetrics.description);
+                    hovertext = hovertext ? 'data-hovertext="' + hovertext + '"': '';
 
-                    html += `<li class="legendItem" data-series="${series.label}" data-hovertext="${hovertext}"><div class="legendSeries" style='color: ${series.color};'>${series.labelHTML}</div><div class="legendValue" style='color: ${series.color};'>${series.dashHTML}</div></li>`;
+                    html += `<li class="legendItem" data-series="${series.label}" ${hovertext}><div class="legendSeries" style='color: ${series.color};'>${series.labelHTML}</div><div class="legendValue" style='color: ${series.color};'>${series.dashHTML}</div></li>`;
                 }
                 html += '</ul>';
             } else {
                 html = '<div>' + (options.xlabel || '').replace(/{xHTML}/, data.xHTML) + '</div><ul>';
-                var sortedSeries = data.series.sort(function(a, b) {return Number.parseFloat(b.yHTML) - Number.parseFloat(a.yHTML);})
+                var sortedSeries = data.series.sort(function(a, b) {return Number.parseFloat(b.yHTML) - Number.parseFloat(a.yHTML);});
                 for (i = 0; i < sortedSeries.length; i++) {
                     series = sortedSeries[i];
                     if (!series.isVisible) continue;
 
-                    var experimentMetrics = metrics[series.labelHTML];
-                    var hovertext = escapeAttribute(experimentMetrics.description);
+                    experimentMetrics = metrics[series.labelHTML];
+                    hovertext = escapeAttribute(experimentMetrics.description);
+                    hovertext = hovertext ? 'data-hovertext="' + hovertext + '"': '';
 
                     var highlightClass = series.isHighlighted ? 'highlight' : '';
-                    html += `<li class="legendItem ${highlightClass}" data-series="${series.label}" data-hovertext="${hovertext}"><div class="legendSeries" style='color: ${series.color};'>${series.labelHTML}</div><div class="legendValue">${series.yHTML}</div></li>`;
+                    html += `<li class="legendItem ${highlightClass}" data-series="${series.label}" ${hovertext}><div class="legendSeries" style='color: ${series.color};'>${series.labelHTML}</div><div class="legendValue">${series.yHTML}</div></li>`;
                 }
                 html += '</ul>';
             }
@@ -698,7 +704,12 @@ var ataqc = (function() {
                     cell = row.insertCell();
                     cell.classList.add(key);
                     cell.dataset.experiment = slugify(experimentValues.name);
-                    cell.dataset.hovertext = escapeAttribute(experimentValues.description);
+
+                    var hovertext = escapeAttribute(metrics[experimentID].description);
+                    if (hovertext) {
+                        cell.dataset.hovertext = hovertext;
+                    }
+
                     if (typeof(value) == 'number') {
                         if (value == ranges[key].max && value != ranges[key].min) {
                             cell.classList.add('max');
@@ -781,7 +792,7 @@ var ataqc = (function() {
         installLegendHighlighters();
         if (activeExperimentIDs.length > 0) {
             document.getElementById('removeAllExperiments').style.display = 'inline-block';
-            for (inactive_tab of querySelectorAll('.tab:not(.active) a')) {
+            for (var inactive_tab of querySelectorAll('.tab:not(.active) a')) {
                 inactive_tab.querySelector('.badge').classList.add('visible');
                 inactive_tab.classList.add('glow');
             }
@@ -791,7 +802,7 @@ var ataqc = (function() {
                 }
             }, 300);
         } else {
-            for (badge of querySelectorAll('.badge')) {
+            for (var badge of querySelectorAll('.badge')) {
                 badge.classList.remove('visible');
             }
         }
@@ -849,5 +860,5 @@ var ataqc = (function() {
     return {
         setMetrics: setMetrics,
         initialize: initialize
-    }
+    };
 })();
