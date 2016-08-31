@@ -344,11 +344,16 @@ int main(int argc, char **argv) {
         if (!autosomal_reference_filename.empty()) {
             metrics.load_autosomal_reference();
         }
+
         if (!excluded_region_filenames.empty()) {
             metrics.load_excluded_regions();
         }
+
         metrics.load_alignments();
-        metrics.load_peaks();
+
+        if (!metrics.peak_filename.empty()) {
+            metrics.load_peaks();
+        }
     } catch (FileException& e) {
         std::cerr << e.what() << std::endl;
         exit(1);

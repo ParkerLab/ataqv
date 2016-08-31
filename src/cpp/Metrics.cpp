@@ -740,27 +740,29 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
         os << std::setfill(' ') << std::setw(20) << std::right << threshold << ": " << percentage_string(count, m.total_reads) << std::endl;
     }
 
-    os << "PEAK METRICS" << std::endl
-       << "------------" << std::endl
-       << "Peak count: " << m.peaks.size() << std::endl <<std::endl
+    if (m.peaks.size() > 0 || !m.peak_filename.empty()) {
+        os << "PEAK METRICS" << std::endl
+           << "------------" << std::endl
+           << "Peak count: " << m.peaks.size() << std::endl <<std::endl
 
-       << "Reads that overlapped peaks: "  << percentage_string(m.reads_in_peaks, m.total_reads, 3, " (", "% of all reads)") << std::endl
-       << "Number of reads overlapping the top 10,000 peaks: " << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top peak: " << std::fixed << percentage_string(m.top_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 10 peaks: " << std::fixed << percentage_string(m.top_10_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 100 peaks: "<< std::fixed << percentage_string(m.top_100_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 1000 peaks: " << std::fixed << percentage_string(m.top_1000_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 10,000 peaks: " << std::fixed << percentage_string(m.top_10000_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
+           << "Reads that overlapped peaks: "  << percentage_string(m.reads_in_peaks, m.total_reads, 3, " (", "% of all reads)") << std::endl
+           << "Number of reads overlapping the top 10,000 peaks: " << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top peak: " << std::fixed << percentage_string(m.top_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 10 peaks: " << std::fixed << percentage_string(m.top_10_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 100 peaks: "<< std::fixed << percentage_string(m.top_100_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 1000 peaks: " << std::fixed << percentage_string(m.top_1000_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 10,000 peaks: " << std::fixed << percentage_string(m.top_10000_peak_read_count, m.total_reads, 3, " (", "% of all reads)") << std::endl
 
-       << std::endl
+           << std::endl
 
-       << "High quality autosomal aligments that overlapped peaks: "  << percentage_string(m.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
-       << "Number of high quality autosomal aligments overlapping the top 10,000 peaks: " << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top peak: " << std::fixed << percentage_string(m.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 10 peaks: " << std::fixed << percentage_string(m.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 100 peaks: "<< std::fixed << percentage_string(m.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 1000 peaks: " << std::fixed << percentage_string(m.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-       << std::setfill(' ') << std::setw(22) << std::right << "Top 10,000 peaks: " << std::fixed << percentage_string(m.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl;
+           << "High quality autosomal aligments that overlapped peaks: "  << percentage_string(m.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << "Number of high quality autosomal aligments overlapping the top 10,000 peaks: " << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top peak: " << std::fixed << percentage_string(m.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 10 peaks: " << std::fixed << percentage_string(m.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 100 peaks: "<< std::fixed << percentage_string(m.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 1000 peaks: " << std::fixed << percentage_string(m.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(22) << std::right << "Top 10,000 peaks: " << std::fixed << percentage_string(m.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl;
+    }
     return os;
 }
 
