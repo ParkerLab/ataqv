@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+
+try:
+    import http.server as httpserver
+    import socketserver
+except:
+    import SimpleHTTPServer as httpserver
+    import SocketServer as socketserver
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='srvarv: serve an instance of the ataqc web results viewer'
+    )
+    parser.add_argument('-p', '--port', type=int, default=8000, help="""The TCP port on which to serve the viewer (default: 8000).""")
+    parser.add_argument('instance', nargs='?', default='.', help="""The directory containing the viewer instance (default: current directory).""")
+    args = parser.parse_args()
+
+    handler = httpserver.SimpleHTTPRequestHandler
+    httpd = socketserver.TCPServer(('', args.port), handler)
+
+    instance = os.path.abspath(args.instance)
+    os.chdir(args.instance)
+
+    print('Serving ataqc web viewer instance from {} at http://localhost:{}'.format(instance, args.port))
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print('Shutting down.')
