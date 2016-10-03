@@ -4,6 +4,6 @@
 ((c++-mode
   (flycheck-clang-language-standard . "c++11")
   (flycheck-gcc-language-standard . "c++11")
-  (flycheck-clang-include-path . ("."))
-  (flycheck-gcc-include-path . ("."))
+  (flycheck-clang-include-path . ("." "/usr/local/include"))
+  (flycheck-gcc-include-path . ("." "/usr/local/include"))
 ))

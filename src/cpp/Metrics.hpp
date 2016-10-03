@@ -8,10 +8,9 @@
 #define METRICS_HPP
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
-
-#include "json.hpp"
 
 #include "Exceptions.hpp"
 #include "Features.hpp"
@@ -19,37 +18,110 @@
 #include "IO.hpp"
 #include "Peaks.hpp"
 
-using json = nlohmann::json;
+
+class MetricsCollector;
+class Metrics;
+
+
+//
+// The MetricsCollector examines a BAM file and optionally, a BED file
+// containing peaks, to collect metrics for each read group found. If
+// the BAM file has no read groups defined, one will be fabricated for
+// it, using the filename.
+//
+class MetricsCollector {
+private:
+    void load_autosomal_references();
+    void load_excluded_regions();
+
+public:
+    std::map<std::string, Metrics*> metrics;
+
+    std::string name = "";
+    std::string organism  = "";
+    std::string description = "";
+    std::string library_description = "";
+    std::string url = "";
+
+    std::string alignment_filename = "";
+
+    std::string autosomal_reference_filename = "";
+    std::string mitochondrial_reference_name = "chrM";
+
+    // For each organism, the autosomal chromosomes that we'll
+    // consider when recording fragment lengths or overlap with peaks.
+    std::map<std::string, std::map<std::string, int>> autosomal_references = {};
+
+    std::string peak_filename = "auto";
+
+    std::vector<std::string> excluded_region_filenames = {};
+    std::vector<Feature> excluded_regions = {};
+
+    bool log_problematic_reads = false;
+    bool verbose = false;
+
+    MetricsCollector(const std::string& name = "",
+                     const std::string& organism = "human",
+                     const std::string& description = "",
+                     const std::string& library_description = "",
+                     const std::string& url = "",
+                     const std::string& alignment_filename = "",
+                     const std::string& autosomal_reference_filename = "",
+                     const std::string& mitochondrial_reference_name = "chrM",
+                     const std::string& peak_filename = "",
+                     const std::vector<std::string>& excluded_region_filenames = {},
+                     bool log_problematic_reads = false,
+                     bool verbose = false);
+
+    std::string autosomal_reference_string() const;
+    std::string configuration_string() const;
+    bool is_autosomal(const std::string &reference_name);
+    bool is_mitochondrial(const std::string& reference_name);
+    void load_alignments();
+    void to_json(std::ostream& os);
+};
+
+
+std::ostream& operator<<(std::ostream& os, const MetricsCollector& collector);
+
+
+// Sequenced library metadata, with SAM spec tag in comments
+class Library {
+public:
+    std::string library = "";  // LB
+    std::string sample = "";  // SM
+    std::string description = "";  // DS
+    std::string center = "";  // CN
+    std::string date = "";  // DT
+    std::string platform = "";  // PL
+    std::string platform_model = "";  // PM
+    std::string platform_unit = "";  // PU
+    std::string flow_order = "";  // FO
+    std::string key_sequence = "";  // KS
+    std::string predicted_median_insert_size = "";  // PI
+    std::string programs = "";  // PG
+
+    void to_json(std::ostream& os, int indent, bool standalone = false);
+};
+
+std::ostream& operator<<(std::ostream& os, const Library& library);
+
 
 class Metrics {
 private:
-    void log(boost::shared_ptr<boost::iostreams::filtering_ostream> problem_log, const std::string& message);
-    void log_problematic_read(boost::shared_ptr<boost::iostreams::filtering_ostream> problem_log, const bam_hdr_t* header, const bam1_t *record, const std::string& problem);
+    std::shared_ptr<MetricsCollector> collector;
+    std::string problematic_read_filename = "";
+    boost::shared_ptr<boost::iostreams::filtering_ostream> problematic_read_stream = nullptr;
+
+    void log_problematic_read(const std::string& problem, const std::string& record = "");
+    void open_problematic_read_stream();
 
 public:
     std::string name = "";
-    std::string description = "";
-    std::string url = "";
+    Library library = {};
 
-    std::string organism  = "";
-    std::string library  = "";
-    unsigned long long int cell_count = 0;
-
-    std::string reference_genome = "GRCh37";
-    std::string mitochondrial_reference_name = "chrM";
-
-    std::string alignment_filename = "";
-    std::string peak_filename = "";
-    std::string autosomal_reference_filename = "";
-    std::string problematic_reads_filename = "";
-    std::vector<std::string> excluded_region_filenames = {};
-    bool verbose = false;
-
-    /// For each species, list the autosomal chromosomes that we'll consider
-    /// when recording fragment lengths.
-    std::map<std::string, std::map<std::string, int>> genome_autosomal_references = {};
-
-    std::vector<Feature> excluded_regions = {};
+    // read group attributes
+    PeakTree peaks;
 
     unsigned long long int total_reads = 0;
     unsigned long long int forward_reads = 0;
@@ -65,19 +137,17 @@ public:
     unsigned long long int second_reads = 0;
     unsigned long long int forward_mate_reads = 0;
     unsigned long long int reverse_mate_reads = 0;
+    unsigned long long int fr_reads = 0;
 
     unsigned long long int unmapped_reads = 0;
     unsigned long long int unmapped_mate_reads = 0;
     unsigned long long int qcfailed_reads = 0;
     unsigned long long int unpaired_reads = 0;
     unsigned long long int ff_reads = 0;
-    unsigned long long int fr_reads = 0;
     unsigned long long int rf_reads = 0;
     unsigned long long int rr_reads = 0;
-    unsigned long long int reads_improperly_oriented = 0;
     unsigned long long int reads_with_mate_mapped_to_different_reference = 0;
     unsigned long long int reads_mapped_with_zero_quality = 0;
-    unsigned long long int reads_with_mate_mapped_on_same_strand = 0;
     unsigned long long int reads_mapped_and_paired_but_improperly = 0;
 
     unsigned long long int unclassified_reads = 0;
@@ -97,20 +167,12 @@ public:
     std::map<int, unsigned long long int> fragment_length_counts = {};
     std::map<int, unsigned long long int> hqaa_fragment_length_counts = {};
 
-    unsigned long long int hqaa_tf_count = 0;
+    unsigned long long int hqaa_short_count = 0;
     unsigned long long int hqaa_mononucleosomal_count = 0;
 
     std::map<int, unsigned long long int> mapq_counts = {};
 
-    std::vector<Peak> peaks = {};
     unsigned long long int total_peak_territory = 0;
-
-    unsigned long long int reads_in_peaks = 0;
-    unsigned long long int top_peak_read_count = 0;
-    unsigned long long int top_10_peak_read_count = 0;
-    unsigned long long int top_100_peak_read_count = 0;
-    unsigned long long int top_1000_peak_read_count = 0;
-    unsigned long long int top_10000_peak_read_count = 0;
 
     unsigned long long int hqaa_in_peaks = 0;
     unsigned long long int top_peak_hqaa_read_count = 0;
@@ -119,28 +181,30 @@ public:
     unsigned long long int top_1000_peak_hqaa_read_count = 0;
     unsigned long long int top_10000_peak_hqaa_read_count = 0;
 
-    Metrics();
+    bool log_problematic_reads = false;
+    bool peaks_requested = false;
 
-    void add_alignment(const bam_hdr_t* header, const bam1_t* record, boost::shared_ptr<boost::iostreams::filtering_ostream> problem_log);
-    std::vector<std::string> autosomal_references() const;
+    Metrics(std::shared_ptr<MetricsCollector> collector, const std::string& name = nullptr);
+
+    void add_alignment(const bam_hdr_t* header, const bam1_t* record);
     std::string configuration_string() const;
+    void determine_top_peaks();
     void increment_overlapping_read_count(Peak* peak);
-    bool is_autosomal(std::string &reference_name);
+    bool is_autosomal(const std::string &reference_name);
+    bool is_mitochondrial(const std::string& reference_name);
     bool is_ff(const bam1_t* record);
     bool is_fr(const bam1_t* record);
     bool is_rf(const bam1_t* record);
     bool is_rr(const bam1_t* record);
     bool is_hqaa(const bam_hdr_t* header, const bam1_t* record);
-    void load_alignments();
-    void load_autosomal_reference();
-    void load_excluded_regions();
     void load_peaks();
+    void make_aggregate_diagnoses();
+    std::string make_metrics_filename(const std::string& suffix);
     bool mapq_at_least(const int& mapq, const bam1_t* record);
     double mean_mapq() const;
     double median_mapq() const;
-
-    json to_json();
-    void write_json(std::ostream& os);
+    void to_json(std::ostream& os, int indent = 0, bool standalone = true);
+    void update_overlapping_peaks(const bam_hdr_t *header, const bam1_t *record);
 };
 
 std::ostream& operator<<(std::ostream& os, const Metrics& metrics);

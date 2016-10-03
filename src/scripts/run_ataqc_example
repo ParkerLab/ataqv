@@ -4,6 +4,8 @@
 # run_ataqc_example: fetch some example ATAC-seq data and process it
 #
 
+set -e
+
 function perror() {
     >&2 printf "$1\n"
 }
@@ -76,10 +78,10 @@ then
     fi
 fi
 
-make_ataqc_pipeline $BAM "Homo sapiens" "ATAC-seq data from Buenrostro et al." "SRR891268, subsample from chromosome 20"
+make_ataqc_pipeline $BAM human "ATAC-seq data from Buenrostro et al." "SRR891268, subsample from chromosome 20"
 
 perror "Running QC pipeline..."
 
-sh "${DIRECTORY}/qc-${BAM}.sh"
+bash "${DIRECTORY}/qc-${BAM}.sh"
 
 perror "QC pipeline complete."

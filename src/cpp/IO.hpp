@@ -31,6 +31,7 @@ inline bool is_gzipped(std::string filename) {
     return gzipped;
 }
 
+
 inline bool is_gzipped_filename(std::string filename) {
     std::string suffix = ".gz";
     if (filename.length() >= suffix.length()) {
@@ -39,6 +40,7 @@ inline bool is_gzipped_filename(std::string filename) {
         return false;
     }
 }
+
 
 ///
 /// mistream : "magic istream" opens a file, automatically decompressing as needed
@@ -63,6 +65,7 @@ inline boost::shared_ptr<boost::iostreams::filtering_istream> mistream(const std
     return filtering_istream;
 }
 
+
 ///
 /// mostream : "magic ostream" opens a file, automatically compressing if the filename ends in ".gz"
 ///
@@ -85,5 +88,6 @@ inline boost::shared_ptr<boost::iostreams::filtering_ostream> mostream(const std
     filtering_ostream->push(sink, std::ofstream::binary);
     return filtering_ostream;
 }
+
 
 #endif // IO_HPP

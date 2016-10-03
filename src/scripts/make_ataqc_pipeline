@@ -70,6 +70,8 @@ QC="qc-${BAM}.sh"
 cat >"$QC" <<EOF
 #!/bin/bash
 
+set -e
+
 # drmr:job processors=4 memory=8gb
 
 # create a BAM file of all the original data, with duplicates marked
@@ -95,11 +97,11 @@ macs2 callpeak -t ${HQAA} -f BAM -n ${HQAA}.macs2 -g 'hs' --nomodel --shift -100
 # drmr:wait
 
 # Run ataqc
-ataqc --peak-file ${HQAA}.macs2_peaks.broadPeak --metrics-file ${BAMMD}.json --organism "${ORGANISM}" --library "${LIBRARY_DESCRIPTION}" --description "$EXPERIMENT_DESCRIPTION"  ${BAMMD} > ${BAMMD}.ataqc.out
+ataqc --peak-file ${HQAA}.macs2_peaks.broadPeak --metrics-file ${BAMMD}.json.gz --library-description "${LIBRARY_DESCRIPTION}" --description "$EXPERIMENT_DESCRIPTION" "${ORGANISM}" ${BAMMD} > ${BAMMD}.ataqc.out
 
 # drmr:wait
 
-mkarv ${BAMMD}.web ${BAMMD}.json
+mkarv --force --delete ${BAMMD}.web ${BAMMD}.json.gz
 
 EOF
 

@@ -20,7 +20,7 @@ basic metrics, including:
 * reads mapping to autosomal or mitochondrial references
 * the ratio of short to mononucleosomal fragment counts
 * mapping quality
-* various kinds of problematic reads
+* various kinds of problematic alignments
 
 If you also have a file of peaks called on your data, that file can be
 examined to report read coverage of the peaks.
@@ -35,6 +35,12 @@ mapping quality, counts of reads overlapping peaks, and peak
 territory.
 
 Web viewer demo: https://parkerlab.github.io/ataqc/demo/
+
+****
+Help
+****
+
+If you have questions or suggestions, mail us at `parkerlab-software@umich.edu`_.
 
 ***************
 Getting started
@@ -92,6 +98,11 @@ compiler configuration can be made simpler::
 
 Or you can specify directories in BOOST_INCLUDE, BOOST_LIB,
 HTSLIB_INCLUDE, and HTSLIB_LIB separately.
+
+If you use custom locations, like this, you will probably need to set
+LD_LIBRARY_PATH for the shared libraries to be found at runtime::
+
+  export LD_LIBRARY_PATH=/path/to/boost/lib:/path/to/htslib/lib:$LD_LIBRARY_PATH
 
 Dependency notes
 ^^^^^^^^^^^^^^^^
@@ -203,12 +214,18 @@ ATAC-seq experiments as we can get our hands on, so we can compare
 them and learn how changes to the protocol affect the output. Watch
 our `GitHub docs`_ for updates.
 
-****
-Help
-****
+***********
+Performance
+***********
 
-If you have questions or suggestions, mail us at `parkerlab-software@umich.edu`_.
+It's not currently concurrent, so don't allocate it more than a single
+processor. Memory usage should typically be no more than a few hundred
+megabytes.
 
+Anecdotally, processing a 41GB BAM file containing 1,126,660,186
+alignments of the data from the ATAC-seq paper took just under 20
+minutes and 2GB of memory. Adding peak metrics extended the run time
+to almost 40 minutes, but it still used the same amount of memory.
 
 .. _Parker lab: http://theparkerlab.org/
 .. _Boost: http://www.boost.org/

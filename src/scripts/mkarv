@@ -90,6 +90,7 @@ def parse_arguments():
     )
 
     parser.add_argument('-f', '--force', action='store_true', help='Overwrite the output directory if it exists.')
+    parser.add_argument('-d', '--delete', action='store_true', help='With --force, replaces the output directory without backing it up first.')
 
     parser.add_argument('-t', '--template-directory', default=locate_template_directory(sys.argv[0]), help=("""The location of the web app directory template."""))
 
@@ -154,9 +155,12 @@ if __name__ == '__main__':
             logger.error("""Output directory {} already exists. I won't overwrite it unless given the --force argument.""".format(args.directory))
             sys.exit(1)
         else:
-            backup_dir = tempfile.mkdtemp(prefix=args.directory + '.', dir=os.path.dirname(args.directory))
-            logger.info('Moving existing directory {} to {}.'.format(args.directory, backup_dir))
-            os.rename(args.directory, backup_dir)
+            if args.delete:
+                shutil.rmtree(args.directory)
+            else:
+                backup_dir = tempfile.mkdtemp(prefix=args.directory + '.', dir=os.path.dirname(args.directory))
+                logger.info('Moving existing directory {} to {}.'.format(args.directory, backup_dir))
+                os.rename(args.directory, backup_dir)
 
     logger.info('Copying web visualizer template directory to {}'.format(args.directory))
     shutil.copytree(args.template_directory, args.directory)
@@ -171,25 +175,28 @@ if __name__ == '__main__':
         logger.info('Adding metrics file {}'.format(metrics_filename))
         mf = open_maybe_gzipped(metrics_filename)
         try:
-            metrics = json.load(mf)['metrics']
+            collection = json.load(mf)
+            for result in collection:
+                metrics = result['metrics']
+                name = metrics['name']
+
+                calculate_mean_mapq(logger, metrics)
+                add_peak_percentiles(logger, metrics)
+                del metrics['peaks']
+                del metrics['peaks_fields']
+
+                original_metrics_filename = os.path.join(data_directory, os.path.basename(metrics_filename))
+                metrics['original_url'] = os.path.join('data', os.path.basename(metrics_filename))
+
+                logger.debug('  Copying original metrics file to {}'.format(original_metrics_filename))
+                shutil.copy(metrics_filename, original_metrics_filename)
+
+                data[name] = metrics
+
         except ValueError as e:
             logger.error('Could not add metrics file {}: {}'.format(metrics_filename, e))
             continue
 
-        name = metrics['name']
-
-        calculate_mean_mapq(logger, metrics)
-        add_peak_percentiles(logger, metrics)
-        del metrics['peaks']
-        del metrics['peaks_fields']
-
-        original_metrics_filename = os.path.join(data_directory, os.path.basename(metrics_filename))
-        metrics['original_url'] = os.path.join('data', os.path.basename(metrics_filename))
-
-        logger.debug('  Copying original metrics file to {}'.format(original_metrics_filename))
-        shutil.copy(metrics_filename, original_metrics_filename)
-
-        data[name] = metrics
 
     data_filename = os.path.join(args.directory, 'js/data.js')
     logger.info('Writing ataqc data to {}'.format(data_filename))

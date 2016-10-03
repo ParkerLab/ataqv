@@ -6,9 +6,16 @@
 
 #ifndef HTS_HPP
 #define HTS_HPP
+
+#include <map>
+#include <sstream>
+#include <string>
+
 #include <htslib/bgzf.h>
 #include <htslib/sam.h>
-#include <htslib/kstring.h>
+
+#include "Utils.hpp"
+
 
 ///
 /// Most of these conditions are taken directly from samtools
@@ -28,4 +35,9 @@
 #define IS_SUPPLEMENTARY(bam) (bam->core.flag & BAM_FSUPPLEMENTARY)
 #define IS_UNMAPPED(bam) (bam->core.flag & BAM_FUNMAP)
 
+typedef std::map<std::string, std::vector<std::map<std::string, std::string>>> sam_header;
+
+std::string get_qname(const bam1_t* record);
+std::string record_to_string(const bam_hdr_t* header, const bam1_t* record);
+sam_header parse_sam_header(const std::string &header_text);
 #endif

@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.4.1
+VERSION = 0.5.0
 
 #
 # PATHS
@@ -36,7 +36,8 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqc/$(VERSION)
 #
 
 CPPFLAGS = -I. $(INCLUDES) -pedantic -Wall -Wextra -Wwrite-strings
-CXXFLAGS = -std=c++11 -Weffc++ -pthread -O3 -g
+CXXFLAGS = -std=c++11 -pthread -O3
+#CXXFLAGS = -std=c++11 -Weffc++ -pthread -O3 -g  # for development
 
 #
 # Try to locate dependencies using environment variables
@@ -52,9 +53,9 @@ CXXFLAGS = -std=c++11 -Weffc++ -pthread -O3 -g
 # your make command to link with tagged libraries.
 #
 ifdef BOOST_TAGGED
-	BOOST_LIBS = -lboost_iostreams-mt -lboost_system-mt -lboost_chrono-mt
+	BOOST_LIBS = -lboost_filesystem-mt -lboost_iostreams-mt -lboost_system-mt -lboost_chrono-mt
 else
-	BOOST_LIBS = -lboost_iostreams -lboost_system -lboost_chrono
+	BOOST_LIBS = -lboost_filesystem -lboost_iostreams -lboost_system -lboost_chrono
 endif
 
 ifdef BOOST_ROOT
@@ -96,7 +97,7 @@ else
 	HTS_LIBS = -lhts
 endif
 
-LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz
+LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses
 
 #
 # Architecture flags
@@ -131,7 +132,7 @@ checkdirs: $(BUILD_DIR)
 $(BUILD_DIR):
 	@mkdir -p $@
 
-$(BUILD_DIR)/ataqc: $(BUILD_DIR)/ataqc.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
+$(BUILD_DIR)/ataqc: $(BUILD_DIR)/ataqc.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/HTS.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP) $(CPP_DIR)/Version.hpp

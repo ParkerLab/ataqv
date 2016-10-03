@@ -109,11 +109,21 @@ th {
     border-right: 1px solid #ccc;
     white-space: nowrap;
     background-clip: padding-box;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+th .sortable {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
 th button {
     display: block;
     width: 100%;
+    padding-right: 1em;
     text-align: left;
     margin: 0;
     padding: 0;
@@ -274,6 +284,7 @@ li {
 .sort {
     border: none;
     display: block;
+    flex: 1;
     text-decoration: none;
     background-color: transparent !important;
     position: relative;
@@ -296,7 +307,8 @@ li {
     border-bottom: 5px solid transparent;
     content:"";
     position: absolute;
-    right: -14px;
+    flex: 0 0 10px;
+    margin-left: 4px;
 }
 
 .sort.asc:after {
@@ -306,7 +318,7 @@ li {
     border-right: 5px solid transparent;
     border-top: 5px solid #000;
     content:"";
-    bottom: 0px;
+    bottom: 2px;
 }
 
 .sort.desc:after {
@@ -316,7 +328,7 @@ li {
     border-right: 5px solid transparent;
     border-bottom: 5px solid #000;
     content:"";
-    bottom: 8px;
+    bottom: 10px;
 }
 
 .tabs {

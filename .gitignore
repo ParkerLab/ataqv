@@ -1,3 +1,4 @@
+.emacs.desktop*
 build
 README.html
 src/cpp/Version.hpp

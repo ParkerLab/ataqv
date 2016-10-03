@@ -1,0 +1,10 @@
+{
+    "preset": "google",
+    "maximumLineLength": 168,
+    "requireBlocksOnNewline": false,
+    "requireCamelCaseOrUpperCaseIdentifiers": false,
+    "requireMultipleVarDecl": false,
+    "requireSpaceAfterKeywords": false,
+    "requireSpacesInAnonymousFunctionExpression": false,
+    "validateIndentation": 4
+}

@@ -9,6 +9,9 @@
 
 #include <string>
 
+#include "HTS.hpp"
+
+
 class Feature {
 public:
     std::string reference = "";
@@ -18,8 +21,13 @@ public:
     friend bool operator< (const Feature &a, const Feature &b);
     unsigned long long int size() const;
 
+    Feature();
+    Feature(const bam_hdr_t *header, const bam1_t *record);
+
     bool overlaps(const Feature& other);
 };
+
+bool operator< (const Feature& f1, const Feature& f2);
 
 std::ostream& operator<<(std::ostream& os, const Feature& feature);
 std::istream& operator>>(std::istream& is, Feature& feature);

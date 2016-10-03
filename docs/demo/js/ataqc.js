@@ -64,7 +64,7 @@ var ataqc = (function() {
     }
 
     function escapeAttribute(text) {
-        return text.replace(/\\?"/g, "'");
+        return String(text || '').replace(/\\?"/g, "'");
     }
 
     function formatNumber(n) {
@@ -247,11 +247,11 @@ var ataqc = (function() {
         var cleaner;
 
         var listOptions = {
-            item: '<tr><td class=""><a href="#" class="name"></a></td><td class="organism"></td><td class="library"></td><td class="description_with_url"></td><td><a href="#" class="original_url" download>Download</a></td></tr>',
+            item: '<tr><td class=""><a href="#" class="name"></a></td><td class="organism"></td><td class="library_description"></td><td class="description_with_url"></td><td><a href="#" class="original_url" download>Download</a></td></tr>',
             valueNames: [
                 'name',
                 'organism',
-                'library',
+                'library_description',
                 'description_with_url',
                 {name: 'original_url', attr: 'href'},
                 {name: 'original_url', attr: 'download'}
@@ -268,7 +268,8 @@ var ataqc = (function() {
 
         for (experimentID in metrics) {
             var experiment_metrics = metrics[experimentID];
-            experiment_metrics['description_with_url'] = experiment_metrics.url ? '<a target="_blank" href="' + experiment_metrics.url + '">' + experiment_metrics.description + '</a>' : experiment_metrics.description;
+            experiment_metrics.library_description = experiment_metrics.library.description;
+            experiment_metrics.description_with_url = experiment_metrics.url ? '<a target="_blank" href="' + experiment_metrics.url + '">' + experiment_metrics.description + '</a>' : experiment_metrics.description;
             metadata.push(experiment_metrics);
         }
 
