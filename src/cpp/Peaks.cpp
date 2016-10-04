@@ -13,6 +13,26 @@
 #include "Peaks.hpp"
 
 
+bool operator< (const Peak& p1, const Peak& p2) {
+    return (
+        sort_strings_numerically(p1.reference, p2.reference) ||
+        (
+            p1.reference == p2.reference &&
+            (
+                ((p1.start < p2.start) || (p1.end < p2.end)) ||
+                (p1.overlapping_hqaa < p2.overlapping_hqaa) ||
+                sort_strings_numerically(p1.name, p2.name)
+            )
+        )
+    );
+}
+
+
+bool operator== (const Peak& p1, const Peak& p2) {
+    return (p1.reference == p2.reference) && (p1.start == p2.start) && (p1.end == p2.end) && (p1.overlapping_hqaa == p2.overlapping_hqaa) && (p1.name == p2.name);
+}
+
+
 std::ostream& operator<<(std::ostream& os, const Peak& peak) {
     os << peak.reference << '\t' << peak.start << '\t' << peak.end << '\t' << peak.name;
     return os;
@@ -30,19 +50,6 @@ std::istream& operator>>(std::istream& is, Peak& peak) {
 }
 
 
-bool peak_coordinate_comparator(const Peak& p1, const Peak& p2) {
-    if (p1.start < p2.start) {
-        return true;
-    }
-
-    if (p1.end < p2.end) {
-        return true;
-    }
-
-    return false;
-}
-
-
 bool peak_overlapping_hqaa_descending_comparator(const Peak& p1, const Peak& p2) {
     return p1.overlapping_hqaa > p2.overlapping_hqaa;
 }
@@ -50,23 +57,27 @@ bool peak_overlapping_hqaa_descending_comparator(const Peak& p1, const Peak& p2)
 
 void ReferencePeakCollection::add(Peak& peak) {
     peaks.push_back(peak);
-    if (start > peak.start) {
+
+    if (reference != peak.reference) {
+        if (reference.empty()) {
+            reference = peak.reference;
+        } else {
+            throw std::out_of_range("Peak reference does not match collection.");
+        }
+    }
+
+    if (start == 0 || start > peak.start) {
         start = peak.start;
     }
 
-    if (end < peak.end) {
+    if (end == 0 || end < peak.end) {
         end = peak.end;
     }
 }
 
 
 bool ReferencePeakCollection::overlaps(const Feature& feature) {
-    return !peaks.empty() && ((start <= feature.end) || (feature.start <= end));
-}
-
-
-void ReferencePeakCollection::sort_peaks() {
-    std::sort(peaks.begin(), peaks.end(), peak_coordinate_comparator);
+    return !peaks.empty() && reference == feature.reference && ((start <= feature.end) || (feature.start <= end));
 }
 
 
@@ -109,6 +120,7 @@ std::vector<Peak> PeakTree::list_peaks() {
             peaks.push_back(peak);
         }
     }
+    std::sort(peaks.begin(), peaks.end());
     return peaks;
 }
 
@@ -125,9 +137,10 @@ std::vector<Peak> PeakTree::list_peaks_by_overlapping_hqaa_descending() {
 }
 
 
-void PeakTree::print_reference_peak_counts() {
+void PeakTree::print_reference_peak_counts(std::ostream* os) {
+    std::ostream out(os ? os->rdbuf() : std::cout.rdbuf());
     for (auto refpeaks : tree) {
-        std::cout << refpeaks.first << " peak count: " << refpeaks.second.peaks.size() << std::endl;
+         out << refpeaks.first << " peak count: " << refpeaks.second.peaks.size() << std::endl;
     }
 }
 
@@ -138,11 +151,4 @@ size_t PeakTree::size() const {
         size += refpeaks.second.peaks.size();
     }
     return size;
-}
-
-
-void PeakTree::sort_peaks() {
-    for (auto it : tree) {
-        it.second.sort_peaks();
-    }
 }

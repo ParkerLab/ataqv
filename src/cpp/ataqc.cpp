@@ -306,9 +306,9 @@ int main(int argc, char **argv) {
         autosomal_reference_filename,
         mitochondrial_reference_name,
         peak_filename,
-        excluded_region_filenames,
         verbose,
-        log_problematic_reads);
+        log_problematic_reads,
+        excluded_region_filenames);
 
 
     // if the filename for the metrics output wasn't specified,
@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
     std::cout << collector << std::endl;  // Print the stats
 
     std::cout << "Writing JSON metrics to " << metrics_filename << std::endl << std::flush;
-    collector.to_json(*metrics_file);
+    *metrics_file << collector.to_json();
     std::cout << "Metrics written to \"" << metrics_filename << "\"" << std::endl;
 
     std::cout << "Finished." << std::endl << std::flush;

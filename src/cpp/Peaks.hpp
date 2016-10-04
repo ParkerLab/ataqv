@@ -15,7 +15,11 @@
 class Peak : public Feature {
 public:
     unsigned long long int overlapping_hqaa = 0;
+    using Feature::Feature;
 };
+
+bool operator< (const Peak& p1, const Peak& p2);
+bool operator== (const Peak& p1, const Peak& p2);
 
 std::ostream& operator<<(std::ostream& os, const Peak& peak);
 std::istream& operator>>(std::istream& is, Peak& peak);
@@ -30,14 +34,16 @@ struct peak_tree_default_ordering {
 
 class ReferencePeakCollection {
 public:
+    std::string reference = "";
+    std::vector<Peak> peaks = {};
+
     unsigned long long int start = 0;
     unsigned long long int end = 0;
-    std::vector<Peak> peaks = {};
 
     void add(Peak& peak);
     bool overlaps(const Feature& feature);
-    void sort_peaks();
 };
+
 
 class PeakTree {
 private:
@@ -50,9 +56,8 @@ public:
     void increment_overlapping_hqaa(const Feature& hqaa);
     std::vector<Peak> list_peaks();
     std::vector<Peak> list_peaks_by_overlapping_hqaa_descending();
-    void print_reference_peak_counts();
+    void print_reference_peak_counts(std::ostream* os = nullptr);
     size_t size() const;
-    void sort_peaks();
 };
 
 #endif  // PEAKS_HPP

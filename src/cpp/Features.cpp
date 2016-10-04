@@ -12,6 +12,8 @@
 
 Feature::Feature() {}
 
+Feature::Feature(const std::string& reference, unsigned long long int start, unsigned long long int end, const std::string& name): reference(reference), start(start), end(end), name(name) {}
+
 
 Feature::Feature(const bam_hdr_t *header, const bam1_t *record) :
     reference(std::string(header->target_name[record->core.tid])),
@@ -21,7 +23,7 @@ Feature::Feature(const bam_hdr_t *header, const bam1_t *record) :
 
 
 bool operator< (const Feature& f1, const Feature& f2) {
-    return (f1.reference < f2.reference) || (f1.start < f2.start) || (f1.end < f2.end);
+    return sort_strings_numerically(f1.reference, f2.reference) || (f1.start < f2.start) || (f1.end < f2.end);
 }
 
 

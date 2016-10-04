@@ -41,46 +41,79 @@ std::string qq(const std::string& s) {
 }
 
 
-float fraction(const float& numerator, const float& denominator) {
-    return(denominator == 0 ? 0.0 : (numerator / denominator));
+std::string fraction_string(const double& numerator, const double& denominator, const int& precision) {
+    std::stringstream ss;
+    ss.precision(precision);
+    ss << std::fixed;
+    if (denominator == 0) {
+        ss << "undefined";
+    } else {
+        ss << (numerator / denominator);
+    }
+    return ss.str();
 }
 
 
-float percentage(const float& numerator, const float& denominator) {
-    return(denominator == 0 ? 0.0 : (100.0 * numerator / denominator));
-}
-
-
-std::string percentage_string(const unsigned long long int& numerator, const unsigned long long int& denominator, const int& precision, const std::string& prefix, const std::string& suffix) {
-    std::stringstream s;
-    s.precision(precision);
-    s << numerator << prefix << std::fixed << percentage(numerator, denominator) << suffix;
-    return s.str();
+std::string percentage_string(const double& numerator, const double& denominator, const int& precision, const std::string& prefix, const std::string& suffix) {
+    std::stringstream ss;
+    ss.precision(precision);
+    ss << prefix << std::fixed;
+    if (denominator == 0) {
+        ss << "undefined";
+    } else {
+        ss << (100.0 * numerator / denominator);
+    }
+    ss << suffix;
+    return ss.str();
 }
 
 
 std::pair<std::string, std::string> split(const std::string& str, const std::string& delimiters) {
     size_t split_position = str.find_first_of(delimiters);
     if (split_position == std::string::npos) {
-        return std::pair<std::string, std::string>(str, nullptr);
+        return std::pair<std::string, std::string>(str, "");
     } else {
         return std::pair<std::string, std::string>(str.substr(0, split_position), str.substr(split_position + 1));
     }
 }
 
 
-std::vector<std::string> tokenize(const std::string& str, const std::string& delimiters) {
+std::vector<std::string> tokenize(const std::string& s, const std::string& delimiters) {
     std::vector<std::string> tokens;
     std::string token;
 
-    size_t start = 0;
-    size_t end = str.find_first_of(delimiters);
+    auto last = --s.cend();
+    if (!s.empty()) {
+        bool in_delimiter = delimiters.find(s.at(0)) != std::string::npos;
 
-    while (start != std::string::npos || end != std::string::npos) {
-        token = str.substr(start, end);
-        tokens.push_back(token);
-        start = end;
-        end = str.find_first_not_of(delimiters, start);
+        for (auto it = s.cbegin(); it != s.cend(); ++it) {
+            char c = *it;
+            if (delimiters.find(c) == std::string::npos) {
+                if (!in_delimiter) {
+                    token.push_back(c);
+                } else {
+                    if (!token.empty()) {
+                        tokens.push_back(token);
+                    }
+                    token = c;
+                }
+                in_delimiter = false;
+            } else {
+                if (in_delimiter) {
+                    token.push_back(c);
+                } else {
+                    if (!token.empty()) {
+                        tokens.push_back(token);
+                    }
+                    token = c;
+                }
+                in_delimiter = true;
+            }
+
+            if (!token.empty() && it == last) {
+                tokens.push_back(token);
+            }
+        }
     }
 
     return tokens;
@@ -91,6 +124,13 @@ bool is_only_digits(const std::string& s)
 {
     return !s.empty() && s.find_first_not_of("0123456789") == std::string::npos;
 }
+
+
+bool is_only_whitespace(const std::string& s)
+{
+    return (s.find_first_not_of(" \t\r\n") == std::string::npos);
+}
+
 
 bool sort_strings_numerically(const std::string& s1, const std::string& s2) {
     unsigned long long int d1, d2;
@@ -117,36 +157,58 @@ bool sort_strings_numerically(const std::string& s1, const std::string& s2) {
 }
 
 
-std::string iso8601_timestamp() {
+const std::string iso8601_timestamp(std::time_t* t) {
     char timestamp[22];
-    std::time_t time = std::time(nullptr);
+    std::time_t time = t ? *t : std::time(nullptr);
     std::strftime(timestamp, sizeof(timestamp), "%FT%TZ", std::gmtime(&time));
     return std::string(timestamp);
 }
 
-std::string wrap(std::string s, size_t length, size_t indent, std::string delimiters) {
-    std::stringstream ss;
 
-    size_t substr_length = length - indent;
-    size_t string_length = s.length();
-    std::string chunk;
-    for (size_t start = 0, cut = substr_length;
-         start < string_length;
-         start = cut + 1, cut += substr_length) {
+std::string slice(std::string s, size_t start, size_t end) {
+    return s.substr(start, (end - start));
+}
 
-        cut = s.find_last_of(delimiters, cut);
 
-        if (cut == std::string::npos || (cut < start || start + substr_length >= string_length)) {
-            cut = start + substr_length;
-        }
+std::string wrap(std::string s, size_t length, size_t indent) {
+    std::string whitespace = " \t\r\n";
 
-        chunk = s.substr(start, cut - start);
+    std::stringstream wrapped;
 
-        for (size_t i = 0; i < indent; i++) {
-            ss << " ";
-        }
+    std::vector<std::string> words = tokenize(s, whitespace);
 
-        ss << chunk << std::endl;
+    size_t line_length = length - indent;
+    size_t count = 0;
+    for (size_t i = 0; i < indent; i++) {
+        wrapped.put(' ');
     }
-    return ss.str();
+    count += indent;
+
+    for (auto it = words.cbegin(); it != words.cend(); it++) {
+        auto word = *it;
+
+        if (is_only_whitespace(word)) {
+            continue;
+        }
+
+        if (count + word.length() > line_length) {
+            wrapped << '\n';
+            count = 0;
+
+            for (size_t i = 0; i < indent; i++) {
+                wrapped.put(' ');
+            }
+
+            count += indent;
+        }
+
+        wrapped << (count == indent ? "" : " ") << word;
+        count += word.length() + 1;
+    }
+
+    std::string result = wrapped.str();
+    if (result.back() != '\n') {
+        result.push_back('\n');
+    }
+    return result;
 }

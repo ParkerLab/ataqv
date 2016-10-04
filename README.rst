@@ -59,6 +59,14 @@ To build ataqc, you need:
 The ``mkarv`` script that collects ataqc results and sets up a web
 application to visualize them requires Python 2.7 or newer.
 
+To run the test suite, you'll also need `LCOV`_, which can be
+installed via `Homebrew`_ (and is, if you install ataqc with
+Homebrew). Note that on Macs with XCode 8, LCOV <= 1.12 will not be
+able to find the coverage files, because of Apple's constant changes
+to their gcov version output. This has been fixed in LCOV, but not yet
+released -- when it is, and its Homebrew formula is updated, the test
+suite coverage report should work on Macs.
+
 Getting it running
 ==================
 
@@ -230,6 +238,7 @@ to almost 40 minutes, but it still used the same amount of memory.
 .. _Parker lab: http://theparkerlab.org/
 .. _Boost: http://www.boost.org/
 .. _HTSlib: http://www.htslib.org/
+.. _LCOV: http://ltp.sourceforge.net/coverage/lcov.php
 .. _Homebrew: http://brew.sh/
 .. _Environment Modules: https://en.wikipedia.org/wiki/Environment_Modules_%28software%29
 .. _bwa: http://bio-bwa.sourceforge.net/

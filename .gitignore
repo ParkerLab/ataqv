@@ -1,4 +1,5 @@
 .emacs.desktop*
 build
+testing
 README.html
 src/cpp/Version.hpp

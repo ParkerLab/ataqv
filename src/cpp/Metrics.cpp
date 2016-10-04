@@ -28,9 +28,9 @@ MetricsCollector::MetricsCollector(const std::string& name,
                                    const std::string& autosomal_reference_filename,
                                    const std::string& mitochondrial_reference_name,
                                    const std::string& peak_filename,
-                                   const std::vector<std::string>& excluded_region_filenames,
                                    bool verbose,
-                                   bool log_problematic_reads) :
+                                   bool log_problematic_reads,
+                                   const std::vector<std::string>& excluded_region_filenames) :
     metrics({}),
     name(name),
     organism(organism),
@@ -61,10 +61,6 @@ MetricsCollector::MetricsCollector(const std::string& name,
 
     if (!autosomal_reference_filename.empty()) {
         load_autosomal_references();
-    }
-
-    if (verbose) {
-        std::cout << configuration_string();
     }
 
     if (!excluded_region_filenames.empty()) {
@@ -197,7 +193,8 @@ void MetricsCollector::load_alignments() {
 
     start = boost::chrono::high_resolution_clock::now();
 
-    if ((alignment_file_header = sam_hdr_read(alignment_file)) == 0) {
+    alignment_file_header = sam_hdr_read(alignment_file);
+    if (alignment_file_header == NULL) {
         throw FileException("Could not read a valid header from alignment file \"" + alignment_filename +  "\".");
     }
 
@@ -227,12 +224,11 @@ void MetricsCollector::load_alignments() {
             metrics[metrics_id]->library = library;
         }
     } else {
-        std::cerr << "No read groups found in alignment file." << std::endl;
         if (peak_filename == "auto") {
             peak_filename = "";
         }
 
-        metrics_id = name.empty() ? alignment_filename : name;
+        metrics_id = name.empty() ? basename(alignment_filename) : name;
         metrics[metrics_id] = new Metrics(collector, metrics_id);
 
         Library library;
@@ -272,7 +268,23 @@ void MetricsCollector::load_alignments() {
 }
 
 
-Metrics::Metrics(std::shared_ptr<MetricsCollector> collector, const std::string& name): collector(collector), name(name), peaks(), log_problematic_reads (collector->log_problematic_reads) {
+Metrics::Metrics(std::shared_ptr<MetricsCollector> collector, const std::string& name): collector(collector), name(name), peaks(), log_problematic_reads(collector->log_problematic_reads) {
+
+    if (log_problematic_reads) {
+        try {
+            problematic_read_filename = make_metrics_filename(".problems");
+
+            if (collector->verbose) {
+                std::cout << "Logging problematic reads to " << problematic_read_filename << "." << std::endl << std::endl;
+            }
+
+            problematic_read_stream = mostream(problematic_read_filename);
+        } catch (FileException& e) {
+            std::cerr << "Could not open problematic read file: " <<  e.what() << std::endl << std::flush;
+            exit(1);
+        }
+    }
+
     if (!collector->peak_filename.empty()) {
         peaks_requested = true;
         load_peaks();
@@ -285,29 +297,9 @@ std::string Metrics::make_metrics_filename(const std::string& suffix) {
 }
 
 
-void Metrics::open_problematic_read_stream() {
-    problematic_read_filename = make_metrics_filename(".problems.gz");
-
-    if (collector->verbose) {
-        std::cout << "Logging problematic reads to " << problematic_read_filename << "." << std::endl << std::endl;
-    }
-
-    problematic_read_stream = mostream(problematic_read_filename);
-}
-
-
 void Metrics::log_problematic_read(const std::string& problem, const std::string& record) {
     if (!log_problematic_reads) {
         return;
-    }
-
-    if (!(problematic_read_stream && problematic_read_stream->is_complete())) {
-        try {
-            open_problematic_read_stream();
-        } catch (FileException& e) {
-            std::cerr << "Could not open problematic read file: " <<  e.what() << std::endl << std::flush;
-            exit(1);
-        }
     }
 
     *problematic_read_stream << problem;
@@ -356,7 +348,7 @@ bool Metrics::is_mitochondrial(const std::string& reference_name) {
 
 std::string Metrics::configuration_string() const {
     std::stringstream cs;
-    cs << "Read Group: " << name << std::endl << library << std::endl;
+    cs << "Read Group\n==========\nID: " << name << std::endl << library << std::endl;
     return cs.str();
 }
 
@@ -764,8 +756,6 @@ void Metrics::load_peaks() {
         }
     }
 
-    peaks.sort_peaks();
-
     if (peaks.empty()) {
         std::cout << "No peaks were found in " << peak_filename << std::endl;
     } else if (collector->verbose) {
@@ -805,18 +795,18 @@ void Metrics::determine_top_peaks() {
 
 std::ostream& operator<<(std::ostream& os, const Library& library) {
     os
-       << "Library: " << library.library << std::endl
-       << "Sample: " << library.sample << std::endl
-       << "Description: " << library.description << std::endl << std::endl
-       << "Sequencing center: " << library.center << std::endl
-       << "Sequencing date: " << library.date << std::endl
-       << "Sequencing platform: " << library.platform << std::endl
-       << "Platform model: " << library.platform_model << std::endl
-       << "Platform unit: " << library.platform_unit << std::endl
-       << "Flow order: " << library.flow_order << std::endl
-       << "Key sequence: " << library.key_sequence << std::endl
-       << "Predicted median insert size: " << library.predicted_median_insert_size << std::endl
-       << "Programs: " << library.programs << std::endl;
+        << "Library: " << library.library << std::endl
+        << "Sample: " << library.sample << std::endl
+        << "Description: " << library.description << std::endl << std::endl
+        << "Sequencing center: " << library.center << std::endl
+        << "Sequencing date: " << library.date << std::endl
+        << "Sequencing platform: " << library.platform << std::endl
+        << "Platform model: " << library.platform_model << std::endl
+        << "Platform unit: " << library.platform_unit << std::endl
+        << "Flow order: " << library.flow_order << std::endl
+        << "Key sequence: " << library.key_sequence << std::endl
+        << "Predicted median insert size: " << library.predicted_median_insert_size << std::endl
+        << "Programs: " << library.programs << std::endl;
     return os;
 }
 
@@ -838,69 +828,70 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
                                              m.reads_mapped_and_paired_but_improperly);
 
     os << m.configuration_string()
-
+       << "Metrics\n"
+       << "-------\n\n"
        << "  Read Mapping Metrics" << std::endl
        << "  --------------------" << std::endl
        << "  Total reads: " << m.total_reads << std::endl
-       << "  Total problems: " << percentage_string(total_problems, m.total_reads) << std::endl
-       << "  Properly paired and mapped reads: " << percentage_string(m.properly_paired_and_mapped_reads, m.total_reads) << std::endl
-       << "  Secondary reads: " << percentage_string(m.secondary_reads, m.total_reads) << std::endl
-       << "  Supplementary reads: " << percentage_string(m.supplementary_reads, m.total_reads) << std::endl
-       << "  Duplicate reads: " << percentage_string(m.duplicate_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl
+       << "  Total problems: " << total_problems << percentage_string(total_problems, m.total_reads) << std::endl
+       << "  Properly paired and mapped reads: " << m.properly_paired_and_mapped_reads << percentage_string(m.properly_paired_and_mapped_reads, m.total_reads) << std::endl
+       << "  Secondary reads: " << m.secondary_reads << percentage_string(m.secondary_reads, m.total_reads) << std::endl
+       << "  Supplementary reads: " << m.supplementary_reads << percentage_string(m.supplementary_reads, m.total_reads) << std::endl
+       << "  Duplicate reads: " << m.duplicate_reads << percentage_string(m.duplicate_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl
 
        << std::endl
 
        << "  Quality Indicators" << std::endl
        << "  ------------------" << std::endl
-       << "  Short to mononucleosomal ratio: " << std::setprecision(3) << std::fixed << fraction(m.hqaa_short_count, m.hqaa_mononucleosomal_count) << std::endl
+       << "  Short to mononucleosomal ratio: " << std::setprecision(3) << std::fixed << fraction_string(m.hqaa_short_count, m.hqaa_mononucleosomal_count) << std::endl
        << "  High quality, nonduplicate, properly paired, uniquely mapped autosomal alignments: " << m.hqaa << std::endl
-       << "    as a percentage of autosomal reads: " << std::setprecision(3) << std::fixed << percentage(m.hqaa, m.total_autosomal_reads) << "%" << std::endl
-       << "    as a percentage of all reads: " << std::setprecision(3) << std::fixed << percentage(m.hqaa, m.total_reads) << "%" << std::endl
+       << "    as a percentage of autosomal reads: " << std::setprecision(3) << std::fixed << percentage_string(m.hqaa, m.total_autosomal_reads, 3, "", "%") << std::endl
+       << "    as a percentage of all reads: " << std::setprecision(3) << std::fixed << percentage_string(m.hqaa, m.total_reads, 3, "", "%") << std::endl
 
        << std::endl
 
        << "  Paired Read Metrics" << std::endl
        << "  -------------------" << std::endl
-       << "  Paired reads: " << percentage_string(m.paired_reads, m.total_reads) << std::endl
-       << "  Paired and mapped reads: " << percentage_string(m.paired_and_mapped_reads, m.total_reads) << std::endl
-       << "  FR reads: " << percentage_string(m.fr_reads, m.total_reads, 6) << std::endl
-       << "  First of pair: " << percentage_string(m.first_reads, m.total_reads) << std::endl
-       << "  Second of pair: " << percentage_string(m.second_reads, m.total_reads) << std::endl
-       << "  Forward reads: " << percentage_string(m.forward_reads, m.total_reads) << std::endl
-       << "  Reverse reads: " << percentage_string(m.reverse_reads, m.total_reads) << std::endl
-       << "  Forward mate reads: " << percentage_string(m.forward_mate_reads, m.total_reads) << std::endl
-       << "  Reverse mate reads: " << percentage_string(m.reverse_mate_reads, m.total_reads) << std::endl
+       << "  Paired reads: " << m.paired_reads << percentage_string(m.paired_reads, m.total_reads) << std::endl
+       << "  Paired and mapped reads: " << m.paired_and_mapped_reads << percentage_string(m.paired_and_mapped_reads, m.total_reads) << std::endl
+       << "  FR reads: " << m.fr_reads << percentage_string(m.fr_reads, m.total_reads, 6) << std::endl
+       << "  First of pair: " << m.first_reads << percentage_string(m.first_reads, m.total_reads) << std::endl
+       << "  Second of pair: " << m.second_reads << percentage_string(m.second_reads, m.total_reads) << std::endl
+       << "  Forward reads: " << m.forward_reads << percentage_string(m.forward_reads, m.total_reads) << std::endl
+       << "  Reverse reads: " << m.reverse_reads << percentage_string(m.reverse_reads, m.total_reads) << std::endl
+       << "  Forward mate reads: " << m.forward_mate_reads << percentage_string(m.forward_mate_reads, m.total_reads) << std::endl
+       << "  Reverse mate reads: " << m.reverse_mate_reads << percentage_string(m.reverse_mate_reads, m.total_reads) << std::endl
 
        << std::endl
 
        << "  Unmapped Read Metrics" << std::endl
        << "  ---------------------" << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  Unmapped reads: " <<percentage_string(m.unmapped_reads, m.total_reads) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  Unmapped mate reads: " <<percentage_string(m.unmapped_mate_reads, m.total_reads) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  Reads not passing quality controls: " << percentage_string(m.qcfailed_reads, m.total_reads) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  Unpaired reads: " << percentage_string(m.unpaired_reads, m.total_reads) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  Reads with zero mapping quality: " << percentage_string(m.reads_mapped_with_zero_quality, m.total_reads) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  Unmapped reads: " << m.unmapped_reads << percentage_string(m.unmapped_reads, m.total_reads) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  Unmapped mate reads: " << m.unmapped_mate_reads << percentage_string(m.unmapped_mate_reads, m.total_reads) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  Reads not passing quality controls: " << m.qcfailed_reads << percentage_string(m.qcfailed_reads, m.total_reads) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  Unpaired reads: " << m.unpaired_reads << percentage_string(m.unpaired_reads, m.total_reads) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  Reads with zero mapping quality: " << m.reads_mapped_with_zero_quality << percentage_string(m.reads_mapped_with_zero_quality, m.total_reads) << std::endl
 
        << std::endl
 
        << "  Aberrant Mapping Metrics" << std::endl
        << "  ------------------------" << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  RF reads: " << percentage_string(m.rf_reads, m.total_reads, 6) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  FF reads: " << percentage_string(m.ff_reads, m.total_reads, 6) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  RR reads: " << percentage_string(m.rr_reads, m.total_reads, 6) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  RF reads: " << m.rf_reads << percentage_string(m.rf_reads, m.total_reads, 6) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  FF reads: " << m.ff_reads << percentage_string(m.ff_reads, m.total_reads, 6) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "  RR reads: " << m.rr_reads << percentage_string(m.rr_reads, m.total_reads, 6) << std::endl
        << std::setfill(' ') << std::left << std::setw(40) << "  Reads that paired and mapped but..." << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "    on different chromosomes: " << percentage_string(m.reads_with_mate_mapped_to_different_reference, m.total_reads) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "    probably too far from their mates: " << percentage_string(m.reads_with_mate_too_distant, m.total_reads) << " (longest proper fragment seems to be " << m.maximum_proper_pair_fragment_size << ")" << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "    just not properly: " << percentage_string(m.reads_mapped_and_paired_but_improperly, m.total_reads) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "    on different chromosomes: " << m.reads_with_mate_mapped_to_different_reference << percentage_string(m.reads_with_mate_mapped_to_different_reference, m.total_reads) << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "    probably too far from their mates: " << m.reads_with_mate_too_distant << percentage_string(m.reads_with_mate_too_distant, m.total_reads) << " (longest proper fragment seems to be " << m.maximum_proper_pair_fragment_size << ")" << std::endl
+       << std::setfill(' ') << std::left << std::setw(40) << "    just not properly: " << m.reads_mapped_and_paired_but_improperly << percentage_string(m.reads_mapped_and_paired_but_improperly, m.total_reads) << std::endl
 
        << std::endl
 
        << "  Autosomal/Mitochondrial Metrics" << std::endl
        << "  -------------------------------" << std::endl
-       << "  Total autosomal reads: " << percentage_string(m.total_autosomal_reads, m.total_reads, 3,  " (", "% of all reads)") << std::endl
-       << "  Total mitochondrial reads: " << percentage_string(m.total_mitochondrial_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl
-       << "  Duplicate autosomal reads: " << percentage_string(m.duplicate_autosomal_reads, m.total_autosomal_reads, 3, " (", "% of all autosomal reads)") << std::endl
-       << "  Duplicate mitochondrial reads: " << percentage_string(m.duplicate_mitochondrial_reads, m.total_mitochondrial_reads, 3, " (", "% of all mitochondrial reads)") << std::endl << std::endl
+       << "  Total autosomal reads: " << m.total_autosomal_reads << percentage_string(m.total_autosomal_reads, m.total_reads, 3,  " (", "% of all reads)") << std::endl
+       << "  Total mitochondrial reads: " << m.total_mitochondrial_reads << percentage_string(m.total_mitochondrial_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl
+       << "  Duplicate autosomal reads: " << m.duplicate_autosomal_reads << percentage_string(m.duplicate_autosomal_reads, m.total_autosomal_reads, 3, " (", "% of all autosomal reads)") << std::endl
+       << "  Duplicate mitochondrial reads: " << m.duplicate_mitochondrial_reads << percentage_string(m.duplicate_mitochondrial_reads, m.total_mitochondrial_reads, 3, " (", "% of all mitochondrial reads)") << std::endl << std::endl
 
        << std::endl
 
@@ -917,7 +908,7 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
                 count += it.second;
             }
         }
-        os << std::setfill(' ') << std::setw(20) << std::right << threshold << ": " << percentage_string(count, m.total_reads) << std::endl;
+        os << std::setfill(' ') << std::setw(20) << std::right << threshold << ": " << count << percentage_string(count, m.total_reads) << std::endl;
     }
 
     if (m.peaks_requested) {
@@ -925,18 +916,19 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
            << "  ------------" << std::endl
            << "  Peak count: " << m.peaks.size() << std::endl <<std::endl
 
-           << "  High quality autosomal aligments that overlapped peaks: "  << percentage_string(m.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << "  High quality autosomal aligments that overlapped peaks: "  << m.hqaa_in_peaks << percentage_string(m.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
            << "  Number of high quality autosomal aligments overlapping the top 10,000 peaks: " << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top peak: " << std::fixed << percentage_string(m.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 10 peaks: " << std::fixed << percentage_string(m.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 100 peaks: "<< std::fixed << percentage_string(m.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 1000 peaks: " << std::fixed << percentage_string(m.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 10,000 peaks: " << std::fixed << percentage_string(m.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl;
+           << std::setfill(' ') << std::setw(20) << std::right << "Top peak: " << std::fixed << m.top_peak_hqaa_read_count << percentage_string(m.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 10 peaks: " << std::fixed << m.top_10_peak_hqaa_read_count << percentage_string(m.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 100 peaks: "<< std::fixed << m.top_100_peak_hqaa_read_count << percentage_string(m.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 1000 peaks: " << std::fixed << m.top_1000_peak_hqaa_read_count << percentage_string(m.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 10,000 peaks: " << std::fixed << m.top_10000_peak_hqaa_read_count << percentage_string(m.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl;
     }
 
+    unsigned long long int mysteries = m.total_reads - m.unclassified_reads - m.properly_paired_and_mapped_reads - total_problems;
     if (!(m.unclassified_reads == 0 && (total_problems + m.properly_paired_and_mapped_reads == m.total_reads))) {
-        os << "  Some reads were not classified: " << percentage_string(m.total_reads - m.unclassified_reads - m.properly_paired_and_mapped_reads - total_problems, m.total_reads) << std::endl
-           << "  We'd like to know what we're missing. If it would be possible for you to share the unclassified reads, please file an issue at: " << std::endl << std::endl
+        os << "  Some reads slipped through our taxonomy: " << mysteries << percentage_string(mysteries, m.total_reads) << std::endl
+           << "  We'd like to know what we're missing. If it would be possible for you\nto share your data with us, please file an issue at: " << std::endl << std::endl
            << "      https://github.com/ParkerLab/ataqc/issues" << std::endl;
     }
 
@@ -945,157 +937,159 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
 }
 
 
-void Library::to_json(std::ostream& os, int indent, bool standalone) {
-    std::string in(indent, ' ');
-    os << "{" << std::endl
-       << in << "  \"library\": \"" << qq(library) << "\"," << std::endl
-       << in << "  \"sample\": \"" << qq(sample) << "\"," << std::endl
-       << in << "  \"description\": \"" << qq(description) << "\"," << std::endl
-       << in << "  \"sequencing_center\": \"" << qq(center) << "\"," << std::endl
-       << in << "  \"sequencing_date\": \"" << qq(date) << "\"," << std::endl
-       << in << "  \"sequencing_platform\": \"" << qq(platform) << "\"," << std::endl
-       << in << "  \"platform_model\": \"" << qq(platform_model) << "\"," << std::endl
-       << in << "  \"platform_unit\": \"" << qq(platform_unit) << "\"," << std::endl
-       << in << "  \"flow_order\": \"" << qq(flow_order) << "\"," << std::endl
-       << in << "  \"key_sequence\": \"" << qq(key_sequence) << "\"," << std::endl
-       << in << "  \"predicted_median_insert_size\": \"" << qq(predicted_median_insert_size) << "\"," << std::endl
-       << in << "  \"programs\": \"" << qq(programs) << "\"" << std::endl
-       << in << "}" << (standalone ? "" : ",") << std::endl;
+json Library::to_json() {
+    json result = {
+        {"library", library},
+        {"sample", sample},
+        {"description", description},
+        {"sequencingcenter", center},
+        {"sequencingdate", date},
+        {"sequencingplatform", platform},
+        {"platformmodel", platform_model},
+        {"platformunit", platform_unit},
+        {"floworder", flow_order},
+        {"keysequence", key_sequence},
+        {"predicted_median_insert_size", predicted_median_insert_size},
+        {"programs", programs}
+    };
+    return result;
 }
 
 
-void Metrics::to_json(std::ostream& os, int indent, bool standalone) {
-    std::string in(indent, ' ');
-    os
-        << in << "{" << std::endl
-        << in << "  \"ataqc_version\": \"" << version_string() << "\"," << std::endl
-        << in << "  \"timestamp\": \"" << iso8601_timestamp() << "\"," << std::endl
-        << in << "  \"metrics\": {" << std::endl
-        << in << "    \"name\": \"" << qq(name) << "\"," << std::endl
-        << in << "    \"organism\": \"" << qq(collector->organism) << "\"," << std::endl
-        << in << "    \"description\": \"" << qq(collector->description) << "\"," << std::endl
-        << in << "    \"url\": \"" << qq(collector->url) << "\"," << std::endl
-
-        << in << "    \"library\": ";
-
-    library.to_json(os, indent + 4);
-
-    os
-        << in << "    \"total_reads\": " << total_reads << "," << std::endl
-        << in << "    \"forward_reads\": " << forward_reads << "," << std::endl
-        << in << "    \"reverse_reads\": " << reverse_reads << "," << std::endl
-        << in << "    \"secondary_reads\": " << secondary_reads << "," << std::endl
-        << in << "    \"supplementary_reads\": " << supplementary_reads << "," << std::endl
-        << in << "    \"duplicate_reads\": " << duplicate_reads << "," << std::endl
-
-        << in << "    \"paired_reads\": " << paired_reads << "," << std::endl
-        << in << "    \"paired_and_mapped_reads\": " << paired_and_mapped_reads << "," << std::endl
-        << in << "    \"properly_paired_and_mapped_reads\": " << properly_paired_and_mapped_reads << "," << std::endl
-        << in << "    \"first_reads\": " << first_reads << "," << std::endl
-        << in << "    \"second_reads\": " << second_reads << "," << std::endl
-        << in << "    \"forward_mate_reads\": " << forward_mate_reads << "," << std::endl
-        << in << "    \"reverse_mate_reads\": " << reverse_mate_reads << "," << std::endl
-        << in << "    \"fr_reads\": " << fr_reads << "," << std::endl
-
-        << in << "    \"unmapped_reads\": " << unmapped_reads << "," << std::endl
-        << in << "    \"unmapped_mate_reads\": " << unmapped_mate_reads << "," << std::endl
-        << in << "    \"qcfailed_reads\": " << qcfailed_reads << "," << std::endl
-        << in << "    \"unpaired_reads\": " << unpaired_reads << "," << std::endl
-        << in << "    \"ff_reads\": " << ff_reads << "," << std::endl
-        << in << "    \"rf_reads\": " << rf_reads << "," << std::endl
-        << in << "    \"rr_reads\": " << rr_reads << "," << std::endl
-        << in << "    \"reads_with_mate_mapped_to_different_reference\": " << reads_with_mate_mapped_to_different_reference << "," << std::endl
-        << in << "    \"reads_mapped_with_zero_quality\": " << reads_mapped_with_zero_quality << "," << std::endl
-        << in << "    \"reads_mapped_and_paired_but_improperly\": " << reads_mapped_and_paired_but_improperly << "," << std::endl
-        << in << "    \"unclassified_reads\": " << unclassified_reads << "," << std::endl
-        << in << "    \"maximum_proper_pair_fragment_size\": " << maximum_proper_pair_fragment_size << "," << std::endl
-        << in << "    \"reads_with_mate_too_distant\": " << reads_with_mate_too_distant << "," << std::endl
-        << in << "    \"total_autosomal_reads\": " << total_autosomal_reads << "," << std::endl
-        << in << "    \"total_mitochondrial_reads\": " << total_mitochondrial_reads << "," << std::endl
-        << in << "    \"duplicate_autosomal_reads\": " << duplicate_autosomal_reads << "," << std::endl
-        << in << "    \"duplicate_mitochondrial_reads\": " << duplicate_mitochondrial_reads << "," << std::endl
-        << in << "    \"hqaa\": " << hqaa << "," << std::endl
-        << in << "    \"hqaa_short_count\": " << hqaa_short_count << "," << std::endl
-        << in << "    \"hqaa_mononucleosomal_count\": " << hqaa_mononucleosomal_count << "," << std::endl
-        << in << "    \"short_mononucleosomal_ratio\": " << fraction(hqaa_short_count, hqaa_mononucleosomal_count) << "," << std::endl
-        << in << "    \"fragment_length_counts_fields\": [\"fragment_length\", \"read_count\", \"fraction_of_all_reads\"]," << std::endl
-        << in << "    \"fragment_length_counts\": [" << std::endl;
-
+json Metrics::to_json() {
+    std::vector<std::string> fragment_length_counts_fields = {"fragment_length", "read_count", "fraction_of_all_reads"};
+    json fragment_length_counts_json;
     int max_fragment_length = std::max(1000, fragment_length_counts.empty() ? 0 : fragment_length_counts.rbegin()->first);
 
     for (int fragment_length = 0; fragment_length < max_fragment_length; fragment_length++) {
         int count = fragment_length_counts[fragment_length];
-        os << in << "      [" << fragment_length << ", " << count << ", " << fraction(count, total_reads) << "]";
-        if (fragment_length < max_fragment_length - 1) {
-            os << ",";
-        }
-        os << std::endl;
+        json flc;
+        flc.push_back(fragment_length);
+        flc.push_back(count);
+        std::string fraction_of_total_reads = fraction_string(count, total_reads);
+        flc.push_back(fraction_of_total_reads == "undefined" ? nullptr : fraction_of_total_reads);
+
+        fragment_length_counts_json.push_back(flc);
     }
 
-    os
-        << in << "    ]," << std::endl
-        << in << "    \"hqaa_fragment_length_counts_fields\": [\"fragment_length\", \"read_count\", \"fraction_of_hqaa\"]," << std::endl
-        << in << "    \"hqaa_fragment_length_counts\": [" << std::endl;
-
-
+    std::vector<std::string> hqaa_fragment_length_counts_fields = {"fragment_length", "read_count", "fraction_of_hqaa"};
+    json hqaa_fragment_length_counts_json;
     max_fragment_length = std::max(1000, hqaa_fragment_length_counts.empty() ? 0 : hqaa_fragment_length_counts.rbegin()->first);
-
     for (int fragment_length = 0; fragment_length < max_fragment_length; fragment_length++) {
         int count = hqaa_fragment_length_counts[fragment_length];
-        os << in << "      [" << fragment_length << ", " << count << ", " << fraction(count, hqaa) << "]";
-        if (fragment_length < max_fragment_length - 1) {
-            os << ",";
-        }
-        os << std::endl;
+        json flc;
+        flc.push_back(fragment_length);
+        flc.push_back(count);
+        std::string fraction_of_hqaa_reads = fraction_string(count, hqaa);
+        flc.push_back(fraction_of_hqaa_reads == "undefined" ? nullptr : fraction_of_hqaa_reads);
+
+        hqaa_fragment_length_counts_json.push_back(flc);
     }
 
-    os
-        << in << "    ]," << std::endl
-        << in << "    \"mapq_counts_fields\": [\"mapq\", \"read_count\"]," << std::endl
-        << in << "    \"mapq_counts\": [" << std::endl;
+    std::vector<std::string> mapq_counts_fields = {"mapq", "read_count"};
 
-    auto last_mapq = --mapq_counts.end();
-    for (auto it = mapq_counts.begin(); it != mapq_counts.end(); ++it) {
-        os << in << "      [" << it->first << ", " << it->second << "]";
-        if (it != last_mapq) {
-            os << ",";
-        }
-        os << std::endl;
+    json mapq_counts_json;
+    for (auto it : mapq_counts) {
+        json mc;
+        mc.push_back(it.first);
+        mc.push_back(it.second);
+        mapq_counts_json.push_back(mc);
     }
 
-    os
-        << in << "    ]," << std::endl
-        << in << "    \"mean_mapq\": " << mean_mapq() << "," << std::endl
-        << in << "    \"median_mapq\": " << median_mapq() << "," << std::endl
-        << in << "    \"peaks_fields\": [\"name\", \"overlapping_hqaa\", \"territory\"]," << std::endl
-        << in << "    \"peaks\": [" << std::endl;
+    std::vector<std::string> peaks_fields = {
+        "name",
+        "overlapping_hqaa",
+        "territory"
+    };
 
-    std::vector<Peak> peak_list = peaks.list_peaks();;
+    std::vector<json> peak_list;
+    unsigned long long int peak_count = 0;
     unsigned long long int hqaa_overlapping_peaks = 0;
 
-    auto last_peak = --peak_list.end();
-    for (auto peak = peak_list.begin(); peak != peak_list.end(); ++peak) {
-        hqaa_overlapping_peaks += peak->overlapping_hqaa;
-        os << in << "      [\"" << peak->name << "\", " << peak->overlapping_hqaa << ", " << peak->size() << "]";
-        if (peak != last_peak) {
-            os << ",";
-        }
-        os << std::endl;
+    for (auto peak: peaks.list_peaks()) {
+        peak_count++;
+        hqaa_overlapping_peaks += peak.overlapping_hqaa;
+
+        json jp;
+        jp.push_back(peak.name);
+        jp.push_back(peak.overlapping_hqaa);
+        jp.push_back(peak.size());
+
+        peak_list.push_back(jp);
     }
 
-    os
-        << in << "    ]," << std::endl
-        << in << "    \"total_peaks\": " << peak_list.size() << "," << std::endl
-        << in << "    \"total_peak_territory\": " << total_peak_territory << "," << std::endl
-        << in << "    \"hqaa_overlapping_peaks_percent\": " << percentage(hqaa_overlapping_peaks, hqaa) << std::endl
-        << in << "  }" << std::endl
-        << in << "}" << (standalone ? "" : ",") << std::endl;
+    std::string short_mononucleosomal_ratio = fraction_string(hqaa_short_count, hqaa_mononucleosomal_count);
+
+    json result = {
+        {"ataqc_version", version_string()},
+        {"timestamp", iso8601_timestamp()},
+        {"metrics",
+         {
+             {"name", name},
+             {"organism", collector->organism},
+             {"description", collector->description},
+             {"url", collector->url},
+             {"library", library.to_json()},
+             {"total_reads", total_reads},
+             {"hqaa", hqaa},
+             {"forward_reads", forward_reads},
+             {"reverse_reads", reverse_reads},
+             {"secondary_reads", secondary_reads},
+             {"supplementary_reads", supplementary_reads},
+             {"duplicate_reads", duplicate_reads},
+             {"paired_reads", paired_reads},
+             {"properly_paired_and_mapped_reads", properly_paired_and_mapped_reads},
+             {"fr_reads", fr_reads},
+             {"ff_reads", ff_reads},
+             {"rf_reads", rf_reads},
+             {"rr_reads", rr_reads},
+             {"first_reads", first_reads},
+             {"second_reads", second_reads},
+             {"forward_mate_reads", forward_mate_reads},
+             {"reverse_mate_reads", reverse_mate_reads},
+             {"unmapped_reads", unmapped_reads},
+             {"unmapped_mate_reads", unmapped_mate_reads},
+             {"qcfailed_reads", qcfailed_reads},
+             {"unpaired_reads", unpaired_reads},
+             {"reads_with_mate_mapped_to_different_reference", reads_with_mate_mapped_to_different_reference},
+             {"reads_mapped_with_zero_quality", reads_mapped_with_zero_quality},
+             {"reads_mapped_and_paired_but_improperly", reads_mapped_and_paired_but_improperly},
+             {"unclassified_reads", unclassified_reads},
+             {"maximum_proper_pair_fragment_size", maximum_proper_pair_fragment_size},
+             {"reads_with_mate_too_distant", reads_with_mate_too_distant},
+             {"total_autosomal_reads", total_autosomal_reads},
+             {"total_mitochondrial_reads", total_mitochondrial_reads},
+             {"duplicate_autosomal_reads", duplicate_autosomal_reads},
+             {"duplicate_mitochondrial_reads", duplicate_mitochondrial_reads},
+             {"hqaa_tf_count", hqaa_short_count},
+             {"hqaa_mononucleosomal_count", hqaa_mononucleosomal_count},
+             {"short_mononucleosomal_ratio", short_mononucleosomal_ratio == "undefined" ? nullptr : short_mononucleosomal_ratio},
+             {"fragment_length_counts_fields", fragment_length_counts_fields},
+             {"fragment_length_counts", fragment_length_counts_json},
+             {"hqaa_fragment_length_counts_fields", hqaa_fragment_length_counts_fields},
+             {"hqaa_fragment_length_counts", hqaa_fragment_length_counts_json},
+             {"mapq_counts_fields", mapq_counts_fields},
+             {"mapq_counts", mapq_counts_json},
+             {"mean_mapq", mean_mapq()},
+             {"median_mapq", median_mapq()},
+             {"peaks_fields", peaks_fields},
+             {"peaks", peak_list},
+             {"total_peaks", peak_count},
+             {"total_peak_territory", total_peak_territory},
+             {"hqaa_overlapping_peaks_percent", percentage_string(hqaa_overlapping_peaks, hqaa)}
+         }
+        }
+    };
+    return result;
 }
+
 
 //
 // Produce text version of all of a collector's Metrics
 //
 std::ostream& operator<<(std::ostream& os, const MetricsCollector& collector) {
+    std::cout << collector.configuration_string();
+
     for (auto it : collector.metrics) {
         os << *(it.second);
     }
@@ -1103,13 +1097,10 @@ std::ostream& operator<<(std::ostream& os, const MetricsCollector& collector) {
     return os;
 }
 
-void MetricsCollector::to_json(std::ostream& os) {
-    os << "[" << std::endl;
-    auto last = --metrics.end();
-    for (auto it = metrics.cbegin(); it != metrics.cend(); ++it) {
-        if (it->second->total_reads > 0) {
-            it->second->to_json(os, 2, (it == last));
-        }
+json MetricsCollector::to_json() {
+    json result;
+    for (auto m : metrics) {
+        result.push_back(m.second->to_json());
     }
-    os << "]" << std::endl;
+    return result;
 }

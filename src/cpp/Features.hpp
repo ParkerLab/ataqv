@@ -22,6 +22,7 @@ public:
     unsigned long long int size() const;
 
     Feature();
+    Feature(const std::string& reference, unsigned long long int start, unsigned long long int end, const std::string& name);
     Feature(const bam_hdr_t *header, const bam1_t *record);
 
     bool overlaps(const Feature& other);

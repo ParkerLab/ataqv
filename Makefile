@@ -13,13 +13,13 @@ CPP_DIR = $(SRC_DIR)/cpp
 SCRIPTS_DIR = $(SRC_DIR)/scripts
 WEB_DIR = $(SRC_DIR)/web
 BUILD_DIR = build
+TEST_DIR = testing
 
 SRC_CPP := $(wildcard $(CPP_DIR)/*.cpp)
 SRC_HPP := $(wildcard $(CPP_DIR)/*.hpp)
-OBJECTS := $(patsubst $(CPP_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRC_CPP))
-SCRIPTS := $(wildcard $(SCRIPTS_DIR)/*)
+INCLUDES := $(addprefix -I,$(CPP_DIR))
 
-INCLUDES := $(addprefix -I,$(SRC_DIR))
+SCRIPTS := $(wildcard $(SCRIPTS_DIR)/*)
 
 # where to install -- the default location assumes environment modules
 # are in use, but you can simply override PREFIX with a command like
@@ -35,9 +35,9 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqc/$(VERSION)
 # FLAGS
 #
 
-CPPFLAGS = -I. $(INCLUDES) -pedantic -Wall -Wextra -Wwrite-strings
-CXXFLAGS = -std=c++11 -pthread -O3
-#CXXFLAGS = -std=c++11 -Weffc++ -pthread -O3 -g  # for development
+CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing $(INCLUDES)
+CXXFLAGS = -std=c++11 -pthread -O3 $(CPPFLAGS)
+CXXFLAGS_DEV = -std=c++11 -Weffc++ -pthread -O3 -g
 
 #
 # Try to locate dependencies using environment variables
@@ -123,16 +123,19 @@ endif
 # TARGETS
 #
 
-.PHONY: all checkdirs clean install install-ataqc install-module install-scripts install-web
+.PHONY: all checkdirs clean install install-ataqc install-module install-scripts install-web test
 
 all: checkdirs $(BUILD_DIR)/ataqc
 
-checkdirs: $(BUILD_DIR)
+checkdirs: $(BUILD_DIR) $(TEST_DIR)
 
 $(BUILD_DIR):
 	@mkdir -p $@
 
-$(BUILD_DIR)/ataqc: $(BUILD_DIR)/ataqc.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/HTS.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
+$(TEST_DIR):
+	@mkdir -p $@
+
+$(BUILD_DIR)/ataqc: $(BUILD_DIR)/ataqc.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/HTS.o $(BUILD_DIR)/IO.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP) $(CPP_DIR)/Version.hpp
@@ -147,8 +150,19 @@ $(CPP_DIR)/Version.hpp: Makefile
 	@echo >>$@
 	@echo '#define VERSION "$(VERSION)"' >>$@
 
+test: checkdirs $(TEST_DIR)/run_ataqc_tests
+	@cp testdata/* $(TEST_DIR)
+	@cd $(TEST_DIR) && ./run_ataqc_tests -i
+	@cd $(TEST_DIR) && lcov --quiet --capture --derive-func-data --directory . --output-file ataqc.info && lcov --remove ataqc.info catch.hpp --remove ataqc.info json.hpp --output-file ataqc.info && genhtml ataqc.info -o ataqc
+
+$(TEST_DIR)/run_ataqc_tests: $(TEST_DIR)/run_ataqc_tests.o $(TEST_DIR)/test_features.o $(TEST_DIR)/test_hts.o $(TEST_DIR)/test_io.o $(TEST_DIR)/test_metrics.o $(TEST_DIR)/test_peaks.o $(TEST_DIR)/test_utils.o $(TEST_DIR)/Features.o $(TEST_DIR)/HTS.o $(TEST_DIR)/IO.o $(TEST_DIR)/Metrics.o $(TEST_DIR)/Peaks.o $(TEST_DIR)/Utils.o
+	$(CXX) -o $@ $^ $(LDFLAGS) --coverage $(LDLIBS)
+
+$(TEST_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS_DEV) -fprofile-arcs -ftest-coverage -o $@ -c $<
+
 clean:
-	@rm -rf $(BUILD_DIR)
+	@rm -rf $(BUILD_DIR) $(TEST_DIR)
 
 install: checkdirs install-ataqc install-scripts install-web
 

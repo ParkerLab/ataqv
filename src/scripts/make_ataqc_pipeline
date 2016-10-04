@@ -60,6 +60,7 @@ then
 fi
 
 BASE=$(basename $BAM .bam)
+SORTED_BAM=${BASE}.sorted.bam
 BAMMD=${BASE}.md.bam
 HQAA=${BASE}.hqaa.bam
 
@@ -74,8 +75,11 @@ set -e
 
 # drmr:job processors=4 memory=8gb
 
+# ensure the alignments are coordinate-sorted
+samtools sort ${BAM} -O BAM -o ${SORTED_BAM}
+
 # create a BAM file of all the original data, with duplicates marked
-${PICARD} MarkDuplicates I=${BAM} O=${BAMMD} ASSUME_SORTED=true METRICS_FILE=${BAMMD}.markdup.metrics VALIDATION_STRINGENCY=LENIENT
+${PICARD} MarkDuplicates I=${SORTED_BAM} O=${BAMMD} ASSUME_SORTED=true METRICS_FILE=${BAMMD}.markdup.metrics VALIDATION_STRINGENCY=LENIENT
 
 # drmr:wait
 

@@ -12,11 +12,16 @@
 #include <string>
 #include <vector>
 
+#include "json.hpp"
+
 #include "Exceptions.hpp"
 #include "Features.hpp"
 #include "HTS.hpp"
 #include "IO.hpp"
 #include "Peaks.hpp"
+
+
+using json = nlohmann::json;
 
 
 class MetricsCollector;
@@ -69,16 +74,16 @@ public:
                      const std::string& autosomal_reference_filename = "",
                      const std::string& mitochondrial_reference_name = "chrM",
                      const std::string& peak_filename = "",
-                     const std::vector<std::string>& excluded_region_filenames = {},
+                     bool verbose = false,
                      bool log_problematic_reads = false,
-                     bool verbose = false);
+                     const std::vector<std::string>& excluded_region_filenames = {});
 
     std::string autosomal_reference_string() const;
     std::string configuration_string() const;
     bool is_autosomal(const std::string &reference_name);
     bool is_mitochondrial(const std::string& reference_name);
     void load_alignments();
-    void to_json(std::ostream& os);
+    json to_json();
 };
 
 
@@ -101,7 +106,7 @@ public:
     std::string predicted_median_insert_size = "";  // PI
     std::string programs = "";  // PG
 
-    void to_json(std::ostream& os, int indent, bool standalone = false);
+    json to_json();
 };
 
 std::ostream& operator<<(std::ostream& os, const Library& library);
@@ -203,7 +208,7 @@ public:
     bool mapq_at_least(const int& mapq, const bam1_t* record);
     double mean_mapq() const;
     double median_mapq() const;
-    void to_json(std::ostream& os, int indent = 0, bool standalone = true);
+    json to_json();
     void update_overlapping_peaks(const bam_hdr_t *header, const bam1_t *record);
 };
 

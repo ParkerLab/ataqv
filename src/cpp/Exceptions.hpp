@@ -12,7 +12,6 @@
 
 class FileException: public std::runtime_error {
 public:
-    explicit FileException() : std::runtime_error("") { }
     explicit FileException(const std::string& msg) : std::runtime_error(msg) { }
 };
 
