@@ -55,6 +55,11 @@ bool peak_overlapping_hqaa_descending_comparator(const Peak& p1, const Peak& p2)
 }
 
 
+bool peak_size_descending_comparator(const Peak& p1, const Peak& p2) {
+    return p1.size() > p2.size();
+}
+
+
 void ReferencePeakCollection::add(Peak& peak) {
     peaks.push_back(peak);
 
@@ -133,6 +138,18 @@ std::vector<Peak> PeakTree::list_peaks_by_overlapping_hqaa_descending() {
         }
     }
     std::sort(peaks.begin(), peaks.end(), peak_overlapping_hqaa_descending_comparator);
+    return peaks;
+}
+
+
+std::vector<Peak> PeakTree::list_peaks_by_size_descending() {
+    std::vector<Peak> peaks;
+    for (auto ref_peaks : tree) {
+        for (auto peak: ref_peaks.second.peaks) {
+            peaks.push_back(peak);
+        }
+    }
+    std::sort(peaks.begin(), peaks.end(), peak_size_descending_comparator);
     return peaks;
 }
 

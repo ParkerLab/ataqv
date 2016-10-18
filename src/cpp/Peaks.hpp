@@ -56,6 +56,7 @@ public:
     void increment_overlapping_hqaa(const Feature& hqaa);
     std::vector<Peak> list_peaks();
     std::vector<Peak> list_peaks_by_overlapping_hqaa_descending();
+    std::vector<Peak> list_peaks_by_size_descending();
     void print_reference_peak_counts(std::ostream* os = nullptr);
     size_t size() const;
 };

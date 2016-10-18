@@ -18,7 +18,7 @@ import textwrap
 
 LOGGING_FORMAT = '%(message)s'
 PROGRAM = 'mkarv'
-PROGRAM_VERSION = '0.1.5'
+PROGRAM_VERSION = '{{VERSION}}'
 
 METADATA_FIELDS = [
     'name',
@@ -102,47 +102,6 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def add_peak_percentiles(logger, metrics):
-    peaks = metrics['peaks']
-
-    peak_percentiles = {
-        'cumulative_fraction_of_hqaa': [],
-        'cumulative_fraction_of_territory': []
-    }
-
-    if peaks:
-        peak_count = len(peaks)
-        percentile_indexes = [int(peak_count * (percentile / 100.0)) for percentile in range(1, 101)]
-
-        hqaa = decimal.Decimal(metrics['hqaa'])
-        total_peak_territory = decimal.Decimal(metrics['total_peak_territory'])
-
-        # sort by overlapping reads
-        peaks = sorted(peaks, key=operator.itemgetter(1), reverse=True)
-        percentile_peaks = [peak for index, peak in enumerate(peaks, 1) if index in percentile_indexes]
-
-        cumulative_hqaa_in_peaks = decimal.Decimal(0)
-        for peak in percentile_peaks:
-            cumulative_hqaa_in_peaks += decimal.Decimal(peak[1]) / hqaa
-            peak_percentiles['cumulative_fraction_of_hqaa'].append(cumulative_hqaa_in_peaks)
-
-        # sort by peak size
-        peaks = sorted(peaks, key=operator.itemgetter(2), reverse=True)
-        percentile_peaks = [peak for index, peak in enumerate(peaks, 1) if index in percentile_indexes]
-        cumulative_territory = decimal.Decimal(0)
-        for peak in percentile_peaks:
-            cumulative_territory += decimal.Decimal(peak[2]) / total_peak_territory
-            peak_percentiles['cumulative_fraction_of_territory'].append(cumulative_territory)
-    else:
-        logger.info('  No peaks found in metrics.')
-
-    metrics['peak_percentiles'] = peak_percentiles
-
-
-def calculate_mean_mapq(logger, metrics):
-    metrics['mean_mapq'] = sum([mc[0] * mc[1] for mc in metrics['mapq_counts']]) / float(metrics['total_reads'])
-
-
 if __name__ == '__main__':
     args = parse_arguments()
 
@@ -179,11 +138,6 @@ if __name__ == '__main__':
             for result in collection:
                 metrics = result['metrics']
                 name = metrics['name']
-
-                calculate_mean_mapq(logger, metrics)
-                add_peak_percentiles(logger, metrics)
-                del metrics['peaks']
-                del metrics['peaks_fields']
 
                 original_metrics_filename = os.path.join(data_directory, os.path.basename(metrics_filename))
                 metrics['original_url'] = os.path.join('data', os.path.basename(metrics_filename))

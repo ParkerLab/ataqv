@@ -966,8 +966,8 @@ json Metrics::to_json() {
         json flc;
         flc.push_back(fragment_length);
         flc.push_back(count);
-        std::string fraction_of_total_reads = fraction_string(count, total_reads);
-        flc.push_back(fraction_of_total_reads == "undefined" ? nullptr : fraction_of_total_reads);
+        long double fraction_of_total_reads = total_reads == 0 ? std::nan("") : count / (long double) total_reads;
+        flc.push_back(fraction_of_total_reads);
 
         fragment_length_counts_json.push_back(flc);
     }
@@ -980,8 +980,8 @@ json Metrics::to_json() {
         json flc;
         flc.push_back(fragment_length);
         flc.push_back(count);
-        std::string fraction_of_hqaa_reads = fraction_string(count, hqaa);
-        flc.push_back(fraction_of_hqaa_reads == "undefined" ? nullptr : fraction_of_hqaa_reads);
+        long double fraction_of_hqaa_reads = hqaa != 0 ? (count / (long double) hqaa) : std::nan("");
+        flc.push_back(fraction_of_hqaa_reads);
 
         hqaa_fragment_length_counts_json.push_back(flc);
     }
@@ -1003,11 +1003,23 @@ json Metrics::to_json() {
     };
 
     std::vector<json> peak_list;
-    unsigned long long int peak_count = 0;
+
+    std::set<unsigned long long int> percentile_indices;
+    std::map<std::string, std::vector<long double>> peak_percentiles = {
+        {"cumulative_fraction_of_hqaa", {}},
+        {"cumulative_fraction_of_territory", {}}
+    };
+
+    auto default_peak_list = peaks.list_peaks();
+    unsigned long long int peak_count = default_peak_list.size();
     unsigned long long int hqaa_overlapping_peaks = 0;
 
+
+    for (int percentile = 1; percentile < 101; percentile++) {
+        percentile_indices.insert(peak_count * (percentile / 100.0));
+    }
+
     for (auto peak: peaks.list_peaks()) {
-        peak_count++;
         hqaa_overlapping_peaks += peak.overlapping_hqaa;
 
         json jp;
@@ -1016,6 +1028,28 @@ json Metrics::to_json() {
         jp.push_back(peak.size());
 
         peak_list.push_back(jp);
+    }
+
+    unsigned long long int count = 0;
+    long double cumulative_fraction_of_hqaa = 0.0;
+    for (auto peak: peaks.list_peaks_by_overlapping_hqaa_descending()) {
+        count++;
+        cumulative_fraction_of_hqaa += (peak.overlapping_hqaa / (long double)hqaa);
+
+        if (percentile_indices.count(count) == 1) {
+            peak_percentiles["cumulative_fraction_of_hqaa"].push_back(cumulative_fraction_of_hqaa);
+        }
+    }
+
+    count = 0;
+    long double cumulative_fraction_of_territory = 0.0;
+    for (auto peak: peaks.list_peaks_by_size_descending()) {
+        count++;
+        cumulative_fraction_of_territory += (peak.size() / (long double)total_peak_territory);
+
+        if (percentile_indices.count(count) == 1) {
+            peak_percentiles["cumulative_fraction_of_territory"].push_back(cumulative_fraction_of_territory);
+        }
     }
 
     std::string short_mononucleosomal_ratio = fraction_string(hqaa_short_count, hqaa_mononucleosomal_count);
@@ -1066,6 +1100,7 @@ json Metrics::to_json() {
              {"short_mononucleosomal_ratio", short_mononucleosomal_ratio == "undefined" ? nullptr : short_mononucleosomal_ratio},
              {"fragment_length_counts_fields", fragment_length_counts_fields},
              {"fragment_length_counts", fragment_length_counts_json},
+             {"fragment_length_count_reference", nullptr},
              {"hqaa_fragment_length_counts_fields", hqaa_fragment_length_counts_fields},
              {"hqaa_fragment_length_counts", hqaa_fragment_length_counts_json},
              {"mapq_counts_fields", mapq_counts_fields},
@@ -1074,6 +1109,7 @@ json Metrics::to_json() {
              {"median_mapq", median_mapq()},
              {"peaks_fields", peaks_fields},
              {"peaks", peak_list},
+             {"peak_percentiles", peak_percentiles},
              {"total_peaks", peak_count},
              {"total_peak_territory", total_peak_territory},
              {"hqaa_overlapping_peaks_percent", percentage_string(hqaa_overlapping_peaks, hqaa)}

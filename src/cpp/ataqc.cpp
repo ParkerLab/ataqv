@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
     std::cout << collector << std::endl;  // Print the stats
 
     std::cout << "Writing JSON metrics to " << metrics_filename << std::endl << std::flush;
-    *metrics_file << collector.to_json();
+    *metrics_file << collector.to_json().dump(2); // TODO: remove indent
     std::cout << "Metrics written to \"" << metrics_filename << "\"" << std::endl;
 
     std::cout << "Finished." << std::endl << std::flush;
