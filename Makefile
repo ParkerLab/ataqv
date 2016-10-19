@@ -37,7 +37,7 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqc/$(VERSION)
 
 CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing $(INCLUDES)
 CXXFLAGS = -std=c++11 -pthread -O3 $(CPPFLAGS)
-CXXFLAGS_DEV = -std=c++11 -Weffc++ -pthread -O3 -g
+CXXFLAGS_DEV = -std=c++11 -Weffc++ -pthread -O3 -g $(CPPFLAGS)
 
 #
 # Try to locate dependencies using environment variables

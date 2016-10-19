@@ -26,8 +26,8 @@ bool sort_strings_numerically(const std::string& s1, const std::string& s2);
 
 const std::string iso8601_timestamp(std::time_t* t = nullptr);
 
-std::string slice(std::string s, size_t start, size_t end = std::string::npos);
+std::string slice(const std::string& s, size_t start, size_t end = std::string::npos);
 
-std::string wrap(std::string s, size_t length = 72, size_t indent=0);
+std::string wrap(const std::string& s, size_t length = 72, size_t indent=0);
 
 #endif  // UTIL_HPP

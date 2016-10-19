@@ -33,7 +33,6 @@ sam_header parse_sam_header(const std::string &header_text) {
     std::stringstream headers_stream(header_text);
 
     std::string header_tag;
-    std::string field;
 
     for (std::string header_string; std::getline(headers_stream, header_string); ) {
         std::stringstream header_stream(header_string);

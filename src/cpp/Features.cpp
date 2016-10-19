@@ -23,7 +23,23 @@ Feature::Feature(const bam_hdr_t *header, const bam1_t *record) :
 
 
 bool operator< (const Feature& f1, const Feature& f2) {
-    return sort_strings_numerically(f1.reference, f2.reference) || (f1.start < f2.start) || (f1.end < f2.end);
+    return (
+        sort_strings_numerically(f1.reference, f2.reference) ||
+        (f1.reference == f2.reference &&
+         (f1.start < f2.start ||
+            (f1.start == f2.start &&
+             (f1.end < f2.end ||
+              (f1.end == f2.end && sort_strings_numerically(f1.name, f2.name))
+             )
+            )
+         )
+        )
+    );
+}
+
+
+bool feature_overlap_comparator(const Feature& f1, const Feature& f2) {
+    return sort_strings_numerically(f1.reference, f2.reference) || f1.start < f2.start || f1.end < f2.end;
 }
 
 
@@ -48,7 +64,7 @@ std::istream& operator>>(std::istream& is, Feature& feature) {
 }
 
 
-bool Feature::overlaps(const Feature& other) {
+bool Feature::overlaps(const Feature& other) const {
     return
         reference == other.reference && (
             (

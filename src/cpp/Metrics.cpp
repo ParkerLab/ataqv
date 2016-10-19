@@ -174,9 +174,6 @@ void MetricsCollector::load_alignments() {
     samFile *alignment_file = nullptr;
     bam_hdr_t *alignment_file_header = nullptr;
     bam1_t *record = bam_init1();
-    boost::chrono::high_resolution_clock::time_point start;
-    boost::chrono::duration<double> duration;
-    double rate;
     unsigned long long int total_reads = 0;
 
     if (alignment_filename.empty()) {
@@ -190,8 +187,6 @@ void MetricsCollector::load_alignments() {
     if (verbose) {
         std::cout << "Collecting metrics from " << alignment_filename << "." << std::endl << std::endl;
     }
-
-    start = boost::chrono::high_resolution_clock::now();
 
     alignment_file_header = sam_hdr_read(alignment_file);
     if (alignment_file_header == NULL) {
@@ -236,6 +231,10 @@ void MetricsCollector::load_alignments() {
         metrics[metrics_id]->library = library;
     }
 
+    boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
+    boost::chrono::duration<double> duration;
+    double rate = 0.0;
+
     while (sam_read1(alignment_file, alignment_file_header, record) >= 0) {
         uint8_t* aux = bam_aux_get(record, "RG");
         if (aux) {
@@ -263,7 +262,8 @@ void MetricsCollector::load_alignments() {
 
     if (verbose) {
         duration = boost::chrono::high_resolution_clock::now() - start;
-        std::cout << "Analyzed " << total_reads << " reads in " << duration << " (" << (total_reads / duration.count()) << " reads/second)." << std::endl << std::endl;
+        rate = (total_reads / duration.count());
+        std::cout << "Analyzed " << total_reads << " reads in " << duration << " (" << rate << " reads/second)." << std::endl << std::endl;
     }
 }
 
@@ -476,9 +476,8 @@ double Metrics::median_mapq() const {
     }
 
     unsigned long long int mapq_index = 0;
-    unsigned long long int next_mapq_index = 0;
     for (auto it : mapq_counts) {
-        next_mapq_index = mapq_index + it.second;
+        unsigned long long int next_mapq_index = mapq_index + it.second;
         bool median1_here = (mapq_index <= median1 && median1 <= next_mapq_index);
         bool median2_here = (mapq_index <= median2 && median2 <= next_mapq_index);
 
@@ -1019,7 +1018,7 @@ json Metrics::to_json() {
         percentile_indices.insert(peak_count * (percentile / 100.0));
     }
 
-    for (auto peak: peaks.list_peaks()) {
+    for (auto peak: default_peak_list) {
         hqaa_overlapping_peaks += peak.overlapping_hqaa;
 
         json jp;

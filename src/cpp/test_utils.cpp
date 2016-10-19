@@ -163,8 +163,8 @@ TEST_CASE("Test Utils::is_only_whitespace", "[utils/is_only_whitespace]" ) {
 
 
 TEST_CASE("Test Utils::sort_strings_numerically", "[utils/sort_strings_numerically]" ) {
-    std::vector<std::string> subject = {"1", "10", "2", "20", "chr30", "chr10", "chr20", "chr1", "chr2", "chr1:10-100", "chr1:2-1000"};
-    std::vector<std::string> expected = {"1", "2", "10", "20", "chr1", "chr1:2-1000", "chr1:10-100", "chr2", "chr10", "chr20", "chr30"};
+    std::vector<std::string> subject = {"1", "10", "2", "20", "chr30", "chr10", "chr20", "chr1", "chr2", "chr1:10-100", "chr1:2-1000", "SRR891275.1234567890", "SRR891275.1", ""};
+    std::vector<std::string> expected = {"", "1", "2", "10", "20", "SRR891275.1", "SRR891275.1234567890", "chr1", "chr1:2-1000", "chr1:10-100", "chr2", "chr10", "chr20", "chr30"};
     std::sort(subject.begin(), subject.end(), sort_strings_numerically);
     REQUIRE(expected == subject);
 }

@@ -40,8 +40,9 @@ public:
     unsigned long long int start = 0;
     unsigned long long int end = 0;
 
-    void add(Peak& peak);
-    bool overlaps(const Feature& feature);
+    void add(const Peak& peak);
+    bool overlaps(const Feature& feature) const;
+    void sort();
 };
 
 

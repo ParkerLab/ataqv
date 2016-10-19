@@ -25,10 +25,11 @@ public:
     Feature(const std::string& reference, unsigned long long int start, unsigned long long int end, const std::string& name);
     Feature(const bam_hdr_t *header, const bam1_t *record);
 
-    bool overlaps(const Feature& other);
+    bool overlaps(const Feature& other) const;
 };
 
 bool operator< (const Feature& f1, const Feature& f2);
+bool feature_overlap_comparator(const Feature& f1, const Feature& f2);
 
 std::ostream& operator<<(std::ostream& os, const Feature& feature);
 std::istream& operator>>(std::istream& is, Feature& feature);

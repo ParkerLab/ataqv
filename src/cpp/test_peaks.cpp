@@ -112,10 +112,10 @@ TEST_CASE("Peak HQAA counting", "peaks/hqaa") {
     Peak peak4("chr10", 100, 200, "peak4");
     peak4.overlapping_hqaa = 400;
 
-    tree.add(peak1);
     tree.add(peak2);
-    tree.add(peak3);
+    tree.add(peak1);
     tree.add(peak4);
+    tree.add(peak3);
 
     REQUIRE_FALSE(tree.empty());
 
@@ -123,6 +123,7 @@ TEST_CASE("Peak HQAA counting", "peaks/hqaa") {
     tree.increment_overlapping_hqaa(hqaa1);
 
     ReferencePeakCollection chr1 = *tree.get_reference_peaks("chr1");
+    chr1.sort();
     REQUIRE(chr1.peaks[0].overlapping_hqaa == 101);
     REQUIRE(chr1.peaks[1].overlapping_hqaa == 201);
     REQUIRE(chr1.peaks[2].overlapping_hqaa == 300);
