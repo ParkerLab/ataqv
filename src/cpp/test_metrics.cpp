@@ -156,6 +156,7 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
     unsigned long long int hqaa = j[0]["metrics"]["hqaa"];
     REQUIRE(total_reads == metrics->total_reads);
     REQUIRE(hqaa == metrics->hqaa);
+    REQUIRE(1.28125 == j[0]["metrics"]["short_mononucleosomal_ratio"].get<long double>());
 }
 
 TEST_CASE("Metrics::load_alignments errors", "[metrics/load_alignments_errors]") {

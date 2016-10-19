@@ -1033,7 +1033,7 @@ json Metrics::to_json() {
     long double cumulative_fraction_of_hqaa = 0.0;
     for (auto peak: peaks.list_peaks_by_overlapping_hqaa_descending()) {
         count++;
-        cumulative_fraction_of_hqaa += (peak.overlapping_hqaa / (long double)hqaa);
+        cumulative_fraction_of_hqaa += hqaa == 0 ? std::nan("") : (peak.overlapping_hqaa / (long double)hqaa);
 
         if (percentile_indices.count(count) == 1) {
             peak_percentiles["cumulative_fraction_of_hqaa"].push_back(cumulative_fraction_of_hqaa);
@@ -1051,7 +1051,7 @@ json Metrics::to_json() {
         }
     }
 
-    std::string short_mononucleosomal_ratio = fraction_string(hqaa_short_count, hqaa_mononucleosomal_count);
+    long double short_mononucleosomal_ratio = fraction(hqaa_short_count, hqaa_mononucleosomal_count);
 
     json result = {
         {"ataqc_version", version_string()},
@@ -1096,10 +1096,9 @@ json Metrics::to_json() {
              {"duplicate_mitochondrial_reads", duplicate_mitochondrial_reads},
              {"hqaa_tf_count", hqaa_short_count},
              {"hqaa_mononucleosomal_count", hqaa_mononucleosomal_count},
-             {"short_mononucleosomal_ratio", short_mononucleosomal_ratio == "undefined" ? nullptr : short_mononucleosomal_ratio},
+             {"short_mononucleosomal_ratio", short_mononucleosomal_ratio},
              {"fragment_length_counts_fields", fragment_length_counts_fields},
              {"fragment_length_counts", fragment_length_counts_json},
-             {"fragment_length_count_reference", nullptr},
              {"hqaa_fragment_length_counts_fields", hqaa_fragment_length_counts_fields},
              {"hqaa_fragment_length_counts", hqaa_fragment_length_counts_json},
              {"mapq_counts_fields", mapq_counts_fields},
@@ -1111,7 +1110,7 @@ json Metrics::to_json() {
              {"peak_percentiles", peak_percentiles},
              {"total_peaks", peak_count},
              {"total_peak_territory", total_peak_territory},
-             {"hqaa_overlapping_peaks_percent", percentage_string(hqaa_overlapping_peaks, hqaa)}
+             {"hqaa_overlapping_peaks_percent", percentage(hqaa_overlapping_peaks, hqaa)}
          }
         }
     };

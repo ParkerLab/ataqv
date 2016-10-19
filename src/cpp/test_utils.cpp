@@ -30,6 +30,21 @@ TEST_CASE("Test Utils::qq", "[utils/qq]" ) {
 }
 
 
+TEST_CASE("Test Utils::fraction", "[utils/fraction]" ) {
+    SECTION("Test fraction(1, 2)") {
+        REQUIRE(0.5 == fraction(1, 2));
+    }
+
+    SECTION("Test fraction(2, 1)") {
+        REQUIRE(2.000 == fraction(2, 1));
+    }
+
+    SECTION("Test fraction(1, 0)") {
+        REQUIRE(std::isnan(fraction(1, 0)));
+    }
+}
+
+
 TEST_CASE("Test Utils::fraction_string", "[utils/fraction_string]" ) {
     SECTION("Test fraction_string(1, 2)") {
         REQUIRE("0.500" == fraction_string(1, 2));
@@ -44,7 +59,22 @@ TEST_CASE("Test Utils::fraction_string", "[utils/fraction_string]" ) {
     }
 
     SECTION("Test fraction_string(1, 0)") {
-        REQUIRE("undefined" == fraction_string(1, 0));
+        REQUIRE("nan" == fraction_string(1, 0));
+    }
+}
+
+
+TEST_CASE("Test Utils::percentage", "[utils/percentage]" ) {
+    SECTION("Test percentage(1, 2)") {
+        REQUIRE(50 == percentage(1, 2));
+    }
+
+    SECTION("Test percentage(2, 1)") {
+        REQUIRE(200 == percentage(2, 1));
+    }
+
+    SECTION("Test percentage(1, 0)") {
+        REQUIRE(std::isnan(percentage(1, 0)));
     }
 }
 
@@ -63,7 +93,7 @@ TEST_CASE("Test Utils::percentage_string", "[utils/percentage_string]" ) {
     }
 
     SECTION("Test percentage_string(1, 0)") {
-        REQUIRE(" (undefined%)" == percentage_string(1, 0));
+        REQUIRE(" (nan%)" == percentage_string(1, 0));
     }
 }
 

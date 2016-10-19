@@ -5,6 +5,7 @@
 //
 
 #include <algorithm>
+#include <cmath>
 #include <ctime>
 #include <iostream>
 #include <sstream>
@@ -41,28 +42,30 @@ std::string qq(const std::string& s) {
 }
 
 
-std::string fraction_string(const double& numerator, const double& denominator, const int& precision) {
+long double fraction(const long double& numerator, const long double& denominator) {
+    return denominator == 0 ? std::nan("") : numerator / denominator;
+}
+
+
+std::string fraction_string(const long double& numerator, const long double& denominator, const int& precision) {
     std::stringstream ss;
     ss.precision(precision);
     ss << std::fixed;
-    if (denominator == 0) {
-        ss << "undefined";
-    } else {
-        ss << (numerator / denominator);
-    }
+    ss << fraction(numerator, denominator);
     return ss.str();
 }
 
 
-std::string percentage_string(const double& numerator, const double& denominator, const int& precision, const std::string& prefix, const std::string& suffix) {
+long double percentage(const long double& numerator, const long double& denominator) {
+    return 100.0 * fraction(numerator, denominator);
+}
+
+
+std::string percentage_string(const long double& numerator, const long double& denominator, const int& precision, const std::string& prefix, const std::string& suffix) {
     std::stringstream ss;
     ss.precision(precision);
     ss << prefix << std::fixed;
-    if (denominator == 0) {
-        ss << "undefined";
-    } else {
-        ss << (100.0 * numerator / denominator);
-    }
+    ss << percentage(numerator, denominator);
     ss << suffix;
     return ss.str();
 }
