@@ -1,6 +1,6 @@
-##################
-ataqc: ATAC-seq QC
-##################
+####################################
+ataqv: ATAC-seq QC and visualization
+####################################
 
 ***********
 What is it?
@@ -12,7 +12,7 @@ understand how well our ATAC-seq assays had worked, and to make it
 easier to spot differences that might be caused by library prep or
 sequencing.
 
-The main program, ataqc, examines your aligned reads and reports some
+The main program, ataqv, examines your aligned reads and reports some
 basic metrics, including:
 
 * reads mapped in proper pairs
@@ -34,7 +34,7 @@ interactive tables of the metrics and plots of fragment length,
 mapping quality, counts of reads overlapping peaks, and peak
 territory.
 
-Web viewer demo: https://parkerlab.github.io/ataqc/demo/
+Web viewer demo: https://parkerlab.github.io/ataqv/demo/
 
 ****
 Help
@@ -49,18 +49,18 @@ Getting started
 Prerequisites
 =============
 
-To build ataqc, you need:
+To build ataqv, you need:
 
 * Linux or a Mac
 * C++11 compiler (gcc 4.9 or newer, or clang on OS X)
 * `Boost`_
 * `HTSlib`_
 
-The ``mkarv`` script that collects ataqc results and sets up a web
+The ``mkarv`` script that collects ataqv results and sets up a web
 application to visualize them requires Python 2.7 or newer.
 
 To run the test suite, you'll also need `LCOV`_, which can be
-installed via `Homebrew`_ (and is, if you install ataqc with
+installed via `Homebrew`_ (and is, if you install ataqv with
 Homebrew). Note that on Macs with XCode 8, LCOV <= 1.12 will not be
 able to find the coverage files, because of Apple's constant changes
 to their gcov version output. This has been fixed in LCOV, but not yet
@@ -73,11 +73,11 @@ Getting it running
 Mac
 ---
 
-The easiest way to install ataqc on Macs is via `Homebrew`_ and our
+The easiest way to install ataqv on Macs is via `Homebrew`_ and our
 tap. At the terminal::
 
   brew tap ParkerLab/tap
-  brew install ataqc
+  brew install ataqv
 
 You can also build from a clone of the git repository, as described
 for Linux below.
@@ -87,8 +87,8 @@ Linux
 
 At your shell prompt::
 
-  git clone https://github.com/ParkerLab/ataqc
-  cd ataqc
+  git clone https://github.com/ParkerLab/ataqv
+  cd ataqv
   make
 
 If Boost and htslib are not available in default system locations (for
@@ -135,8 +135,8 @@ well::
 Installing
 ==========
 
-You can just copy ``build/ataqc`` and ``src/scripts/*`` wherever you
-like, or run them from your copy of the ataqc repository. If you want
+You can just copy ``build/ataqv`` and ``src/scripts/*`` wherever you
+like, or run them from your copy of the ataqv repository. If you want
 to install them to a bin directory somewhere, for example
 /usr/local/bin, you can run::
 
@@ -150,7 +150,7 @@ can install to the modules tree by defining the ``MODULES_ROOT`` and
 
   make install-module MODULES_ROOT=/opt/modules MODULEFILE_ROOT=/opt/modulefiles
 
-And then you should be able to run ``module load ataqc`` to have
+And then you should be able to run ``module load ataqv`` to have
 everything available in your environment.
 
 *****
@@ -164,23 +164,23 @@ You'll need to have a BAM file containing alignments of your ATAC-seq
 reads to your reference genome. If you want accurate duplication
 metrics, you'll also need to have marked duplicates in that BAM
 file. If you have a BED file containing peaks called on your data,
-ataqc can produce some additional metrics using that.
+ataqv can produce some additional metrics using that.
 
-Verifying ataqc results with data from a variety of common tools is on
+Verifying ataqv results with data from a variety of common tools is on
 our to-do list, but so far, we've only used `bwa`_, `Picard's
 MarkDuplicates`_, and `MACS2`_ for these steps. A pipeline like ours
-can be generated with the included ``make_ataqc_pipeline`` script. Its
+can be generated with the included ``make_ataqv_pipeline`` script. Its
 output product starts from a BAM file of aligned reads, marks
-duplicates and calls peaks, then runs ataqc and produces a web viewer
+duplicates and calls peaks, then runs ataqv and produces a web viewer
 for the output.
 
 Running
 =======
 
-The main program is ataqc. Run ``ataqc --help`` for complete
+The main program is ataqv. Run ``ataqv --help`` for complete
 instructions.
 
-When run, ataqc prints a human-readable summary to its standard output,
+When run, ataqv prints a human-readable summary to its standard output,
 and writes complete metrics to the file named with the
 `--metrics-file` option.
 
@@ -194,14 +194,14 @@ instance.
 Example
 =======
 
-The ataqc package includes a script that will set up and run our
+The ataqv package includes a script that will set up and run our
 entire ATAC-seq pipeline on some sample data.
 
-You'll need to have installed ataqc itself, plus Picard tools,
+You'll need to have installed ataqv itself, plus Picard tools,
 samtools, and MACS2 to run the pipeline. On a Mac, you can obtain
 everything with::
 
-  $ brew install ataqc picard-tools samtools
+  $ brew install ataqv picard-tools samtools
   $ pip install MACS2
 
 On Linux, installation of the dependencies is probably specific to
@@ -212,12 +212,12 @@ with ``pip install MACS2`` should be enough.
 Once you have the prerequisite programs installed, you can run the
 example pipeline with::
 
-  $ run_ataqc_example /output/path
+  $ run_ataqv_example /output/path
 
 Comparing your results to others
 ================================
 
-Part of this project will be publishing ataqc output for as many
+Part of this project will be publishing ataqv output for as many
 ATAC-seq experiments as we can get our hands on, so we can compare
 them and learn how changes to the protocol affect the output. Watch
 our `GitHub docs`_ for updates.
@@ -244,5 +244,5 @@ to almost 40 minutes, but it still used the same amount of memory.
 .. _bwa: http://bio-bwa.sourceforge.net/
 .. _Picard's MarkDuplicates: https://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates
 .. _MACS2: https://github.com/taoliu/MACS/
-.. _Github docs: https://parkerlab.github.io/ataqc/
-.. _parkerlab-software@umich.edu: mailto:parkerlab-software@umich.edu?subject=ataqc
+.. _Github docs: https://parkerlab.github.io/ataqv/
+.. _parkerlab-software@umich.edu: mailto:parkerlab-software@umich.edu?subject=ataqv

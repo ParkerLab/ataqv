@@ -19,8 +19,7 @@ std::string fraction_string(const long double& numerator, const long double& den
 long double percentage(const long double& numerator, const long double& denominator);
 std::string percentage_string(const long double& numerator, const long double& denominator, const int &precision = 3, const std::string& prefix = " (", const std::string& suffix = "%)");
 
-std::pair<std::string, std::string> split(const std::string& str, const std::string& delimiters = " ");
-std::vector<std::string> tokenize(const std::string& str, const std::string& delimiters = " ");
+std::vector<std::string> split(const std::string& str, const std::string& delimiters = " ", bool keep_delimiters = false);
 
 bool is_only_digits(const std::string& s);
 bool is_only_whitespace(const std::string& s);

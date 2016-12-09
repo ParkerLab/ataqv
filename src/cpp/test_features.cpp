@@ -58,6 +58,18 @@ TEST_CASE("Second feature's end lies within the first", "[features]" ) {
     REQUIRE(f1.overlaps(f2));
 }
 
+TEST_CASE("Overlapping features sort naturally by name", "[features]" ) {
+    Feature f1 = Feature("chr1", 50, 150, "feature1");
+    Feature f10 = Feature("chr1", 50, 150, "feature10");
+    Feature f11 = Feature("chr1", 50, 150, "feature11");
+    Feature f2 = Feature("chr1", 50, 150, "feature2");
+    std::vector<Feature> fv = {f1, f10, f11, f2};
+    std::sort(fv.begin(), fv.end());
+    REQUIRE(fv[0] == f1);
+    REQUIRE(fv[1] == f2);
+    REQUIRE(fv[2] == f10);
+    REQUIRE(fv[3] == f11);
+}
 
 TEST_CASE("Feature size is correct", "[features]" ) {
     Feature f1 = Feature("chr1", 50, 150, "feature1");

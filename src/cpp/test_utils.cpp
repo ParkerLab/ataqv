@@ -114,54 +114,32 @@ namespace Catch {
 
 TEST_CASE("Test Utils::split", "[utils/split]" ) {
     SECTION("Test split with space") {
-        std::pair<std::string, std::string> expected("just", "some space-separated words");
+        std::vector<std::string> expected = {"just", "some", "space-separated", "words"};
         auto actual = split("just some space-separated words");
         REQUIRE(expected == actual);
     }
 
     SECTION("Test split with tab") {
-        std::pair<std::string, std::string> expected("just", "some\ttab-separated\twords");
-        std::pair<std::string, std::string> actual = split("just\tsome\ttab-separated\twords", "\t");
+        std::vector<std::string> expected = {"just", "some", "tab-separated", "words"};
+        std::vector<std::string> actual = split("just\tsome\ttab-separated\twords", "\t");
         REQUIRE(expected == actual);
     }
 
     SECTION("Test split with no delimiters") {
-        std::pair<std::string, std::string> expected("just\tsome\ttab-separated\twords", "");
-        std::pair<std::string, std::string> actual = split("just\tsome\ttab-separated\twords", "");
-        REQUIRE(expected == actual);
-    }
-}
-
-
-TEST_CASE("Test Utils::tokenize", "[utils/tokenize]" ) {
-    SECTION("Test tokenize with numbers as delimiters: mixed") {
-        std::string subject("one2three4");
-        std::vector<std::string> expected = {"one", "2", "three", "4"};
-        auto actual = tokenize(subject, "0123456789");
+        std::vector<std::string> expected = {"just some words"};
+        std::vector<std::string> actual = split("just some words", "");
         REQUIRE(expected == actual);
     }
 
-    SECTION("Test tokenize with numbers as delimiters: all numbers") {
-        std::string subject("0123456789");
-        std::vector<std::string> expected = {subject};
-        auto actual = tokenize(subject, "0123456789");
+    SECTION("Test split with consecutive delimiters") {
+        std::vector<std::string> expected = {"just", "some", "tab-separated", "words"};
+        std::vector<std::string> actual = split("just\t\tsome\t\ttab-separated\t\t\t\twords", "\t");
         REQUIRE(expected == actual);
     }
 
-    SECTION("Test tokenize with numbers as delimiters: no numbers") {
-        std::string subject(
-            "It's when I'm weary of considerations,\n"
-            "And life is too much like a pathless wood\n"
-            "Where your face burns and tickles with the cobwebs\n"
-            "Broken across it, and one eye is weeping\n"
-            "From a twig's having lashed across it open.\n"
-            "I'd like to get away from earth awhile\n"
-            "And then come back to it and begin over.\n"
-        );
-
-        std::vector<std::string> expected = {subject};
-
-        auto actual = tokenize(subject, "0123456789");
+    SECTION("Test split, keeping delimiters") {
+        std::vector<std::string> expected = {"SRR", "891275", ".", "1234567890"};
+        std::vector<std::string> actual = split("SRR891275.1234567890", "0123456789", true);
         REQUIRE(expected == actual);
     }
 }
@@ -227,6 +205,8 @@ TEST_CASE("Test Utils::slice", "[utils/slice]" ) {
     REQUIRE("foo" == slice("foobar", 0, 3));
     REQUIRE("bar" == slice("foobar", 3));
     REQUIRE("ooba" == slice("foobar", 1, 5));
+    REQUIRE("oobar" == slice("foobar", 1, 100));
+    REQUIRE("" == slice("foobar", 100, 5));
 }
 
 

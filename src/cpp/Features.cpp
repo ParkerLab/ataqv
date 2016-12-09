@@ -22,6 +22,16 @@ Feature::Feature(const bam_hdr_t *header, const bam1_t *record) :
     name(get_qname(record)) {}
 
 
+bool operator== (const Feature& f1, const Feature& f2) {
+    return (
+        f1.reference == f2.reference &&
+        f1.start == f2.start &&
+        f1.end == f2.end &&
+        f1.name == f2.name
+    );
+}
+
+
 bool operator< (const Feature& f1, const Feature& f2) {
     return (
         sort_strings_numerically(f1.reference, f2.reference) ||

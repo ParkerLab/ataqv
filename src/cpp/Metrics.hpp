@@ -10,6 +10,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "json.hpp"
@@ -55,15 +56,16 @@ public:
 
     // For each organism, the autosomal chromosomes that we'll
     // consider when recording fragment lengths or overlap with peaks.
-    std::map<std::string, std::map<std::string, int>> autosomal_references = {};
+    std::unordered_map<std::string, std::unordered_map<std::string, int>> autosomal_references;
 
     std::string peak_filename = "auto";
 
+    bool verbose = false;
+    bool ignore_read_groups = false;
+    bool log_problematic_reads = false;
+
     std::vector<std::string> excluded_region_filenames = {};
     std::vector<Feature> excluded_regions = {};
-
-    bool log_problematic_reads = false;
-    bool verbose = false;
 
     MetricsCollector(const std::string& name = "",
                      const std::string& organism = "human",
@@ -75,10 +77,11 @@ public:
                      const std::string& mitochondrial_reference_name = "chrM",
                      const std::string& peak_filename = "",
                      bool verbose = false,
+                     bool ignore_read_groups = false,
                      bool log_problematic_reads = false,
                      const std::vector<std::string>& excluded_region_filenames = {});
 
-    std::string autosomal_reference_string() const;
+    std::string autosomal_reference_string(std::string separator = ", ") const;
     std::string configuration_string() const;
     bool is_autosomal(const std::string &reference_name);
     bool is_mitochondrial(const std::string& reference_name);
@@ -114,7 +117,7 @@ std::ostream& operator<<(std::ostream& os, const Library& library);
 
 class Metrics {
 private:
-    std::shared_ptr<MetricsCollector> collector;
+    MetricsCollector* collector;
     std::string problematic_read_filename = "";
     boost::shared_ptr<boost::iostreams::filtering_ostream> problematic_read_stream = nullptr;
 
@@ -189,7 +192,7 @@ public:
     bool log_problematic_reads = false;
     bool peaks_requested = false;
 
-    Metrics(std::shared_ptr<MetricsCollector> collector, const std::string& name = nullptr);
+    Metrics(MetricsCollector* collector, const std::string& name = nullptr);
 
     void add_alignment(const bam_hdr_t* header, const bam1_t* record);
     std::string configuration_string() const;

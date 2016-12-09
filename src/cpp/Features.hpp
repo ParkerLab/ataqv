@@ -18,7 +18,6 @@ public:
     unsigned long long int start = 0;
     unsigned long long int end = 0;
     std::string name = "";
-    friend bool operator< (const Feature &a, const Feature &b);
     unsigned long long int size() const;
 
     Feature();
@@ -28,7 +27,8 @@ public:
     bool overlaps(const Feature& other) const;
 };
 
-bool operator< (const Feature& f1, const Feature& f2);
+bool operator== (const Feature &f1, const Feature &f2);
+bool operator< (const Feature &f1, const Feature &f2);
 bool feature_overlap_comparator(const Feature& f1, const Feature& f2);
 
 std::ostream& operator<<(std::ostream& os, const Feature& feature);

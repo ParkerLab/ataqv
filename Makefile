@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.5.1
+VERSION = 0.6.0
 
 #
 # PATHS
@@ -25,11 +25,11 @@ SCRIPTS := $(wildcard $(SCRIPTS_DIR)/*)
 # are in use, but you can simply override PREFIX with a command like
 # 'make install PREFIX=...'
 MODULES_ROOT = /lab/sw/modules
-PREFIX = $(MODULES_ROOT)/ataqc/$(VERSION)
+PREFIX = $(MODULES_ROOT)/ataqv/$(VERSION)
 
 # where to install the modulefile
 MODULEFILES_ROOT = /lab/sw/modulefiles
-MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqc/$(VERSION)
+MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqv/$(VERSION)
 
 #
 # FLAGS
@@ -37,7 +37,7 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqc/$(VERSION)
 
 CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing $(INCLUDES)
 CXXFLAGS = -std=c++11 -pthread -O3 $(CPPFLAGS)
-CXXFLAGS_DEV = -std=c++11 -Weffc++ -pthread -O3 -g $(CPPFLAGS)
+CXXFLAGS_DEV = -std=c++11 -pthread -O3 -g $(CPPFLAGS)
 
 #
 # Try to locate dependencies using environment variables
@@ -123,9 +123,9 @@ endif
 # TARGETS
 #
 
-.PHONY: all checkdirs clean install install-ataqc install-module install-scripts install-web test
+.PHONY: all checkdirs clean install install-ataqv install-module install-scripts install-web test
 
-all: checkdirs $(BUILD_DIR)/ataqc
+all: checkdirs $(BUILD_DIR)/ataqv
 
 checkdirs: $(BUILD_DIR) $(TEST_DIR)
 
@@ -135,7 +135,7 @@ $(BUILD_DIR):
 $(TEST_DIR):
 	@mkdir -p $@
 
-$(BUILD_DIR)/ataqc: $(BUILD_DIR)/ataqc.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/HTS.o $(BUILD_DIR)/IO.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
+$(BUILD_DIR)/ataqv: $(BUILD_DIR)/ataqv.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/HTS.o $(BUILD_DIR)/IO.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP) $(CPP_DIR)/Version.hpp
@@ -150,12 +150,12 @@ $(CPP_DIR)/Version.hpp: Makefile
 	@echo >>$@
 	@echo '#define VERSION "$(VERSION)"' >>$@
 
-test: checkdirs $(TEST_DIR)/run_ataqc_tests
+test: checkdirs $(TEST_DIR)/run_ataqv_tests
 	@cp testdata/* $(TEST_DIR)
-	@cd $(TEST_DIR) && ./run_ataqc_tests -i
-	@cd $(TEST_DIR) && lcov --quiet --capture --derive-func-data --directory . --output-file ataqc.info && lcov --remove ataqc.info catch.hpp --remove ataqc.info json.hpp --output-file ataqc.info && genhtml ataqc.info -o ataqc
+	@cd $(TEST_DIR) && ./run_ataqv_tests -i
+	@cd $(TEST_DIR) && lcov --quiet --capture --derive-func-data --directory . --output-file ataqv.info && lcov --remove ataqv.info catch.hpp --remove ataqv.info json.hpp --output-file ataqv.info && genhtml ataqv.info -o ataqv
 
-$(TEST_DIR)/run_ataqc_tests: $(TEST_DIR)/run_ataqc_tests.o $(TEST_DIR)/test_features.o $(TEST_DIR)/test_hts.o $(TEST_DIR)/test_io.o $(TEST_DIR)/test_metrics.o $(TEST_DIR)/test_peaks.o $(TEST_DIR)/test_utils.o $(TEST_DIR)/Features.o $(TEST_DIR)/HTS.o $(TEST_DIR)/IO.o $(TEST_DIR)/Metrics.o $(TEST_DIR)/Peaks.o $(TEST_DIR)/Utils.o
+$(TEST_DIR)/run_ataqv_tests: $(TEST_DIR)/run_ataqv_tests.o $(TEST_DIR)/test_features.o $(TEST_DIR)/test_hts.o $(TEST_DIR)/test_io.o $(TEST_DIR)/test_metrics.o $(TEST_DIR)/test_peaks.o $(TEST_DIR)/test_utils.o $(TEST_DIR)/Features.o $(TEST_DIR)/HTS.o $(TEST_DIR)/IO.o $(TEST_DIR)/Metrics.o $(TEST_DIR)/Peaks.o $(TEST_DIR)/Utils.o
 	$(CXX) -o $@ $^ $(LDFLAGS) --coverage $(LDLIBS)
 
 $(TEST_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
@@ -164,13 +164,13 @@ $(TEST_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
 clean:
 	@rm -rf $(BUILD_DIR) $(TEST_DIR)
 
-install: checkdirs install-ataqc install-scripts install-web
+install: checkdirs install-ataqv install-scripts install-web
 
-install-ataqc: $(BUILD_DIR)/ataqc
+install-ataqv: $(BUILD_DIR)/ataqv
 	@echo "Installing to $(PREFIX)"
-	strip $(BUILD_DIR)/ataqc
+	strip $(BUILD_DIR)/ataqv
 	install -d -m 0755 $(PREFIX)/bin
-	install -m 0755 build/ataqc $(PREFIX)/bin
+	install -m 0755 build/ataqv $(PREFIX)/bin
 
 install-scripts: $(SCRIPTS)
 	for f in $^; do sed -e 's/{{VERSION}}/$(VERSION)/g' $$f > $(BUILD_DIR)/$$(basename $$f); done
@@ -189,16 +189,16 @@ ifdef MODULEFILE_PATH
 define MODULEFILE
 #%Module1.0
 set           version          $(VERSION)
-set           app              ataqc
+set           app              ataqv
 set           modroot          $(MODULES_ROOT)/$$app/$$version
-setenv        ATAQC_MODULE     $$modroot
+setenv        ATAQV_MODULE     $$modroot
 
 prepend-path  PATH             $$modroot/bin
 
-conflict      ataqc
+conflict      ataqv
 
 module-whatis "ATAC-seq QC toolkit, version $$version."
-module-whatis "URL:  https://github.com/ParkerLab/ataqc"
+module-whatis "URL:  https://github.com/ParkerLab/ataqv"
 module-whatis "Installation directory: $$modroot"
 endef
 export MODULEFILE

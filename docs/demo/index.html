@@ -5,352 +5,464 @@
         <title>ATAC-seq QC</title>
         <link rel="stylesheet" href="css/font-awesome.min.css">
         <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/ataqc.css">
-        <script src="js/dygraph-combined.js" defer></script>
-        <script src="js/list.min.js" defer></script>
-        <script src="js/ataqc.js" defer></script>
+        <link rel="stylesheet" href="css/datatables.min.css"/>
+        <link rel="stylesheet" href="css/datatables.fontawesome.css"/>
+
+        <link rel="stylesheet" href="css/ataqv.css">
+
+        <script src="js/d3.min.js"></script>
+        <script src="js/datatables.min.js"></script>
+        <script src="js/ataqv.js" defer></script>
         <script src="js/data.js" defer></script>
     </head>
     <body>
+        <div id="mask"></div>
+        <div id="status" class="active">
+            <div id="message">Loading experiments...</div>
+            <div id="spinner">
+                <div class="sk-fading-circle">
+                    <div class="sk-circle1 sk-circle"></div>
+                    <div class="sk-circle2 sk-circle"></div>
+                    <div class="sk-circle3 sk-circle"></div>
+                    <div class="sk-circle4 sk-circle"></div>
+                    <div class="sk-circle5 sk-circle"></div>
+                    <div class="sk-circle6 sk-circle"></div>
+                    <div class="sk-circle7 sk-circle"></div>
+                    <div class="sk-circle8 sk-circle"></div>
+                    <div class="sk-circle9 sk-circle"></div>
+                    <div class="sk-circle10 sk-circle"></div>
+                    <div class="sk-circle11 sk-circle"></div>
+                    <div class="sk-circle12 sk-circle"></div>
+                </div>
+            </div>
+        </div>
         <div id="banner">
-            <h1><a href="https://github.com/ParkerLab/ataqc/">ataqc</a></h1>
+            <h1><a href="https://github.com/ParkerLab/ataqv/">ataqv</a></h1>
             <ul id="tabs" class="tabs">
-                <li class="tab active" data-tab="experimentTabBody">
+                <li class="tab active" data-tab="plotTabBody">
                     <h1>
-                        <a class="tabLink" href="#experimentTabBody">Experiments
-                            <svg class="badge" viewBox="0 0 8 8" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <radialGradient id="RadialGradient">
-                                        <stop offset="0%" stop-color="#0cf"/>
-                                        <stop offset="100%" stop-color="#037"/>
-                                    </radialGradient>
-                                </defs>
-                                <circle cx="4" cy="4" r="4" fill="url(#RadialGradient)"/>
-                            </svg>
-                        </a>
+                        <a class="tabLink" id="plotTab" href="#plotTabBody">Plots</a>
                     </h1>
                 </li>
                 <li class="tab" data-tab="tableTabBody">
                     <h1>
-                        <a class="tabLink" id="table_tab" href="#tableTabBody">Tables
-                            <svg class="badge" viewBox="0 0 8 8" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="4" cy="4" r="4" fill="url(#RadialGradient)"/>
-                            </svg>
-                        </a>
+                        <a class="tabLink" id="table_tab" href="#tableTabBody">Tables</a>
                     </h1>
                 </li>
-                <li class="tab" data-tab="plotTabBody">
+                <li class="tab" data-tab="experimentTabBody">
                     <h1>
-                        <a class="tabLink" id="plotTab" href="#plotTabBody">Plots
-                            <svg class="badge" viewBox="0 0 8 8" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="4" cy="4" r="4" fill="url(#RadialGradient)"/>
-                            </svg>
-                        </a>
+                        <a class="tabLink" href="#experimentTabBody">Experiments</a>
                     </h1>
                 </li>
-                <li><h1><a id="help" href="#experimentTabBodyHelp" data-helpid="experimentTabBodyHelp">Help</a></h1></li>
+                <li><h1><a id="help" href="#plotTabBodyHelp" data-helpid="plotTabBodyHelp">Help</a></h1></li>
             </ul>
         </div>
         <div id="main">
-            <ul id="active_experiments">
-            </ul>
-            <div class="tabbodies">
-                <div id="experimentTabBody" class="tabbody active">
-                    <div id="experiments">
-                        <div class="controls">
-                            <button id="addAllExperiments"><span>Add</span></button>
-                            <button id="removeAllExperiments"><span>Remove</span></button>
-                            <div class="inputbox">
-                                <input class="search" placeholder="Search" />
-                                <button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button>
-                            </div>
-                        </div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>
-                                        <div class="sortable">
-                                            <button class="sort" data-sort="name">Name</button>
-                                        </div>
-                                    </th>
-                                    <th>
-                                        <div class="sortable">
-                                            <button class="sort" data-sort="organism">Organism</button>
-                                        </div>
-                                    </th>
-                                    <th>
-                                        <div class="sortable">
-                                            <button class="sort" data-sort="library_description">Library description</button>
-                                        </div>
-                                    </th>
-                                    <th>
-                                        Experiment description
-                                    </th>
-                                    <th>
-                                        ataqc metrics
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="list">
-                            </tbody>
-                        </table>
-                        <div class="footer">
-                            Experiments measured with ataqc, from the Parker lab at the University of Michigan
-                        </div>
-                    </div>
-                </div>
-                <div id="tableTabBody" class="tabbody">
-                    <div id="tables">
-                        <div class="tableContainer">
-                            <h2>Read Mapping Metrics</h2>
-                            <table id="summary" class="data">
-                                <thead>
-                                    <tr>
-                                        <th data-metric="name" class="name">
-                                            <button class="sort" data-sort="name">
-                                                Experiment
-                                            </button>
-                                        </th>
-                                        <th data-metric="total_reads" data-metrictype="integer" data-hovertext="The total number of reads from the experiment.">
-                                            <button class="sort" data-sort="total_reads"><span>Total reads</span></button>
-                                        </th>
-                                        <th data-metric="properly_paired_and_mapped_reads" data-percentage="total_reads" data-hovertext="Properly paired and mapped reads, as a percentage of all reads.">
-                                            <button class="sort" data-sort="properly_paired_and_mapped_reads"><span>Properly paired and mapped&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="secondary_reads" data-percentage="total_reads" data-hovertext="Alternate alignments of reads, of lower quality than their primary alignments.">
-                                            <button class="sort" data-sort="secondary_reads"><span>Secondary&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="supplementary_reads" data-percentage="total_reads" data-hovertext="Aligned segments of reads mapped in chimeric alignments.">
-                                            <button class="sort" data-sort="supplementary_reads" ><span>Supplementary&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="duplicate_reads" data-percentage="total_reads" data-hovertext="Duplicate alignments as a percentage of total reads.">
-                                            <button class="sort" data-sort="duplicate_reads"><span>Duplicate&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="mean_mapq" data-hovertext="The mean mapping quality of the experiment's reads.">
-                                            <button class="sort" data-sort="mean_mapq"><span>Mean mapping quality</span></button>
-                                        </th>
-                                        <th data-metric="median_mapq" data-metrictype="integer" data-hovertext="The median mapping quality of the experiment's reads.">
-                                            <button class="sort" data-sort="median_mapq"><span>Median mapping quality</span></button>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="list">
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="tableContainer">
-                            <h2>Quality Indicators</h2>
-                            <table id="indicators" class="data">
-                                <thead>
-                                    <tr>
-                                        <th data-metric="name" class="name">
-                                            <button class="sort" data-sort="name">
-                                                Experiment
-                                            </button>
-                                        </th>
-                                        <th data-metric="hqaa" data-percentage="total_reads"  data-hovertext="High quality autosomal alignments, as a percentage of all reads. We define these as the primary (not marked duplicate, supplementary, or secondary) alignments of reads properly paired and mapped to autosomes with mapping quality of at least 30. If this metric seems low, look for mitochondrial contamination in the reference metrics below.">
-                                            <button class="sort" data-sort="hqaa"><span>High quality autosomal alignments&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="short_mononucleosomal_ratio" data-hovertext="The ratio of fragments 50-100bp long to fragments 150-200bp long. This can indicate under- or over-transposition -- which should also be apparent on the fragment length distribution plot.">
-                                            <button class="sort" data-sort="short_mononucleosomal_ratio"><span>Short-to-mononucleosomal ratio</span></button>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="list">
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="tableContainer">
-                            <h2>Unmapped Read Metrics</h2>
-                            <table id="basic_problems" class="data">
-                                <thead>
-                                    <tr>
-                                        <th data-metric="name" class="name">
-                                            <button class="sort" data-sort="name"><span>Experiment</span></button>
-                                        </th>
-                                        <th data-metric="unmapped_reads" data-percentage="total_reads" data-hovertext="Unmapped reads, as a percentage of all reads.">
-                                            <button class="sort" data-sort="unmapped_reads"><span>Unmapped&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="unmapped_mate_reads" data-percentage="total_reads" data-hovertext="Unmapped mate reads, as a percentage of all reads.">
-                                            <button class="sort" data-sort="unmapped_mate_reads"><span>Unmapped mate&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="qcfailed_reads" data-percentage="total_reads" data-hovertext="Reads failing quality controls, as a percentage of all reads.">
-                                            <button class="sort" data-sort="qcfailed_reads"><span>QC&nbsp;fail&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="unpaired_reads" data-percentage="total_reads" data-hovertext="Unpaired reads, as a percentage of all reads.">
-                                            <button class="sort" data-sort="unpaired_reads"><span>Unpaired&nbsp;(%)</span></button>
-                                        </th>
-                                        <th data-metric="reads_mapped_with_zero_quality" data-percentage="total_reads" data-hovertext="Alignments with mapping quality of zero, as a percentage of all reads.">
-                                            <button class="sort" data-sort="reads_mapped_with_zero_quality"><span>Zero mapping quality&nbsp;(%)</span></button>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="list">
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="tableContainer">
-                            <h2>Aberrant Mapping Metrics</h2>
-                            <table id="other_problems" class="data">
-                                <thead>
-                                    <tr>
-                                        <th data-metric="name" class="name" rowspan="2">
-                                            <button class="sort" data-sort="name"><span>Experiment</span></button>
-                                        </th>
-                                        <th colspan="7">Of all reads, the percentage that paired and mapped but:</th>
-                                    </tr>
-
-                                    <tr>
-                                        <th data-metric="rf_reads" data-percentage="total_reads" data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand.">
-                                            <button class="sort" data-sort="rf_reads"><span>RF</span></button>
-                                        </th>
-                                        <th data-metric="ff_reads" data-percentage="total_reads" data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand.">
-                                            <button class="sort" data-sort="ff_reads"><span>FF</span></button>
-                                        </th>
-                                        <th data-metric="rr_reads" data-percentage="total_reads" data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand.">
-                                            <button class="sort" data-sort="rr_reads"><span>RR</span></button>
-                                        </th>
-                                        <th data-metric="reads_with_mate_mapped_to_different_reference" data-percentage="total_reads" data-hovertext="Each read of the pair mapped to a different reference (chromosome).">
-                                            <button class="sort" data-sort="reads_with_mate_mapped_to_different_reference"><span>on different chromosomes</span></button>
-                                        </th>
-                                        <th data-metric="reads_with_mate_too_distant" data-percentage="total_reads" data-hovertext="The reads of the pair aligned to locations that are too far apart to be plausible, given the fragment lengths in the dataset.">
-                                            <button class="sort" data-sort="reads_with_mate_too_distant"><span>too far from mate</span></button>
-                                        </th>
-                                        <th data-metric="reads_mapped_and_paired_but_improperly" data-percentage="total_reads" data-hovertext="We don't know why these are not marked properly paired and mapped. Sorry. You can have ataqc log problematic reads, so you can try to diagnose them. Let us know what you find.">
-                                            <button class="sort" data-sort="reads_mapped_and_paired_but_improperly"><span>just not properly</span></button>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="list">
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="tableContainer">
-                            <h2>Reference Mapping Metrics</h2>
-                            <table id="reference" class="data">
-                                <thead>
-                                    <tr>
-                                        <th rowspan="2" data-metric="name" class="name">
-                                            <button class="sort" data-sort="name">Experiment</button>
-                                        </th>
-                                        <th colspan="2">Autosomal</th>
-                                        <th colspan="2">Mitochondrial</th>
-                                    </tr>
-
-                                    <tr>
-                                        <th data-metric="total_autosomal_reads" data-percentage="total_reads" class="rj" data-hovertext="The number of reads aligned to autosomes, as a percentage of all reads.">
-                                            <button class="sort" data-sort="total_autosomal_reads"><span>% of all reads</span></button>
-                                        </th>
-                                        <th data-metric="duplicate_autosomal_reads" data-percentage="total_autosomal_reads" data-hovertext="The percentage of reads mapped to autosomes that were duplicates.">
-                                            <button class="sort" data-sort="duplicate_autosomal_reads"><span>Duplicates (% of autosomal alignments)</span></button>
-                                        </th>
-                                        <th data-metric="total_mitochondrial_reads" data-percentage="total_reads" class="rj" data-hovertext="The number of reads aligned to the mitochondrial reference, as a percentage of all reads.">
-                                            <button class="sort" data-sort="total_mitochondrial_reads"><span>% of all reads</span></button>
-                                        </th>
-                                        <th data-metric="duplicate_mitochondrial_reads" data-percentage="total_mitochondrial_reads" data-hovertext="The percentage of reads mapped to the mitochondrial reference that were duplicates.">
-                                            <button class="sort" data-sort="duplicate_mitochondrial_reads"><span>Duplicates&nbsp;(% of mitochondrial alignments)</span></button>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="list">
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="tableContainer">
-                            <h2>Peak Metrics</h2>
-                            <table id="peaks" class="data">
-                                <thead>
-                                    <tr>
-                                        <th data-metric="name" class="name">
-                                            <button class="sort" data-sort="name">Experiment</button>
-                                        </th>
-                                        <th data-metric="total_peaks" data-metrictype="integer" data-hovertext="The total number of peaks called.">
-                                            <button class="sort" data-sort="total_peaks">Total peaks</button>
-                                        </th>
-                                        <th data-metric="hqaa_overlapping_peaks_percent" data-hovertext="The percentage of high quality autosomal alignments that overlapped called peaks.">
-                                            <button class="sort" data-sort="hqaa_overlapping_peaks_percent">High quality autosomal alignments overlapping peaks&nbsp;(%)</button>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="list">
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="footer">
-                            Metrics produced with ataqc, from the Parker lab at the University of Michigan
-                        </div>
-                    </div>
-                </div>
-                <div id="plotTabBody" class="tabbody">
+            <div id="tabbodies">
+                <div id="plotTabBody" class="tabbody active">
                     <div id="plots">
-                        <div class="plotContainer" id="fragmentLength">
-                            <h2>Fragment length distribution</h2>
-                            <div class="plotbox">
-                                <div class="plot"></div>
-                                <div class="legend"></div>
+                        <div class="plotContainer" id="fragmentLengthDistancePlot">
+                            <div class="plotHeader">
+                                <h2>Distance from reference fragment length distribution</h2>
+                            </div>
+                            <div class="plotMain">
+                                <div class="plotbox">
+                                    <div class="plot"></div>
+                                    <div class="detail"></div>
+                                </div>
+                                <div class="control">
+                                    <div class="controls">
+                                        <label>y axis:
+                                            <select class="yaxis-select plot-configuration" data-plot="plotFragmentLengthDistance">
+                                                <option value="hqaa" selected>High-quality autosomal (%)</option>
+                                                <option value="properly_paired_and_mapped_reads">Properly paired and mapped (%)</option>
+                                                <option value="short_mononucleosomal_ratio">Short-to-mononucleosomal ratio</option>
+                                                <option value="duplicate_autosomal_reads">Autosomal duplicates (%)</option>
+                                            </select>
+                                        </label>
+                                        <button class="reset">Reset zoom</button>
+                                        <button class="showall">Show all</button>
+                                        <button class="hideall">Hide all</button>
+                                    </div>
+                                    <div class="legend"></div>
+                                </div>
                             </div>
                         </div>
-                        <div class="plotContainer" id="mapq">
-                            <h2>Mapping quality distribution</h2>
-                            <div class="plotbox">
-                                <div class="plot"></div>
-                                <div class="legend"></div>
+                        <div class="plotContainer" id="fragmentLengthPlot">
+                            <div class="plotHeader">
+                                <h2>Fragment length distribution</h2>
+                            </div>
+                            <div class="plotMain">
+                                <div class="plotbox">
+                                    <div class="plot"></div>
+                                    <div class="detail"></div>
+                                </div>
+                                <div class="control">
+                                    <div class="controls">
+                                        <label>Smoothing:
+                                            <select class="resolution plot-configuration" data-plot="plotFragmentLength">
+                                                <option>1</option>
+                                                <option selected>10</option>
+                                                <option>20</option>
+                                                <option>50</option>
+                                            </select> bp
+                                        </label>
+                                        <label>Y axis scale:
+                                            <select class="yScale plot-configuration" data-plot="plotFragmentLength">
+                                                <option value="1" selected>Linear</option>
+                                                <option value="0.5">Exponential</option>
+                                            </select>
+                                        </label>
+                                        <button class="reset">Reset zoom</button>
+                                        <button class="showall">Show all</button>
+                                        <button class="hideall">Hide all</button>
+                                    </div>
+                                    <div class="legend"></div>
+                                </div>
                             </div>
                         </div>
-                        <div class="plotContainer" id="peakReadCounts">
-                            <h2>Cumulative fraction of high quality autosomal alignments</h2>
-                            <div class="plotbox">
-                                <div class="plot"></div>
-                                <div class="legend"></div>
+                        <div class="plotContainer" id="peakReadCountsPlot">
+                            <div class="plotHeader">
+                                <h2>Cumulative fraction of HQAA overlapping peaks</h2>
+                            </div>
+                            <div class="plotMain">
+                                <div class="plotbox">
+                                    <div class="plot"></div>
+                                    <div class="detail"></div>
+                                </div>
+                                <div class="control">
+                                    <div class="controls">
+                                        <button class="reset">Reset zoom</button>
+                                        <button class="showall">Show all</button>
+                                        <button class="hideall">Hide all</button>
+                                    </div>
+                                    <div class="legend"></div>
+                                </div>
                             </div>
                         </div>
-                        <div class="plotContainer" id="peakTerritory">
-                            <h2>Cumulative fraction of peak territory</h2>
-                            <div class="plotbox">
-                                <div class="plot"></div>
-                                <div class="legend"></div>
+                        <div class="plotContainer" id="peakTerritoryPlot">
+                            <div class="plotHeader">
+                                <h2>Cumulative fraction of peak territory</h2>
+                            </div>
+                            <div class="plotMain">
+                                <div class="plotbox">
+                                    <div class="plot"></div>
+                                    <div class="detail"></div>
+                                </div>
+                                <div class="control">
+                                    <div class="controls">
+                                        <button class="reset">Reset zoom</button>
+                                        <button class="showall">Show all</button>
+                                        <button class="hideall">Hide all</button>
+                                    </div>
+                                    <div class="legend"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="plotContainer" id="mapqPlot">
+                            <div class="plotHeader">
+                                <h2>Mapping quality distribution</h2>
+                            </div>
+                            <div class="plotMain">
+                                <div class="plotbox">
+                                    <div class="plot"></div>
+                                    <div class="detail"></div>
+                                </div>
+                                <div class="control">
+                                    <div class="controls">
+                                        <button class="reset">Reset zoom</button>
+                                        <button class="showall">Show all</button>
+                                        <button class="hideall">Hide all</button>
+                                    </div>
+                                    <div class="legend"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="footer">
-                        Plots made with ataqc, from the Parker lab at the University of Michigan
+                        Plots made with ataqv, from the Parker lab at the University of Michigan
                     </div>
                 </div>
             </div>
-            <div class="help" id="experimentTabBodyHelp">
-                <h2><div>Using the Experiments tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
-                <p>Click the experiment name in the first column to add it to the list of active experiments shown in the Tables and Plots tabs.</p>
-                <p>If a URL was specified when running ataqc, the "Experiment description" column will contain links to more information on the experiments.</p>
-                <p>The original ataqc metrics files used to produce this viewer can be downloaded via the links in the last column. They're plain JSON files that you can use to produce your own plots with R or Pandas, or analyze further with your own programs.</p>
-                <p>You can search the experiment list by entering text in the Search box. Clear the search with the <i class="fa fa-times-circle"></i> icon.</p>
-                <p>Click the <button>Add</button> button to add all displayed experiments to the active experiment list, so you can compare them in the Tables and Plots tabs. If you've entered text in the Search box, only the matching experiments will be addedl.</p>
-                <p>If there are any active experiments, the <button>Remove</button> button will remove the entire set, or if you've entered text in the Search box, just the ones that match.</p>
+            <div id="tableTabBody" class="tabbody">
+                <div id="tables">
+                    <div class="tableContainer">
+                        <h2>Quality Indicators</h2>
+                        <table id="indicators" class="data" width="100%">
+                            <thead>
+                                <tr>
+                                    <th data-metric="name" class="name" data-order="0:asc">
+                                        <span>Name</span>
+                                    </th>
+                                    <th data-metric="library.sample" class="name" data-order="1:asc">
+                                        <span>Sample</span>
+                                    </th>
+                                    <th data-metric="library.library" class="name" data-order="2:asc">
+                                        <span>Library</span>
+                                    </th>
+                                    <th data-metric="percentages.hqaa__total_reads" >
+                                        <span data-hovertext="High quality autosomal alignments, as a percentage of all reads. We define these as the primary (not marked duplicate, supplementary, or secondary) alignments of reads properly paired and mapped to autosomes with mapping quality of at least 30. If this metric seems low, look for mitochondrial contamination in the reference metrics below.">High quality autosomal alignments&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="short_mononucleosomal_ratio">
+                                        <span data-hovertext="The ratio of fragments 50-100bp long to fragments 150-200bp long. This can indicate under- or over-transposition -- which should also be apparent on the fragment length distribution plot.">Short-to-mononucleosomal ratio</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tableContainer">
+                        <h2>Read Mapping Metrics</h2>
+                        <table id="summary" class="data" width="100%">
+                            <thead>
+                                <tr>
+                                    <th data-metric="name" class="name" data-order="0:asc">
+                                        <span>Name</span>
+                                    </th>
+                                    <th data-metric="library.sample" class="name" data-order="1:asc">
+                                        <span>Sample</span>
+                                    </th>
+                                    <th data-metric="library.library" class="name" data-order="2:asc">
+                                        <span>Library</span>
+                                    </th>
+                                    <th data-metric="total_reads" data-metrictype="integer">
+                                        <span data-hovertext="The total number of reads from the experiment.">Total reads</span>
+                                    </th>
+                                    <th data-metric="percentages.properly_paired_and_mapped_reads__total_reads">
+                                        <span data-hovertext="Properly paired and mapped reads, as a percentage of all reads.">Properly paired and mapped&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="percentages.secondary_reads__total_reads">
+                                        <span data-hovertext="Alternate alignments of reads, of lower quality than their primary alignments.">Secondary&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="percentages.supplementary_reads__total_reads">
+                                        <span data-hovertext="Aligned segments of reads mapped in chimeric alignments.">Supplementary&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="percentages.duplicate_reads__total_reads">
+                                        <span data-hovertext="Duplicate alignments as a percentage of total reads.">Duplicate&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="mean_mapq">
+                                        <span data-hovertext="The mean mapping quality of the experiment's reads.">Mean mapping quality</span>
+                                    </th>
+                                    <th data-metric="median_mapq" data-metrictype="integer">
+                                        <span data-hovertext="The median mapping quality of the experiment's reads.">Median mapping quality</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tableContainer">
+                        <h2>Unmapped Read Metrics</h2>
+                        <table id="basic_problems" class="data" width="100%">
+                            <thead>
+                                <tr>
+                                    <th data-metric="name" class="name" data-order="0:asc">
+                                        <span>Name</span>
+                                    </th>
+                                    <th data-metric="library.sample" class="name" data-order="1:asc">
+                                        <span>Sample</span>
+                                    </th>
+                                    <th data-metric="library.library" class="name" data-order="2:asc">
+                                        <span>Library</span>
+                                    </th>
+                                    <th data-metric="percentages.unmapped_reads__total_reads">
+                                        <span data-hovertext="Unmapped reads, as a percentage of all reads.">Unmapped&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="percentages.unmapped_mate_reads__total_reads">
+                                        <span data-hovertext="Unmapped mate reads, as a percentage of all reads.">Unmapped mate&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="percentages.qcfailed_reads__total_reads">
+                                        <span data-hovertext="Reads failing quality controls, as a percentage of all reads.">QC&nbsp;fail&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="percentages.unpaired_reads__total_reads">
+                                        <span data-hovertext="Unpaired reads, as a percentage of all reads.">Unpaired&nbsp;(%)</span>
+                                    </th>
+                                    <th data-metric="percentages.reads_mapped_with_zero_quality__total_reads">
+                                        <span data-hovertext="Alignments with mapping quality of zero, as a percentage of all reads.">Zero mapping quality&nbsp;(%)</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tableContainer">
+                        <h2>Aberrant Mapping Metrics</h2>
+                        <table id="other_problems" class="data" width="100%">
+                            <thead>
+                                <tr>
+                                    <th data-metric="name" class="name" rowspan="2" data-order="0:asc">
+                                        <span>Name</span>
+                                    </th>
+                                    <th data-metric="library.sample" class="name" rowspan="2" data-order="1:asc">
+                                        <span>Sample</span>
+                                    </th>
+                                    <th data-metric="library.library" class="name" rowspan="2" data-order="2:asc">
+                                        <span>Library</span>
+                                    </th>
+                                    <th colspan="7">Of all reads, the percentage that paired and mapped but:</th>
+                                </tr>
+
+                                <tr>
+                                    <th data-metric="percentages.rf_reads__total_reads">
+                                        <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand.">RF</span>
+                                    </th>
+                                    <th data-metric="percentages.ff_reads__total_reads">
+                                        <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand.">FF</span>
+                                    </th>
+                                    <th data-metric="percentages.rr_reads__total_reads">
+                                        <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand.">RR</span>
+                                    </th>
+                                    <th data-metric="percentages.reads_with_mate_mapped_to_different_reference__total_reads">
+                                        <span data-hovertext="Each read of the pair mapped to a different reference (chromosome).">on different chromosomes</span>
+                                    </th>
+                                    <th data-metric="percentages.reads_with_mate_too_distant__total_reads">
+                                        <span data-hovertext="The reads of the pair aligned to locations that are too far apart to be plausible, given the fragment lengths in the dataset.">too far from mate</span>
+                                    </th>
+                                    <th data-metric="percentages.reads_mapped_and_paired_but_improperly__total_reads">
+                                        <span data-hovertext="We don't know why these are not marked properly paired and mapped. Sorry. You can have ataqv log problematic reads, so you can try to diagnose them. Let us know what you find.">just not properly</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tableContainer">
+                        <h2>Reference Mapping Metrics</h2>
+                        <table id="reference" class="data" width="100%">
+                            <thead>
+                                <tr>
+                                    <th data-metric="name" class="name" rowspan="2" data-order="0:asc">
+                                        <span>Name</span>
+                                    </th>
+                                    <th data-metric="library.sample" class="name" rowspan="2" data-order="1:asc">
+                                        <span>Sample</span>
+                                    </th>
+                                    <th data-metric="library.library" class="name" rowspan="2" data-order="2:asc">
+                                        <span>Library</span>
+                                    </th>
+                                    <th colspan="2">Autosomal</th>
+                                    <th colspan="2">Mitochondrial</th>
+                                </tr>
+
+                                <tr>
+                                    <th data-metric="percentages.total_autosomal_reads__total_reads">
+                                        <span data-hovertext="The number of reads aligned to autosomes, as a percentage of all reads.">% of all reads</span>
+                                    </th>
+                                    <th data-metric="percentages.duplicate_autosomal_reads__total_autosomal_reads">
+                                        <span data-hovertext="The percentage of reads aligned to autosomes that were duplicates.">Duplicates (% of autosomal alignments)</span>
+                                    </th>
+                                    <th data-metric="percentages.total_mitochondrial_reads__total_reads">
+                                        <span data-hovertext="The number of reads aligned to the mitochondrial reference, as a percentage of all reads.">% of all reads</span>
+                                    </th>
+                                    <th data-metric="percentages.duplicate_mitochondrial_reads__total_mitochondrial_reads">
+                                        <span data-hovertext="The percentage of reads mapped to the mitochondrial reference that were duplicates.">Duplicates&nbsp;(% of mitochondrial alignments)</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tableContainer">
+                        <h2>Peak Metrics</h2>
+                        <table id="peaks" class="data" width="100%">
+                            <thead>
+                                <tr>
+                                    <th data-metric="name" class="name" data-order="0:asc">
+                                        <span>Name</span>
+                                    </th>
+                                    <th data-metric="library.sample" class="name" data-order="0:asc">
+                                        <span>Sample</span>
+                                    </th>
+                                    <th data-metric="library.library" class="name" data-order="1:asc">
+                                        <span>Library</span>
+                                    </th>
+                                    <th data-metric="total_peaks" data-metrictype="integer">
+                                        <span data-hovertext="The total number of peaks called.">Total peaks</span>
+                                    </th>
+                                    <th data-metric="hqaa_overlapping_peaks_percent">
+                                        <span data-hovertext="The percentage of high quality autosomal alignments that overlapped called peaks.">High quality autosomal alignments overlapping peaks&nbsp;(%)</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="footer">
+                        Metrics produced with ataqv, from the Parker lab at the University of Michigan
+                    </div>
+                </div>
+            </div>
+            <div id="experimentTabBody" class="tabbody">
+                <div id="experiments">
+                    <table id="experimentsTable" width="100%">
+                        <thead>
+                            <tr>
+                                <th class="name">
+                                    Name
+                                </th>
+                                <th class="name">
+                                    Sample
+                                </th>
+                                <th class="name">
+                                    Library
+                                </th>
+                                <th>
+                                    Library description
+                                </th>
+                                <th>
+                                    Experiment description
+                                </th>
+                                <th>
+                                    ataqv metrics
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <div class="footer">
+                        Experiments measured with ataqv, from the Parker lab at the University of Michigan
+                    </div>
+                </div>
+            </div>
+            <div class="help" id="plotTabBodyHelp">
+                <h2><div>Using the Plots tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                <p>Each plot has specific help, but generally you can:</p>
+                <ul>
+                    <li>Double click or use the mouse wheel or trackpad scrolling to zoom.</li>
+                    <li>Drag to pan.</li>
+                    <li>Hover over plot dots or lines to highlight them and see experiment details.</li>
+                    <li>Hover over legend items to highlight samples in the plot.</li>
+                    <li>Click legend items to toggle sample visibility in the plot.</li>
+                </ul>
             </div>
             <div class="help" id="tableTabBodyHelp">
                 <h2><div>Using the Tables tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
                 <p>Hover over table headings to see descriptions of the metrics.</p>
+                <p>Filter the table by entering text in the Search box. Clear that box to restore the full table.</p>
                 <p>Most table headings can be clicked to sort the table.</p>
-                <p>Hovering over any table row will highlight it in all
-                    the tables. This works best, of course, if you're not
-                    comparing too many experiments to fit on the screen.</p>
-                <p>The maximum value in any column is highlighted in gold text.</p>
             </div>
-            <div class="help" id="plotTabBodyHelp">
-                <h2><div>Using the Plots tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
-                <p>Hover over plot lines or their legend entries to highlight them.</p>
-                <p>When hovering over a plot, its legend is sorted by the Y values at that X position.</p>
-                <p>Click and drag within a plot to zoom in on a region.</p>
-                <p>Double-click the plot at any time to reset it.</p>
+            <div class="help" id="experimentTabBodyHelp">
+                <h2><div>Using the Experiments tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                <p>If a URL was specified when running ataqv, the "Experiment description" column will contain links to more information on the experiments.</p>
+                <p>The original ataqv metrics files used to produce this viewer can be downloaded via the links in the last column. They're plain JSON files that you can use to produce your own plots with R or Pandas, or analyze further with your own programs.</p>
+                <p>You can search the experiment list by entering text in the Search box.</p>
             </div>
         </div>
         <script>
             function initialize() {
-                ataqc.initialize('experiments');
+                ataqv.initialize();
             };
 
             function ready(fn) {

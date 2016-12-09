@@ -71,61 +71,29 @@ std::string percentage_string(const long double& numerator, const long double& d
 }
 
 
-std::pair<std::string, std::string> split(const std::string& str, const std::string& delimiters) {
-    size_t split_position = str.find_first_of(delimiters);
-    if (split_position == std::string::npos) {
-        return std::pair<std::string, std::string>(str, "");
-    } else {
-        return std::pair<std::string, std::string>(str.substr(0, split_position), str.substr(split_position + 1));
-    }
-}
+std::vector<std::string> split(const std::string& str, const std::string& delimiters, bool keep_delimiters) {
+    std::vector<std::string> result;
+    result.reserve(10);
 
-
-std::vector<std::string> tokenize(const std::string& s, const std::string& delimiters) {
-    std::vector<std::string> tokens;
-
-    if (!s.empty()) {
-        if (delimiters.empty() || s.find_first_of(delimiters) == std::string::npos) {
-            tokens.push_back(s);
-        } else {
-            const char& front = s[0];
-            size_t front_in_delimiters = delimiters.find(&front);
-            bool in_delimiter = (front_in_delimiters != std::string::npos);
-
-            std::string token;
-            auto last = --s.cend();
-            for (auto it = s.cbegin(); it != s.cend(); ++it) {
-                char c = *it;
-                if (delimiters.find(c) == std::string::npos) {
-                    if (!in_delimiter) {
-                        token.push_back(c);
-                    } else {
-                        if (!token.empty()) {
-                            tokens.push_back(token);
-                        }
-                        token = c;
-                    }
-                    in_delimiter = false;
-                } else {
-                    if (in_delimiter) {
-                        token.push_back(c);
-                    } else {
-                        if (!token.empty()) {
-                            tokens.push_back(token);
-                        }
-                        token = c;
-                    }
-                    in_delimiter = true;
-                }
-
-                if (!token.empty() && it == last) {
-                    tokens.push_back(token);
-                }
+    size_t start = 0;
+    while (true) {
+        size_t split_position = str.find_first_of(delimiters, start);
+        std::string token = slice(str, start, split_position);
+        if (!token.empty()) {
+            result.push_back(token);
+        }
+        if (split_position == std::string::npos) {
+            break;
+        }
+        start = str.find_first_not_of(delimiters, split_position);
+        if (keep_delimiters) {
+            token = slice(str, split_position, start);
+            if (!token.empty()) {
+                result.push_back(token);
             }
         }
     }
-
-    return tokens;
+    return result;
 }
 
 
@@ -156,33 +124,30 @@ bool sort_strings_numerically(const std::string& s1, const std::string& s2) {
 
     std::string digits = "0123456789";
 
-    if (s1.find_first_of(digits) != std::string::npos &&
-        s2.find_first_of(digits) != std::string::npos) {
+    std::vector<std::string> tokens1 = split(s1, digits, true);
+    std::vector<std::string> tokens2 = split(s2, digits, true);
 
-        std::vector<std::string> tokens1 = tokenize(s1, digits);
-        std::vector<std::string> tokens2 = tokenize(s2, digits);
+    for (int i = 0, l1 = tokens1.size(), l2 = tokens2.size(); i < l1; i++) {
+        if (i >= l2) {
+            return false;
+        }
 
-        for (int i = 0, l1 = tokens1.size(), l2 = tokens2.size(); i < l1; i++) {
-            if (i >= l2) {
-                return false;
+        std::string t1 = tokens1[i];
+        std::string t2 = tokens2[i];
+
+        if (is_only_digits(t1) && is_only_digits(t2)) {
+            unsigned long long int d1 = std::stol(t1);
+            unsigned long long int d2 = std::stol(t2);
+            if (d1 != d2) {
+                return d1 < d2;
             }
-
-            std::string t1 = tokens1[i];
-            std::string t2 = tokens2[i];
-
-            if (is_only_digits(t1) && is_only_digits(t2)) {
-                unsigned long long int d1 = std::stol(t1);
-                unsigned long long int d2 = std::stol(t2);
-                if (d1 != d2) {
-                    return d1 < d2;
-                }
-            } else {
-                if (t1 != t2) {
-                    return t1 < t2;
-                }
+        } else {
+            if (t1 != t2) {
+                return t1 < t2;
             }
         }
     }
+
     return s1 < s2;
 }
 
@@ -196,7 +161,9 @@ const std::string iso8601_timestamp(std::time_t* t) {
 
 
 std::string slice(const std::string& s, size_t start, size_t end) {
-    return s.substr(start, (end - start));
+    size_t cut = start <= s.size() ? start : s.size();
+    size_t count = (end < s.size() ? end : std::string::npos) - cut;
+    return s.substr(cut, count);
 }
 
 
@@ -205,8 +172,7 @@ std::string wrap(const std::string& s, size_t length, size_t indent) {
 
     std::stringstream wrapped;
 
-    std::vector<std::string> words = tokenize(s, whitespace);
-
+    std::vector<std::string> words = split(s, whitespace);
     size_t line_length = length - indent;
     size_t count = 0;
     for (size_t i = 0; i < indent; i++) {

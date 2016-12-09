@@ -1,0 +1,950 @@
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: normal;
+    font-weight: 400;
+    src: local("Source Sans Pro"), url("../fonts/sourcesanspro-regular.woff");
+}
+
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: normal;
+    font-weight: 600;
+    src: local("Source Sans Pro SemiBold"), url("../fonts/sourcesanspro-semibold.woff");
+}
+
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: italic;
+    font-weight: 400;
+    src: local("Source Sans Pro"), url("../fonts/sourcesanspro-regularit.woff");
+}
+
+@font-face {
+    font-family: "Source Sans Pro";
+    font-style: italic;
+    font-weight: 600;
+    src: local("Source Sans Pro SemiBold Italic"), url("../fonts/sourcesanspro-semiboldit.woff");
+}
+
+/* general rules */
+
+*,
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+html {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: calc(1em + 0.1vw);
+    color: #393930;
+}
+
+body {
+    background: #444;
+    color: #fff;
+    position: relative;
+}
+
+button {
+    font-size: 0.9em;
+    outline: none;
+    border-radius: 4px;
+    border: 1px solid #06c;
+    background: #06c;
+    color: #fff;
+    text-transform: uppercase;
+    padding: 0.25em 0.5em;
+    box-shadow: 1px 2px 4px 0px rgba(0, 0, 0, 0.25);
+}
+
+button:active {
+    background: #05a;
+    border-color: #05a;
+    box-shadow: none;
+}
+
+button:focus {
+    outline: none;
+}
+
+button:hover {
+
+}
+
+a {
+    color: #fff;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin: 0.5em 1em 1em 1em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0 0 0.25em 0;
+    padding: 0;
+    line-height: 1;
+    font-weight: normal;
+}
+
+button:focus {
+    outline: none;
+}
+
+ul {
+    position: relative;
+}
+
+li {
+    padding: 0 0.5em;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+.visible {
+    visibility: visible;
+}
+
+.footer {
+    padding: 1em;
+    text-align: right;
+    width: 100%;
+}
+
+/** Help popups */
+
+.help {
+    position: fixed;
+    z-index: 9999;
+    opacity: 1;
+    left: -9999em;
+    top: -9999em;
+    width: 50vw;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #fff;
+    color: #444;
+    box-shadow: 0 0 20px 4px rgba(0, 0, 0, 0.5);
+}
+
+.help h2 {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    display: flex;
+    background: #f90;
+    padding: 1em;
+    color: #fff;
+}
+
+.help h2 .cleaner {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #fff;
+}
+
+.help h2 > div {
+    flex: 1;
+}
+
+.help p {
+    margin: 1em;
+}
+
+.visibleHelp {
+    left: 25vw;
+    top: 10vw;
+}
+
+/** end help */
+
+/** loading spinner from SpinKit: https://github.com/tobiasahlin/SpinKit */
+
+.sk-fading-circle {
+    width: 1em;
+    height: 1em;
+    position: relative;
+}
+
+.sk-fading-circle .sk-circle {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.sk-fading-circle .sk-circle:before {
+    content: '';
+    display: block;
+    margin: 0 auto;
+    width: 12%;
+    height: 10%;
+    background-color: #f90;
+    border-radius: 100%;
+    -webkit-animation: sk-circleFadeDelay 1.2s infinite ease-in-out both;
+    animation: sk-circleFadeDelay 1.2s infinite ease-in-out both;
+}
+
+.sk-fading-circle .sk-circle2 {
+    -webkit-transform: rotate(30deg);
+    -ms-transform: rotate(30deg);
+    transform: rotate(30deg);
+}
+
+.sk-fading-circle .sk-circle3 {
+    -webkit-transform: rotate(60deg);
+    -ms-transform: rotate(60deg);
+    transform: rotate(60deg);
+}
+
+.sk-fading-circle .sk-circle4 {
+    -webkit-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    transform: rotate(90deg);
+}
+
+.sk-fading-circle .sk-circle5 {
+    -webkit-transform: rotate(120deg);
+    -ms-transform: rotate(120deg);
+    transform: rotate(120deg);
+}
+
+.sk-fading-circle .sk-circle6 {
+    -webkit-transform: rotate(150deg);
+    -ms-transform: rotate(150deg);
+    transform: rotate(150deg);
+}
+
+.sk-fading-circle .sk-circle7 {
+    -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+.sk-fading-circle .sk-circle8 {
+    -webkit-transform: rotate(210deg);
+    -ms-transform: rotate(210deg);
+    transform: rotate(210deg);
+}
+
+.sk-fading-circle .sk-circle9 {
+    -webkit-transform: rotate(240deg);
+    -ms-transform: rotate(240deg);
+    transform: rotate(240deg);
+}
+
+.sk-fading-circle .sk-circle10 {
+    -webkit-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+    transform: rotate(270deg);
+}
+
+.sk-fading-circle .sk-circle11 {
+    -webkit-transform: rotate(300deg);
+    -ms-transform: rotate(300deg);
+    transform: rotate(300deg);
+}
+
+.sk-fading-circle .sk-circle12 {
+    -webkit-transform: rotate(330deg);
+    -ms-transform: rotate(330deg);
+    transform: rotate(330deg);
+}
+
+.sk-fading-circle .sk-circle2:before {
+    -webkit-animation-delay: -1.1s;
+    animation-delay: -1.1s;
+}
+
+.sk-fading-circle .sk-circle3:before {
+    -webkit-animation-delay: -1s;
+    animation-delay: -1s;
+}
+
+.sk-fading-circle .sk-circle4:before {
+    -webkit-animation-delay: -0.9s;
+    animation-delay: -0.9s;
+}
+
+.sk-fading-circle .sk-circle5:before {
+    -webkit-animation-delay: -0.8s;
+    animation-delay: -0.8s;
+}
+
+.sk-fading-circle .sk-circle6:before {
+    -webkit-animation-delay: -0.7s;
+    animation-delay: -0.7s;
+}
+
+.sk-fading-circle .sk-circle7:before {
+    -webkit-animation-delay: -0.6s;
+    animation-delay: -0.6s;
+}
+
+.sk-fading-circle .sk-circle8:before {
+    -webkit-animation-delay: -0.5s;
+    animation-delay: -0.5s;
+}
+
+.sk-fading-circle .sk-circle9:before {
+    -webkit-animation-delay: -0.4s;
+    animation-delay: -0.4s;
+}
+
+.sk-fading-circle .sk-circle10:before {
+    -webkit-animation-delay: -0.3s;
+    animation-delay: -0.3s;
+}
+
+.sk-fading-circle .sk-circle11:before {
+    -webkit-animation-delay: -0.2s;
+    animation-delay: -0.2s;
+}
+
+.sk-fading-circle .sk-circle12:before {
+    -webkit-animation-delay: -0.1s;
+    animation-delay: -0.1s;
+}
+
+@-webkit-keyframes sk-circleFadeDelay {
+    0%, 39%, 100% { opacity: 0; }
+    40% { opacity: 1; }
+}
+
+@keyframes sk-circleFadeDelay {
+    0%, 39%, 100% { opacity: 0; }
+    40% { opacity: 1; }
+}
+
+/* end SpinKit */
+
+
+/* tables */
+
+table {
+    border-collapse: collapse;
+    margin-bottom: 2em;
+    width: 100%;
+}
+
+tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+table.dataTable {
+    border-collapse: collapse;
+}
+
+table.dataTable tbody tr {
+    background: #444;
+    color: #ccc;
+    border-bottom: 1px solid #333 !important;
+}
+
+th {
+    position: relative;
+    background: #f0f0f3;
+    padding: 0.25em 20px 0.25em 0.25em;
+    font-weight: normal !important;
+    text-align: left;
+    vertical-align: bottom;
+    border: none;
+    border-right: 1px solid #ccc;
+    white-space: nowrap;
+    background-clip: padding-box;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+table.dataTable thead {
+    background: #1a1a1a !important;
+    border: 1px solid #000;
+}
+
+table.dataTable thead th {
+    position: relative;
+    background: #222;
+    color: #ccc;
+    padding: 0.25em 1.5em 0.25em 0.25em;
+    font-weight: normal !important;
+    text-align: right;
+    vertical-align: bottom;
+    border: none;
+    border-right: 1px solid #000;
+    white-space: nowrap;
+    background-clip: padding-box;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+table.data th {
+    text-align: right;
+}
+
+table.dataTable th.name {
+    text-align: left;
+}
+
+th:last-child {
+    border-right: none;
+}
+
+td {
+    padding: 0.25em 20px 0.25em 0.25em;
+    text-align: left;
+    vertical-align: top;
+}
+
+table.data td.name {
+    text-align: left;
+}
+
+table.data td + td {
+    text-align: right;
+}
+
+.dataTables_wrapper {
+    background: #333;
+    color: #ccc;
+    border-radius: 0.25em;
+    padding: 1em;
+    margin-bottom: 1em;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_processing,
+.dataTables_wrapper .dataTables_paginate {
+    color: #999;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: #999 !important;
+}
+
+table.dataTable.dtr-inline.collapsed>tbody>tr>td:first-child:before,
+table.dataTable.dtr-inline.collapsed>tbody>tr>th:first-child:before {
+    background-color: #000;
+    border: 2px solid #999;
+    line-height: 1em;
+}
+
+table.dataTable.dtr-inline.collapsed>tbody>tr.parent>td:first-child:before,
+table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th:first-child:before {
+    content: '-';
+    background-color: #555;
+}
+
+table.dataTable thead th.sorting::after,
+table.dataTable thead th.sorting_asc::after,
+table.dataTable thead th.sorting_desc::after {
+    top: 4px;
+}
+
+.tableContainer {
+    margin-bottom: 2em;
+}
+
+/* end tables */
+
+/* tabs */
+
+.tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    margin-bottom: 0;
+    padding: 0 0 0 1em;
+}
+
+.tabs h1 {
+    font-size: 1.5em;
+    font-weight: 400;
+    margin-bottom: 0;
+    text-transform: uppercase;
+}
+
+.tabs li {
+    flex: 0 1 auto;
+    margin: 0;
+    padding: 0 2em 0 0;
+}
+
+.tabs a {
+    position: relative;
+    display: block;
+    padding: 0 0 0.2em 0;
+    text-decoration: none;
+    outline: none;
+    color: #ccc;
+    border-bottom: 10px solid rgba(0, 0, 0, 0);
+    text-shadow: none;
+    -webkit-transition: 200ms linear 0s;
+    -moz-transition: 200ms linear 0s;
+    -o-transition: 200ms linear 0s;
+    transition: 200ms linear 0s;
+}
+
+.tabs .active a {
+    color: #fff;
+    border-bottom: 10px solid #444;
+}
+
+.tabs li:hover {
+    color: #039;
+    transition: all 100ms;
+}
+
+#tabbodies {
+    position: absolute;
+    top: -999999em;
+}
+
+.tabbody {
+    position: absolute;
+    top: -99999em;
+    left: -99999em;
+    width: 100%;
+    display: block;
+    opacity: 0;
+    flex-direction: row;
+    padding: 1em;
+    height: 100%;
+}
+
+.tabbody.active {
+    position: relative;
+    top: 0;
+    left: 0;
+    display: block;
+    opacity: 1;
+    transition: opacity 200ms;
+}
+
+/** end tabs */
+
+*[data-hovertext]:hover {
+    position: relative;
+}
+
+*[data-hovertext]:hover::after {
+    position: absolute;
+    left: 0;
+    top: 150%;
+    min-width: 20em;
+    max-width: 100%;
+    min-height: 2em;
+    max-height: 20em;
+    display: block;
+    content: attr(data-hovertext);
+    text-align: left;
+    font-size: 0.9em;
+    font-weight: normal;
+    font-style: italic;
+    white-space: normal;
+    padding: 0.5em;
+    color: #444;
+    z-index: 20;
+    border-radius: 5px;
+    box-shadow: 0 0 20px 4px rgba(0, 0, 0, 0.5);
+    background: #fff;
+}
+
+th:last-child *[data-hovertext]:hover::after,
+td:last-child *[data-hovertext]:hover::after,
+*[data-hovertext].hoverLeft:hover::after {
+    left: auto;
+    right: 0;
+}
+
+#banner {
+    padding: 1.5em 0.5em 0 0.5em;
+    background: #000;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+}
+
+#banner > * {
+    flex: 1;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+#banner > h1 {
+    font-size: 1.5em;
+    text-align: right;
+    padding: 0 0 0.2em 0;
+    margin: 0;
+}
+
+#banner ul {
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#banner a {
+    color: #fff;
+    text-decoration: none;
+}
+
+#mask {
+    position: fixed;
+    z-index: 999;
+    left: -99999em;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: transparent;
+}
+
+#mask.active {
+    left: 0;
+}
+
+#status {
+    position: absolute;
+    top: 0;
+    z-index: 99999;
+    left: -99999em;
+    height: 100%;
+    width: 100%;
+    padding: 10%;
+    text-align: center;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: nowrap;
+    font-size: 1.5em;
+    background: linear-gradient(to bottom, transparent, transparent 2.75em, #444 2.75em);
+}
+
+#status.active {
+    left: 0;
+}
+
+#spinner {
+    flex: 1
+    position: relative;
+    text-align: right;
+}
+
+#spinner > div {
+    padding-right: 2em;
+}
+
+#main {
+    padding: 2em;
+    margin: auto;
+}
+
+#tables {
+    display: block;
+}
+
+#tables th[colspan]:not([colspan="1"]) {
+    background: transparent;
+    text-align: center;
+}
+
+#experimentsTable th {
+    text-align: left;
+}
+
+/* Plots */
+
+#plots {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.plotContainer {
+    min-width: 800px;
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+    position: relative;
+    margin: 0 2em 2em 0;
+}
+
+.plotMain {
+    position: relative;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.plotbox {
+    flex: 1 1 60%;
+    background: #222;
+    border-top-left-radius: 0.25em;
+    border-top-right-radius: 0.25em;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    padding: 1em 0;
+}
+
+.plot {
+    position: relative;
+    flex: 0 1 50%;
+    height: 45vh;
+}
+
+.detail {
+    position: relative;
+    flex: 0 1 50%;
+    font-size: 0.75em;
+    color: #f0f0f0;
+    padding: 1em;
+}
+
+.detail table thead {
+    border-bottom: 1px solid #555;
+}
+
+.detail tbody tr {
+    border-bottom: 1px solid #333;
+}
+
+.detail th {
+    background: transparent;
+    border-right: none;
+    font-weight: bold;
+    vertical-align: top;
+}
+
+.detail td {
+    vertical-align: top;
+    white-space: wrap;
+    word-break: break-all;
+}
+
+.axis {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 0.75rem;
+    fill: #f0f0f0;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #444;
+    shape-rendering: crispEdges;
+}
+
+.origin line{
+	stroke: #777;
+}
+
+.axis text {
+    fill: #eee;
+}
+
+.plotItem {
+    opacity: 0.5;
+}
+
+.unhighlight {
+    opacity: 0.25;
+}
+
+.highlight {
+    visibility: visible;
+    opacity: 1;
+}
+
+.dot.highlight {
+    fill: rgba(255, 255, 0, 1) !important;
+}
+
+.line.highlight {
+    stroke: rgba(255, 255, 0, 1) !important;
+    stroke-width: 3;
+}
+
+.control {
+    flex: 1 1 40%;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    background: #333;
+    padding: 1em;
+    border-radius: 0.25em;
+}
+
+.control > * {
+    flex: 1;
+}
+
+.controls {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.controls > * {
+    flex: 0 0 auto;
+    margin: 0 0 0.25em 0;
+}
+
+.controls label {
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.legend {
+    color: #fff;
+    margin: 0 1em 0 2em;
+    position: relative;
+    font-size: 0.75rem;
+    height: 100p%;
+    overflow: auto;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.legend > ul {
+    list-style: none;
+    margin: 0 2em;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.legend li {
+    position: r2elative;
+    flex: 0 1 50%;
+    display: flex;
+    cursor: pointer;
+}
+
+.legend li.targetHidden {
+    font-weight: 600;
+    opacity: 0.4;
+    visibility: visible;
+    font-style: italic;
+}
+
+.legendItemColor {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-right: 0.5em;
+    background-color: #999;
+}
+
+/* end plots */
+
+@media screen and (min-width: 1024px) {
+    .legend li {
+        flex-basis: 33%;
+    }
+}
+
+
+@media screen and (min-width: 1800px) {
+    .plotContainer {
+        flex: 0 1 45%;
+    }
+
+    .legend li {
+        flex-basis: 50%;
+    }
+}
+
+@media print {
+    @page {
+        size: letter landscape;
+    }
+
+    * {
+        widows: 3;
+        orphans: 3;
+    }
+
+    html, body {
+        color: #000;
+        font-size: 0.75em;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+    }
+
+    .cleaner {
+        display: none;
+    }
+
+    #banner {
+        display: none;
+    }
+
+    .footer {
+        position: fixed;
+        bottom: 0;
+    }
+
+    #tabs, #status, .controls {
+        display: none;
+    }
+
+    .tabbody {
+        padding: 1em 0;
+    }
+
+    tr {
+        page-break-inside: avoid;
+    }
+
+    .tableContainer h2 + table {
+        page-break-before: avoid;
+        break-before: avoid;
+    }
+
+    .tableContainer {
+        page-break-inside: avoid;
+    }
+
+    .plotContainer + .plotContainer {
+        page-break-before: always;
+    }
+
+    .plot {
+        width: 90%;
+        height: 30%;
+    }
+
+    .legend {
+        font-size: 1em;
+    }
+
+    .legend li {
+        opacity: 1;
+    }
+}

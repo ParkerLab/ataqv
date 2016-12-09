@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <unordered_map>
 
 #include <boost/chrono.hpp>
 
@@ -29,6 +30,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
                                    const std::string& mitochondrial_reference_name,
                                    const std::string& peak_filename,
                                    bool verbose,
+                                   bool ignore_read_groups,
                                    bool log_problematic_reads,
                                    const std::vector<std::string>& excluded_region_filenames) :
     metrics({}),
@@ -41,9 +43,10 @@ MetricsCollector::MetricsCollector(const std::string& name,
     autosomal_reference_filename(autosomal_reference_filename),
     mitochondrial_reference_name(mitochondrial_reference_name),
     peak_filename(peak_filename),
-    excluded_region_filenames(excluded_region_filenames),
+    verbose(verbose),
+    ignore_read_groups(ignore_read_groups),
     log_problematic_reads(log_problematic_reads),
-    verbose(verbose)
+    excluded_region_filenames(excluded_region_filenames)
 {
 
     std::map<std::string, int> default_references = {
@@ -71,7 +74,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
 
 std::string MetricsCollector::configuration_string() const {
     std::stringstream cs;
-    cs << "ataqc " << version_string() << std::endl << std::endl
+    cs << "ataqv " << version_string() << std::endl << std::endl
 
        << "Experiment information" << std::endl
        << "======================" << std::endl
@@ -88,7 +91,7 @@ std::string MetricsCollector::configuration_string() const {
 }
 
 
-std::string MetricsCollector::autosomal_reference_string() const {
+std::string MetricsCollector::autosomal_reference_string(std::string separator) const {
     if (autosomal_references.count(organism) == 0) {
         return "";
     }
@@ -105,7 +108,7 @@ std::string MetricsCollector::autosomal_reference_string() const {
     for (auto i = ars.begin(); i != ars.end(); i++) {
         ss << *i;
         if (i != last) {
-            ss << ", ";
+            ss << separator;
         }
     }
     return ss.str();
@@ -141,17 +144,14 @@ void MetricsCollector::load_autosomal_references() {
         }
 
         if (verbose) {
-            std::cout << "Autosomal references for " << organism << ": " << std::endl;
-            for (const auto it : autosomal_references[organism]) {
-                std::cout << "\t" << it.first << std::endl;
-            }
+            std::cout << "Autosomal references for " << organism << ":\n\t" << autosomal_reference_string("\n\t") << std::endl;
         }
     }
 }
 
 
 bool MetricsCollector::is_autosomal(const std::string& reference_name) {
-    static std::map<std::string, bool> refcache;
+    static std::unordered_map<std::string, bool> refcache;
 
     if (refcache.count(reference_name) == 0) {
         refcache[reference_name] = autosomal_references[organism].find(reference_name) != autosomal_references[organism].end();
@@ -174,7 +174,6 @@ void MetricsCollector::load_alignments() {
     samFile *alignment_file = nullptr;
     bam_hdr_t *alignment_file_header = nullptr;
     bam1_t *record = bam_init1();
-    unsigned long long int total_reads = 0;
 
     if (alignment_filename.empty()) {
         throw FileException("Alignment file has not been specified.");
@@ -193,82 +192,86 @@ void MetricsCollector::load_alignments() {
         throw FileException("Could not read a valid header from alignment file \"" + alignment_filename +  "\".");
     }
 
-    std::string metrics_id;
+    std::string default_metrics_id = name.empty() ? basename(alignment_filename) : name;
 
-    std::shared_ptr<MetricsCollector> collector(this);
-    sam_header header = parse_sam_header(alignment_file_header->text);
-    if (header.count("RG") > 0) {
-        for (auto read_group : header["RG"]) {
-            metrics_id = read_group["ID"];
-            metrics[metrics_id] = new Metrics(collector, metrics_id);
+    try {
+        sam_header header = parse_sam_header(alignment_file_header->text);
+        if (!ignore_read_groups && header.count("RG") > 0) {
+            for (auto read_group : header["RG"]) {
+                std::string read_group_id = read_group["ID"];
+                metrics[read_group_id] = new Metrics(this, read_group_id);
+
+                Library library;
+                library.library = read_group["LB"];
+                library.sample = read_group["SM"];
+                library.description = library_description.empty() ? read_group["DS"] : library_description;
+                library.center = read_group["CN"];
+                library.date = read_group["DT"];
+                library.platform = read_group["PL"];
+                library.platform_model = read_group["PM"];
+                library.platform_unit = read_group["PU"];
+                library.flow_order = read_group["FO"];
+                library.key_sequence = read_group["KS"];
+                library.programs = read_group["PG"];
+                library.predicted_median_insert_size = read_group["PI"];
+
+                metrics[read_group_id]->library = library;
+            }
+        } else {
+            metrics[default_metrics_id] = new Metrics(this, default_metrics_id);
 
             Library library;
-            library.library = read_group["LB"];
-            library.sample = read_group["SM"];
-            library.description = library_description.empty() ? read_group["DS"] : library_description;
-            library.center = read_group["CN"];
-            library.date = read_group["DT"];
-            library.platform = read_group["PL"];
-            library.platform_model = read_group["PM"];
-            library.platform_unit = read_group["PU"];
-            library.flow_order = read_group["FO"];
-            library.key_sequence = read_group["KS"];
-            library.programs = read_group["PG"];
-            library.predicted_median_insert_size = read_group["PI"];
-
-            metrics[metrics_id]->library = library;
+            library.library = default_metrics_id;
+            library.sample = default_metrics_id;
+            library.description = library_description;
+            metrics[default_metrics_id]->library = library;
         }
-    } else {
-        if (peak_filename == "auto") {
-            peak_filename = "";
+        boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
+        boost::chrono::duration<double> duration;
+        double rate = 0.0;
+
+        unsigned long long int total_reads = 0;
+
+        while (sam_read1(alignment_file, alignment_file_header, record) >= 0) {
+            uint8_t* aux = bam_aux_get(record, "RG");
+            if (!ignore_read_groups && aux) {
+                metrics[bam_aux2Z(aux)]->add_alignment(alignment_file_header, record);
+            } else {
+                metrics[default_metrics_id]->add_alignment(alignment_file_header, record);
+            }
+
+            total_reads++;
+
+            if (verbose && total_reads % 100000 == 0) {
+                duration = boost::chrono::high_resolution_clock::now() - start;
+                rate = (total_reads / duration.count());
+                std::cout << "Analyzed " << total_reads << " reads in " << duration << " (" << rate << " reads/second)." << std::endl;
+            }
+        }
+        bam_destroy1(record);
+        bam_hdr_destroy(alignment_file_header);
+        hts_close(alignment_file);
+
+        for (auto& m : metrics) {
+            m.second->make_aggregate_diagnoses();
+            m.second->determine_top_peaks();
         }
 
-        metrics_id = name.empty() ? basename(alignment_filename) : name;
-        metrics[metrics_id] = new Metrics(collector, metrics_id);
-
-        Library library;
-        library.description = library_description;
-        metrics[metrics_id]->library = library;
-    }
-
-    boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
-    boost::chrono::duration<double> duration;
-    double rate = 0.0;
-
-    while (sam_read1(alignment_file, alignment_file_header, record) >= 0) {
-        uint8_t* aux = bam_aux_get(record, "RG");
-        if (aux) {
-            metrics_id = std::string(bam_aux2Z(aux));
-            metrics[metrics_id]->add_alignment(alignment_file_header, record);
-        } else {
-            metrics[metrics_id]->add_alignment(alignment_file_header, record);
-        }
-        total_reads++;
-
-        if (verbose && total_reads % 100000 == 0) {
+        if (verbose) {
             duration = boost::chrono::high_resolution_clock::now() - start;
             rate = (total_reads / duration.count());
-            std::cout << "Analyzed " << total_reads << " reads in " << duration << " (" << rate << " reads/second)." << std::endl;
+            std::cout << "Analyzed " << total_reads << " reads in " << duration << " (" << rate << " reads/second)." << std::endl << std::endl;
         }
-    }
-    bam_destroy1(record);
-    bam_hdr_destroy(alignment_file_header);
-    hts_close(alignment_file);
-
-    for (auto& m : metrics) {
-        m.second->make_aggregate_diagnoses();
-        m.second->determine_top_peaks();
-    }
-
-    if (verbose) {
-        duration = boost::chrono::high_resolution_clock::now() - start;
-        rate = (total_reads / duration.count());
-        std::cout << "Analyzed " << total_reads << " reads in " << duration << " (" << rate << " reads/second)." << std::endl << std::endl;
+    } catch (FileException& e) {
+        bam_destroy1(record);
+        bam_hdr_destroy(alignment_file_header);
+        hts_close(alignment_file);
+        throw;
     }
 }
 
 
-Metrics::Metrics(std::shared_ptr<MetricsCollector> collector, const std::string& name): collector(collector), name(name), peaks(), log_problematic_reads(collector->log_problematic_reads) {
+Metrics::Metrics(MetricsCollector* collector, const std::string& name): collector(collector), name(name), peaks(), log_problematic_reads(collector->log_problematic_reads) {
 
     if (log_problematic_reads) {
         try {
@@ -280,8 +283,7 @@ Metrics::Metrics(std::shared_ptr<MetricsCollector> collector, const std::string&
 
             problematic_read_stream = mostream(problematic_read_filename);
         } catch (FileException& e) {
-            std::cerr << "Could not open problematic read file: " <<  e.what() << std::endl << std::flush;
-            exit(1);
+            throw FileException("Could not open problematic read file " + problematic_read_filename + ": " + e.what());
         }
     }
 
@@ -305,10 +307,10 @@ void Metrics::log_problematic_read(const std::string& problem, const std::string
     *problematic_read_stream << problem;
 
     if (!record.empty()) {
-        *problematic_read_stream << "\t" << record;
+        *problematic_read_stream << '\t' << record;
     }
 
-    *problematic_read_stream << std::endl << std::flush;
+    *problematic_read_stream << '\n';
 }
 
 
@@ -629,6 +631,27 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
                     total_autosomal_reads++;
                     if (IS_DUP(record)) {
                         duplicate_autosomal_reads++;
+                    } else {
+                        // nonduplicate, properly paired and uniquely mapped
+                        // autosomal reads will be the basis of our fragment
+                        // size and peak statistics
+                        if (is_hqaa(header, record)) {
+                            hqaa++;
+
+                            hqaa_fragment_length_counts[fragment_length]++;
+
+                            if (50 <= fragment_length && fragment_length <= 100) {
+                                hqaa_short_count++;
+                            }
+
+                            if (150 <= fragment_length && fragment_length <= 200) {
+                                hqaa_mononucleosomal_count++;
+                            }
+
+                            if (!peaks.empty()) {
+                                peaks.increment_overlapping_hqaa(Feature(header, record));
+                            }
+                        }
                     }
                 } else if (is_mitochondrial(reference_name)) {
                     total_mitochondrial_reads++;
@@ -638,46 +661,23 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
                 }
             }
 
-            if (IS_ORIGINAL(record)) {
-                // record proper pairs' fragment lengths
-                fragment_length_counts[fragment_length]++;
+            // record proper pairs' fragment lengths
+            fragment_length_counts[fragment_length]++;
 
-                // Keep track of the longest fragment seen in a proper
-                // pair (ignoring secondary and supplementary
-                // alignments). BWA has an idea of the maximum reasonable
-                // fragment size a proper pair can have, but rather than
-                // choose one aligner-specific heuristic, we'll just go
-                // with the observed result, and hopefully work with other
-                // aligners too.
-                //
-                // When we've added all the reads, we'll use this to
-                // identify those that mapped too far from their
-                // mates.
-                //
-                if (maximum_proper_pair_fragment_size < fragment_length) {
-                    maximum_proper_pair_fragment_size = fragment_length;
-                }
-
-                // nonduplicate, properly paired and uniquely mapped
-                // autosomal reads will be the basis of our fragment
-                // size and peak statistics
-                if (is_hqaa(header, record)) {
-                    hqaa++;
-
-                    hqaa_fragment_length_counts[fragment_length]++;
-
-                    if (50 <= fragment_length && fragment_length <= 100) {
-                        hqaa_short_count++;
-                    }
-
-                    if (150 <= fragment_length && fragment_length <= 200) {
-                        hqaa_mononucleosomal_count++;
-                    }
-
-                    if (!peaks.empty()) {
-                        peaks.increment_overlapping_hqaa(Feature(header, record));
-                    }
-                }
+            // Keep track of the longest fragment seen in a proper
+            // pair (ignoring secondary and supplementary
+            // alignments). BWA has an idea of the maximum reasonable
+            // fragment size a proper pair can have, but rather than
+            // choose one aligner-specific heuristic, we'll just go
+            // with the observed result, and hopefully work with other
+            // aligners too.
+            //
+            // When we've added all the reads, we'll use this to
+            // identify those that mapped too far from their
+            // mates.
+            //
+            if (maximum_proper_pair_fragment_size < fragment_length) {
+                maximum_proper_pair_fragment_size = fragment_length;
             }
         } else if (record->core.tid != record->core.mtid) {
             // Compare the record's reference ID to its mate's
@@ -730,7 +730,13 @@ void Metrics::load_peaks() {
         std::cout << "Loading peaks for read group " << name << " from " << peak_filename << "." << std::endl << std::flush;
     }
 
-    boost::shared_ptr<boost::iostreams::filtering_istream> peak_istream = mistream(peak_filename);
+    boost::shared_ptr<boost::iostreams::filtering_istream> peak_istream;
+    try {
+        peak_istream = mistream(peak_filename);
+    } catch (FileException& e) {
+        throw FileException("Could not open the supplied peak file \"" + peak_filename + "\": " + e.what());
+    }
+
     boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
     boost::chrono::duration<double> duration;
     Peak peak;
@@ -928,7 +934,7 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
     if (!(m.unclassified_reads == 0 && (total_problems + m.properly_paired_and_mapped_reads == m.total_reads))) {
         os << "  Some reads slipped through our taxonomy: " << mysteries << percentage_string(mysteries, m.total_reads) << std::endl
            << "  We'd like to know what we're missing. If it would be possible for you\nto share your data with us, please file an issue at: " << std::endl << std::endl
-           << "      https://github.com/ParkerLab/ataqc/issues" << std::endl;
+           << "      https://github.com/ParkerLab/ataqv/issues" << std::endl;
     }
 
     os << std::endl << std::endl;
@@ -958,9 +964,9 @@ json Library::to_json() {
 json Metrics::to_json() {
     std::vector<std::string> fragment_length_counts_fields = {"fragment_length", "read_count", "fraction_of_all_reads"};
     json fragment_length_counts_json;
-    int max_fragment_length = std::max(1000, fragment_length_counts.empty() ? 0 : fragment_length_counts.rbegin()->first);
+    int max_fragment_length = std::min(1000, std::max(1000, fragment_length_counts.empty() ? 0 : fragment_length_counts.rbegin()->first));
 
-    for (int fragment_length = 0; fragment_length < max_fragment_length; fragment_length++) {
+    for (int fragment_length = 0; fragment_length <= max_fragment_length; fragment_length++) {
         int count = fragment_length_counts[fragment_length];
         json flc;
         flc.push_back(fragment_length);
@@ -974,7 +980,7 @@ json Metrics::to_json() {
     std::vector<std::string> hqaa_fragment_length_counts_fields = {"fragment_length", "read_count", "fraction_of_hqaa"};
     json hqaa_fragment_length_counts_json;
     max_fragment_length = std::max(1000, hqaa_fragment_length_counts.empty() ? 0 : hqaa_fragment_length_counts.rbegin()->first);
-    for (int fragment_length = 0; fragment_length < max_fragment_length; fragment_length++) {
+    for (int fragment_length = 0; fragment_length <= max_fragment_length; fragment_length++) {
         int count = hqaa_fragment_length_counts[fragment_length];
         json flc;
         flc.push_back(fragment_length);
@@ -1054,7 +1060,7 @@ json Metrics::to_json() {
     long double short_mononucleosomal_ratio = fraction(hqaa_short_count, hqaa_mononucleosomal_count);
 
     json result = {
-        {"ataqc_version", version_string()},
+        {"ataqv_version", version_string()},
         {"timestamp", iso8601_timestamp()},
         {"metrics",
          {
@@ -1099,6 +1105,7 @@ json Metrics::to_json() {
              {"short_mononucleosomal_ratio", short_mononucleosomal_ratio},
              {"fragment_length_counts_fields", fragment_length_counts_fields},
              {"fragment_length_counts", fragment_length_counts_json},
+             {"fragment_length_distance", nullptr},
              {"hqaa_fragment_length_counts_fields", hqaa_fragment_length_counts_fields},
              {"hqaa_fragment_length_counts", hqaa_fragment_length_counts_json},
              {"mapq_counts_fields", mapq_counts_fields},

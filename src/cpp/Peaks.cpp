@@ -13,6 +13,17 @@
 #include "Peaks.hpp"
 
 
+bool operator== (const Peak& p1, const Peak& p2) {
+    return (
+        p1.reference == p2.reference &&
+        p1.start == p2.start &&
+        p1.end == p2.end &&
+        p1.name == p2.name &&
+        p1.overlapping_hqaa == p2.overlapping_hqaa
+    );
+}
+
+
 bool operator< (const Peak& p1, const Peak& p2) {
     return sort_strings_numerically(p1.reference, p2.reference) ||
         (p1.reference == p2.reference &&
@@ -28,11 +39,6 @@ bool operator< (const Peak& p1, const Peak& p2) {
           )
          )
         );
-}
-
-
-bool operator== (const Peak& p1, const Peak& p2) {
-    return (p1.reference == p2.reference) && (p1.start == p2.start) && (p1.end == p2.end) && (p1.name == p2.name) && (p1.overlapping_hqaa == p2.overlapping_hqaa);
 }
 
 

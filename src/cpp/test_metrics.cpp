@@ -6,7 +6,7 @@
 
 
 TEST_CASE("MetricsCollector basics", "[metrics/collector]") {
-    MetricsCollector collector("Test collector", "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", "test_alignments.bam");
+    MetricsCollector collector("Test collector", "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", "test.bam");
 
     SECTION("MetricsCollector::is_autosomal") {
         REQUIRE(collector.is_autosomal("chr1"));
@@ -22,7 +22,7 @@ TEST_CASE("MetricsCollector basics", "[metrics/collector]") {
     }
 
     SECTION("MetricsCollector::configuration_string") {
-        std::string expected = "ataqc " + version_string() + "\n\n" +
+        std::string expected = "ataqv " + version_string() + "\n\n" +
             "Experiment information\n" +
             "======================\n" +
             "Organism: human\n" +
@@ -59,7 +59,7 @@ TEST_CASE("MetricsCollector::test_supplied_references", "[metrics/test_supplied_
         *out << "I\nII\nIII\n";
     }
 
-    MetricsCollector collector("Test collector", "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", "test_alignments.bam", autosomal_reference_file, "M", "");
+    MetricsCollector collector("Test collector", "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", "test.bam", autosomal_reference_file, "M", "");
 
     std::remove(autosomal_reference_file.c_str());
 
@@ -78,15 +78,15 @@ TEST_CASE("MetricsCollector::test_supplied_references", "[metrics/test_supplied_
     }
 
     SECTION("Bad autosomal reference file") {
-        REQUIRE_THROWS(MetricsCollector badcollector("Test collector", "human", "a collector with a bad autosomal reference file", "a library of brutal tests?", "https://theparkerlab.org", "test_alignments.bam", "bad_autosomal_reference_file.txt"));
+        REQUIRE_THROWS(MetricsCollector badcollector("Test collector", "human", "a collector with a bad autosomal reference file", "a library of brutal tests?", "https://theparkerlab.org", "test.bam", "bad_autosomal_reference_file.txt"));
     }
 }
 
 
 TEST_CASE("Metrics::load_alignments with no excluded regions", "[metrics/load_alignments_with_no_excluded_regions]") {
     std::string name("Test collector");
-    std::string alignment_file_name("test.bam");
-    std::string peak_file_name("test.peaks.gz");
+    std::string alignment_file_name("SRR891275.bam");
+    std::string peak_file_name("SRR891275.peaks.gz");
 
     MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, true);
 
@@ -94,7 +94,7 @@ TEST_CASE("Metrics::load_alignments with no excluded regions", "[metrics/load_al
 
     Metrics* metrics = collector.metrics.cbegin()->second;
 
-    REQUIRE(metrics->peaks.size() == 15910);
+    REQUIRE(metrics->peaks.size() == 16499);
 }
 
 
@@ -103,13 +103,13 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
     std::string alignment_file_name("test.bam");
     std::string peak_file_name("test.peaks.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, true, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, true, false, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
 
     collector.load_alignments();
 
     std::cout << collector << std::endl;
 
-    REQUIRE(collector.metrics.size() == 1);
+    REQUIRE(collector.metrics.size() == 2);
 
     Metrics* metrics = collector.metrics.cbegin()->second;
     REQUIRE(metrics->total_reads == 520);
@@ -120,7 +120,7 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
     REQUIRE(metrics->hqaa == 200);
     REQUIRE(metrics->hqaa_short_count == 41);
     REQUIRE(metrics->hqaa_mononucleosomal_count == 32);
-    REQUIRE((metrics->hqaa_short_count / (double)metrics->hqaa_mononucleosomal_count) == 1.28125);
+    REQUIRE((metrics->hqaa_short_count / (double)metrics->hqaa_mononucleosomal_count) == Approx(1.28125));
 
     REQUIRE(metrics->paired_reads == 520);
     REQUIRE(metrics->paired_and_mapped_reads == 424);
@@ -149,7 +149,7 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
     REQUIRE(metrics->duplicate_autosomal_reads == 18);
     REQUIRE(metrics->duplicate_mitochondrial_reads == 93);
 
-    REQUIRE(metrics->peaks.size() == 15803);
+    REQUIRE(metrics->peaks.size() == 37276);
 
     json j = collector.to_json();
     unsigned long long int total_reads = j[0]["metrics"]["total_reads"];
@@ -169,4 +169,65 @@ TEST_CASE("Metrics::load_alignments errors", "[metrics/load_alignments_errors]")
         MetricsCollector collector("Broken collector", "human", "a collector with a non-existent alignment file", "a library of brutal tests?", "https://theparkerlab.org", "missing_alignment_file.bam", "", "chrM", "");
         REQUIRE_THROWS_AS(collector.load_alignments(), FileException);
     }
+}
+
+TEST_CASE("Metrics::ignore_read_groups", "[metrics/ignore_read_groups]") {
+    std::string name("Test collector");
+    std::string alignment_file_name("test.bam");
+    std::string peak_file_name("test.peaks.gz");
+
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, true, true, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+
+    collector.load_alignments();
+
+    std::cout << collector << std::endl;
+
+    REQUIRE(collector.metrics.size() == 1);
+
+    Metrics* metrics = collector.metrics.cbegin()->second;
+    REQUIRE(metrics->total_reads == 1040);
+    REQUIRE(metrics->properly_paired_and_mapped_reads == 846);
+    REQUIRE(metrics->secondary_reads == 20);
+    REQUIRE(metrics->supplementary_reads == 0);
+    REQUIRE(metrics->duplicate_reads == 313);
+    REQUIRE(metrics->hqaa == 400);
+    REQUIRE(metrics->hqaa_short_count == 107);
+    REQUIRE(metrics->hqaa_mononucleosomal_count == 60);
+    REQUIRE((metrics->hqaa_short_count / (double)metrics->hqaa_mononucleosomal_count) == Approx(1.78333));
+
+    REQUIRE(metrics->paired_reads == 1040);
+    REQUIRE(metrics->paired_and_mapped_reads == 864);
+    REQUIRE(metrics->fr_reads == 846);
+    REQUIRE(metrics->first_reads == 519);
+    REQUIRE(metrics->second_reads == 521);
+    REQUIRE(metrics->forward_reads == 529);
+    REQUIRE(metrics->reverse_reads == 511);
+    REQUIRE(metrics->forward_mate_reads == 521);
+    REQUIRE(metrics->reverse_mate_reads == 519);
+
+    REQUIRE(metrics->unmapped_reads == 17);
+    REQUIRE(metrics->unmapped_mate_reads == 6);
+    REQUIRE(metrics->qcfailed_reads == 0);
+    REQUIRE(metrics->reads_mapped_with_zero_quality == 111);
+
+    REQUIRE(metrics->rf_reads == 15);
+    REQUIRE(metrics->ff_reads == 10);
+    REQUIRE(metrics->rr_reads == 17);
+    REQUIRE(metrics->reads_with_mate_mapped_to_different_reference == 14);
+    REQUIRE(metrics->reads_with_mate_too_distant == 4);
+    REQUIRE(metrics->reads_mapped_and_paired_but_improperly == 0);
+
+    REQUIRE(metrics->total_autosomal_reads == 437);
+    REQUIRE(metrics->total_mitochondrial_reads == 369);
+    REQUIRE(metrics->duplicate_autosomal_reads == 35);
+    REQUIRE(metrics->duplicate_mitochondrial_reads == 185);
+
+    REQUIRE(metrics->peaks.size() == 37276);
+
+    json j = collector.to_json();
+    unsigned long long int total_reads = j[0]["metrics"]["total_reads"];
+    unsigned long long int hqaa = j[0]["metrics"]["hqaa"];
+    REQUIRE(total_reads == metrics->total_reads);
+    REQUIRE(hqaa == metrics->hqaa);
+    REQUIRE(Approx(1.78333) == j[0]["metrics"]["short_mononucleosomal_ratio"].get<long double>());
 }

@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "IO.hpp"
 
 
@@ -34,7 +36,7 @@ bool is_gzipped_filename(std::string filename) {
 /// mistream : "magic istream" opens a file, automatically decompressing as needed
 ///
 boost::shared_ptr<boost::iostreams::filtering_istream> mistream(const std::string& filename) {
-    boost::shared_ptr<boost::iostreams::filtering_istream> filtering_istream(boost::shared_ptr<boost::iostreams::filtering_istream>(new boost::iostreams::filtering_istream()));
+    boost::shared_ptr<boost::iostreams::filtering_istream> filtering_istream(new boost::iostreams::filtering_istream());
 
     if (filename.empty()) {
         throw FileException("Cannot open without a filename.");
@@ -58,7 +60,7 @@ boost::shared_ptr<boost::iostreams::filtering_istream> mistream(const std::strin
 /// mostream : "magic ostream" opens a file, automatically compressing if the filename ends in ".gz"
 ///
 boost::shared_ptr<boost::iostreams::filtering_ostream> mostream(const std::string& filename) {
-    boost::shared_ptr<boost::iostreams::filtering_ostream> filtering_ostream(boost::shared_ptr<boost::iostreams::filtering_ostream>(new boost::iostreams::filtering_ostream()));
+    boost::shared_ptr<boost::iostreams::filtering_ostream> filtering_ostream(new boost::iostreams::filtering_ostream());
 
     if (filename.empty()) {
         throw FileException("Cannot open the file without a filename.");
