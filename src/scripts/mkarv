@@ -254,7 +254,10 @@ def prepare_for_viewer(data):
         metrics['percentages'] = {}
         for numerator, denominator in PERCENTAGES.items():
             key = '{}__{}'.format(numerator, denominator)
-            metrics['percentages'][key] = float(metrics[numerator]) / metrics[denominator] * 100.0;
+            if metrics[denominator] == 0:
+                metrics['percentages'][key] = None
+            else:
+                metrics['percentages'][key] = float(metrics[numerator]) / metrics[denominator] * 100.0;
 
 
 if __name__ == '__main__':
