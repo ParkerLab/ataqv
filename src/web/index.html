@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>ATAC-seq QC</title>
+        <title>ataqv results viewer</title>
         <link rel="stylesheet" href="css/font-awesome.min.css">
         <link rel="stylesheet" href="css/normalize.css">
         <link rel="stylesheet" href="css/datatables.min.css"/>
@@ -13,7 +13,7 @@
         <script src="js/d3.min.js"></script>
         <script src="js/datatables.min.js"></script>
         <script src="js/ataqv.js" defer></script>
-        <script src="js/data.js" defer></script>
+        <script src="js/configuration.js" defer></script>
     </head>
     <body>
         <div id="mask"></div>
@@ -58,6 +58,7 @@
             </ul>
         </div>
         <div id="main">
+            <div id="description"></div>
             <div id="tabbodies">
                 <div id="plotTabBody" class="tabbody active">
                     <div id="plots">
@@ -72,7 +73,7 @@
                                 </div>
                                 <div class="control">
                                     <div class="controls">
-                                        <label>y axis:
+                                        <label>y axis:&nbsp;
                                             <select class="yaxis-select plot-configuration" data-plot="plotFragmentLengthDistance">
                                                 <option value="hqaa" selected>High-quality autosomal (%)</option>
                                                 <option value="properly_paired_and_mapped_reads">Properly paired and mapped (%)</option>
@@ -99,7 +100,7 @@
                                 </div>
                                 <div class="control">
                                     <div class="controls">
-                                        <label>Smoothing:
+                                        <label>Smoothing:&nbsp;
                                             <select class="resolution plot-configuration" data-plot="plotFragmentLength">
                                                 <option>1</option>
                                                 <option selected>10</option>
@@ -107,11 +108,14 @@
                                                 <option>50</option>
                                             </select> bp
                                         </label>
-                                        <label>Y axis scale:
+                                        <label>Y axis scale:&nbsp;
                                             <select class="yScale plot-configuration" data-plot="plotFragmentLength">
                                                 <option value="1" selected>Linear</option>
                                                 <option value="0.5">Exponential</option>
                                             </select>
+                                        </label>
+                                        <label>Reference:&nbsp;
+                                            <input type="checkbox" class="referenceToggle" data-plot="fragmentLengthPlot" name="fragmentLengthPlotReference" checked>
                                         </label>
                                         <button class="reset">Reset zoom</button>
                                         <button class="showall">Show all</button>
@@ -206,7 +210,7 @@
                                     <th data-metric="short_mononucleosomal_ratio">
                                         <span data-hovertext="The ratio of fragments 50-100bp long to fragments 150-200bp long. This can indicate under- or over-transposition -- which should also be apparent on the fragment length distribution plot.">Short-to-mononucleosomal ratio</span>
                                     </th>
-                                    <th data-metric="fragment_length_distance.distance">
+                                    <th data-metric="fragment_length_distance">
                                         <span data-hovertext="The distance of the experiment's fragment length distribution to a reference distribution. Negative distance should be associated with under-transposition, positive distance should be associated with over-transposition.">Fragment length distribution difference from reference</span>
                                     </th>
                                 </tr>
