@@ -31,8 +31,8 @@ metrics are written to JSON files for further processing.
 A web-based visualization and comparison tool and a script to prepare
 the JSON output for it are also provided. The web viewer includes
 interactive tables of the metrics and plots of fragment length,
-mapping quality, counts of reads overlapping peaks, and peak
-territory.
+distance from a fragment length reference distribution, mapping
+quality, counts of reads overlapping peaks, and peak territory.
 
 Web viewer demo: https://parkerlab.github.io/ataqv/demo/
 
@@ -74,7 +74,7 @@ Mac
 ---
 
 The easiest way to install ataqv on Macs is via `Homebrew`_ and our
-tap. At the terminal::
+`tap`_. At the terminal::
 
   brew tap ParkerLab/tap
   brew install ataqv
@@ -240,6 +240,7 @@ to almost 40 minutes, but it still used the same amount of memory.
 .. _HTSlib: http://www.htslib.org/
 .. _LCOV: http://ltp.sourceforge.net/coverage/lcov.php
 .. _Homebrew: http://brew.sh/
+.. _tap: https://github.com/ParkerLab/homebrew-tap
 .. _Environment Modules: https://en.wikipedia.org/wiki/Environment_Modules_%28software%29
 .. _bwa: http://bio-bwa.sourceforge.net/
 .. _Picard's MarkDuplicates: https://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates
