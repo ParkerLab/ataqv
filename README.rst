@@ -60,30 +60,29 @@ The ``mkarv`` script that collects ataqv results and sets up a web
 application to visualize them requires Python 2.7 or newer.
 
 To run the test suite, you'll also need `LCOV`_, which can be
-installed via `Homebrew`_ (and is, if you install ataqv with
-Homebrew). Note that on Macs with XCode 8, LCOV <= 1.12 will not be
-able to find the coverage files, because of Apple's constant changes
-to their gcov version output. This has been fixed in LCOV, but not yet
-released -- when it is, and its Homebrew formula is updated, the test
-suite coverage report should work on Macs.
+installed via `Homebrew`_ or `Linuxbrew`_. Note that on Macs with
+XCode 8, LCOV <= 1.12 will not be able to find the coverage files,
+because of Apple's constant changes to their gcov version output. This
+has been fixed in LCOV, but not yet released -- when it is, and its
+Homebrew formula is updated, the test suite coverage report should
+work on Macs.
 
 Getting it running
 ==================
 
-Mac
----
+Homebrew
+--------
 
-The easiest way to install ataqv on Macs is via `Homebrew`_ and our
-`tap`_. At the terminal::
+The easiest way to install ataqv is via `Homebrew`_ on Macs, or
+`Linuxbrew`_ on Linux, using our `tap`_. At a shell prompt::
 
   brew tap ParkerLab/tap
   brew install ataqv
 
-You can also build from a clone of the git repository, as described
-for Linux below.
+Manual build
+------------
 
-Linux
------
+You can also just clone the Git repository and build with ``make``.
 
 At your shell prompt::
 
@@ -240,6 +239,7 @@ to almost 40 minutes, but it still used the same amount of memory.
 .. _HTSlib: http://www.htslib.org/
 .. _LCOV: http://ltp.sourceforge.net/coverage/lcov.php
 .. _Homebrew: http://brew.sh/
+.. _Linuxbrew: http://linuxbrew.sh/
 .. _tap: https://github.com/ParkerLab/homebrew-tap
 .. _Environment Modules: https://en.wikipedia.org/wiki/Environment_Modules_%28software%29
 .. _bwa: http://bio-bwa.sourceforge.net/

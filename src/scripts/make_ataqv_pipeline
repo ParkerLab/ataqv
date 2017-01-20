@@ -105,7 +105,7 @@ ataqv --peak-file ${HQAA}.macs2_peaks.broadPeak --metrics-file ${BAMMD}.json.gz 
 
 # drmr:wait
 
-mkarv --force --delete ${BAMMD}.web ${BAMMD}.json.gz
+mkarv --force ${BAMMD}.web ${BAMMD}.json.gz
 
 EOF
 

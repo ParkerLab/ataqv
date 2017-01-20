@@ -43,13 +43,14 @@ DIRECTORY=$1
 if [ -z "$DIRECTORY" ]
 then
     perror "Please supply the name of a directory in which to run the example pipeline."
+    exit 1
 fi
 
 mkdir -p "${DIRECTORY}" && cd "${DIRECTORY}"
 
-if insufficientdisk "${DIRECTORY}" 1024000
+if insufficientdisk . 1024000
 then
-    perror "The example data is about 500 megabytes. Please free up some disk space."
+    perror "The example BAM file about 500 megabytes. Please free up some disk space."
     exit 1
 fi
 
@@ -60,7 +61,6 @@ then
     then
         rm $BAM
     fi
-    perror "The example BAM file is already present."
 fi
 
 if [ ! -r "$BAM" ]
@@ -82,6 +82,6 @@ make_ataqv_pipeline $BAM human "ATAC-seq data from Buenrostro et al." "SRR891268
 
 perror "Running QC pipeline..."
 
-bash "${DIRECTORY}/qc-${BAM}.sh"
+bash "qc-${BAM}.sh"
 
 perror "QC pipeline complete."
