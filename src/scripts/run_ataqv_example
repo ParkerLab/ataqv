@@ -50,7 +50,7 @@ mkdir -p "${DIRECTORY}" && cd "${DIRECTORY}"
 
 if insufficientdisk . 1024000
 then
-    perror "The example BAM file about 500 megabytes. Please free up some disk space."
+    perror "The example BAM file is about 500 megabytes. Please free up some disk space."
     exit 1
 fi
 

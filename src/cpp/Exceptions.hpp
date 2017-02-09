@@ -15,4 +15,9 @@ public:
     explicit FileException(const std::string& msg) : std::runtime_error(msg) { }
 };
 
+class HTSException: public std::runtime_error {
+public:
+    explicit HTSException(const std::string& msg) : std::runtime_error(msg) { }
+};
+
 #endif  // EXCEPTIONS_HPP

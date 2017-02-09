@@ -1131,21 +1131,23 @@ var ataqv = (function() {
                 };
 
                 let totalReads = experiment.total_reads;
-                for (let mqc of experiment.mapq_counts) {
-                    if (mqc[0] > result.xMax) {
-                        result.xMax = mqc[0];
+                if (experiment.mapq_counts) {
+                    for (let mqc of experiment.mapq_counts) {
+                        if (mqc[0] > result.xMax) {
+                            result.xMax = mqc[0];
+                        }
+
+                        let normed = mqc[1] / totalReads;
+
+                        if (normed > result.yMax) {
+                            result.yMax = normed;
+                        }
+
+                        result.series[experimentID].line.push({
+                            x: mqc[0],
+                            y: normed
+                        });
                     }
-
-                    let normed = mqc[1] / totalReads;
-
-                    if (normed > result.yMax) {
-                        result.yMax = normed;
-                    }
-
-                    result.series[experimentID].line.push({
-                        x: mqc[0],
-                        y: normed
-                    });
                 }
             }
             return result;

@@ -41,7 +41,7 @@ private:
     void load_excluded_regions();
 
 public:
-    std::map<std::string, Metrics*> metrics;
+    std::map<std::string, Metrics*, numeric_string_comparator> metrics;
 
     std::string name = "";
     std::string organism  = "";

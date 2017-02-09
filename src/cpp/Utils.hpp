@@ -26,6 +26,13 @@ bool is_only_whitespace(const std::string& s);
 
 bool sort_strings_numerically(const std::string& s1, const std::string& s2);
 
+// comparison object for containers
+struct numeric_string_comparator {
+    bool operator() (const std::string& p1, const std::string& p2) const {
+        return sort_strings_numerically(p1, p2);
+    }
+};
+
 const std::string iso8601_timestamp(std::time_t* t = nullptr);
 
 std::string slice(const std::string& s, size_t start, size_t end = std::string::npos);

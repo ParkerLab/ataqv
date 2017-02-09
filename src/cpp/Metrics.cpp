@@ -226,6 +226,7 @@ void MetricsCollector::load_alignments() {
             library.description = library_description;
             metrics[default_metrics_id]->library = library;
         }
+
         boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
         boost::chrono::duration<double> duration;
         double rate = 0.0;
@@ -233,12 +234,28 @@ void MetricsCollector::load_alignments() {
         unsigned long long int total_reads = 0;
 
         while (sam_read1(alignment_file, alignment_file_header, record) >= 0) {
-            uint8_t* aux = bam_aux_get(record, "RG");
-            if (!ignore_read_groups && aux) {
-                metrics[bam_aux2Z(aux)]->add_alignment(alignment_file_header, record);
+            Metrics* m;
+
+            uint8_t* rgaux = bam_aux_get(record, "RG");
+            if (!ignore_read_groups && rgaux) {
+                std::string read_group_id = bam_aux2Z(rgaux);
+
+                // It can happen that records have RG tags that don't
+                // exist in the file header. If we're not ignoring
+                // read groups altogether, create new Metrics
+                // instances for these rapscallions.
+                try {
+                    m = metrics.at(read_group_id);
+                } catch (std::out_of_range&) {
+                    std::cout << "Adding metrics for read group missing from file header: " << read_group_id << std::endl;
+                    metrics[read_group_id] = new Metrics(this, read_group_id);
+                    m = metrics[read_group_id];
+                }
             } else {
-                metrics[default_metrics_id]->add_alignment(alignment_file_header, record);
+                m = metrics[default_metrics_id];
             }
+
+            m->add_alignment(alignment_file_header, record);
 
             total_reads++;
 
@@ -252,9 +269,15 @@ void MetricsCollector::load_alignments() {
         bam_hdr_destroy(alignment_file_header);
         hts_close(alignment_file);
 
-        for (auto& m : metrics) {
-            m.second->make_aggregate_diagnoses();
-            m.second->determine_top_peaks();
+        for (auto& it : metrics) {
+            Metrics* m = it.second;
+            if (m->total_reads == 0) {
+                std::cout << "Dropping metrics " << m->name << " which has no reads." << std::endl;
+                metrics.erase(it.first);
+            } else {
+                m->make_aggregate_diagnoses();
+                m->determine_top_peaks();
+            }
         }
 
         if (verbose) {
@@ -529,7 +552,7 @@ void MetricsCollector::load_excluded_regions() {
 /// Measure and record a single read
 ///
 void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
-    unsigned long long int fragment_length = abs(record->core.isize);
+    unsigned long long int fragment_length = llabs(record->core.isize);
 
     total_reads++;
 

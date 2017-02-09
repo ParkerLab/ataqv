@@ -103,7 +103,7 @@ def parse_arguments():
         """JSON format, containing an object mapping fragment """
         """lengths to counts (e.g. "{0: 0, 1: 10, 2: 17}", or it """
         """may be a tab- or comma-separated value file in which """
-        """each line contains a fragment length and count. It may"""
+        """each line contains a fragment length and count. It may """
         """also be specified as "SRR891268", in which case the """
         """fragment length distribution from that sample in the """
         """ATAC-seq paper will be used as the reference."""
@@ -128,7 +128,12 @@ def add_fraction_of_reads(fragment_length_counts):
         total_reads += count
 
     for fragment_length, count in fragment_length_counts.items():
-        fragment_length_counts[fragment_length] = [count, count / total_reads]
+        if total_reads < 1:
+            fraction = 0
+        else:
+            fraction = (count / total_reads)
+
+        fragment_length_counts[fragment_length] = [count, fraction]
 
 
 def prepare_fragment_length_counts(fragment_length_counts, max_fragment_length):
@@ -191,7 +196,7 @@ def calculate_fragment_length_distance(metrics, reference_distribution, max_frag
     Calculate the distance to the reference fragment length distribution.
 
     The distance is the largest difference between the cumulative
-    distribution functions of the two fragment length distributions, truncated to the
+    distribution functions of the two fragment length distributions.
     """
 
     distance = 0

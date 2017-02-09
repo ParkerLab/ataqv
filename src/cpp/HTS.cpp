@@ -2,8 +2,11 @@
 #include <iostream>
 #include <string>
 
+#include "Exceptions.hpp"
 #include "HTS.hpp"
 #include "Utils.hpp"
+
+#include <htslib/kstring.h>
 
 
 std::string get_qname(const bam1_t* record) {
@@ -12,18 +15,11 @@ std::string get_qname(const bam1_t* record) {
 
 
 std::string record_to_string(const bam_hdr_t* header, const bam1_t* record) {
-    std::string reference_name(record->core.tid >= 0 ? header->target_name[record->core.tid] : "*");
-    std::string mate_reference_name(record->core.mtid >= 0 ? header->target_name[record->core.mtid] : "*");
-
-    std::stringstream s;
-    s << get_qname(record)
-      << "\t" << record->core.flag
-      << "\t" << reference_name
-      << "\t" << record->core.pos + 1
-      << "\t" << mate_reference_name
-      << "\t" << record->core.mpos + 1
-      << "\t" << record->core.isize;
-    return s.str();
+    kstring_t ks = {0,0,0};
+    if (sam_format1(header, record, &ks) < 0) {
+        throw HTSException("Could not format record " + get_qname(record));
+    }
+    return std::string(ks_release(&ks));
 }
 
 

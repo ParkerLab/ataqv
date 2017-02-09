@@ -28,7 +28,7 @@ TEST_CASE("Test HTS file handling") {
     }
 
     SECTION("TEST HTS::record_to_string", "[hts/record_to_string]") {
-        REQUIRE("SRR891268.122333488\t83\tchr20\t60087\tchr20\t60058\t-79" == record_to_string(header, record));
+        REQUIRE("SRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23" == record_to_string(header, record));
     }
 }
 

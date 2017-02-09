@@ -11,6 +11,7 @@
 #include <string>
 
 #include "Features.hpp"
+#include "Utils.hpp"
 
 class Peak : public Feature {
 public:
@@ -24,13 +25,6 @@ bool operator== (const Peak& p1, const Peak& p2);
 std::ostream& operator<<(std::ostream& os, const Peak& peak);
 std::istream& operator>>(std::istream& is, Peak& peak);
 bool peak_overlapping_hqaa_descending_comparator(const Peak& p1, const Peak& p2);
-
-struct peak_tree_default_ordering {
-    bool operator() (const std::string& p1, const std::string& p2) const {
-        return sort_strings_numerically(p1, p2);
-    }
-};
-
 
 class ReferencePeakCollection {
 public:
@@ -48,7 +42,7 @@ public:
 
 class PeakTree {
 private:
-    std::map<std::string, ReferencePeakCollection, peak_tree_default_ordering> tree = {};
+    std::map<std::string, ReferencePeakCollection, numeric_string_comparator> tree = {};
 
 public:
     void add(Peak& peak);
