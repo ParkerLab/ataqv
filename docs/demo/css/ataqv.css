@@ -16,7 +16,7 @@
     font-family: "Source Sans Pro";
     font-style: italic;
     font-weight: 400;
-    src: local("Source Sans Pro"), url("../fonts/sourcesanspro-regularit.woff");
+    src: local("Source Sans Pro Italic"), url("../fonts/sourcesanspro-regularit.woff");
 }
 
 @font-face {
@@ -614,6 +614,10 @@ td:last-child *[data-hovertext]:hover::after,
     left: 0;
 }
 
+#description {
+    margin: 1em;
+}
+
 #status {
     position: absolute;
     top: 0;
@@ -644,7 +648,7 @@ td:last-child *[data-hovertext]:hover::after,
 
 #spinner > div {
     padding-right: 2em;
-}
+}p
 
 #tables {
     display: block;
@@ -704,12 +708,16 @@ td:last-child *[data-hovertext]:hover::after,
     height: 45vh;
 }
 
+.plotBackground {
+    fill: #111;
+}
+
 .detail {
     position: relative;
     flex: 0 1 50%;
     font-size: 0.75em;
     color: #f0f0f0;
-    padding: 1em;
+    padding: 0 1em;
 }
 
 .detail table thead {
@@ -758,7 +766,7 @@ td:last-child *[data-hovertext]:hover::after,
 }
 
 .plotItem {
-    opacity: 0.5;
+    opacity: 0.75;
 }
 
 .unhighlight {
@@ -774,9 +782,20 @@ td:last-child *[data-hovertext]:hover::after,
     fill: rgba(255, 255, 0, 1) !important;
 }
 
+.line {
+    stroke-width: 2;
+}
+
 .line.highlight {
     stroke: rgba(255, 255, 0, 1) !important;
     stroke-width: 3;
+}
+
+.line.reference {
+    stroke: rgba(255, 0, 0, 1) !important;
+    stroke-width: 2;
+    stroke-dasharray: 10, 1;
+    z-index: 999999;
 }
 
 .control {
@@ -852,6 +871,7 @@ td:last-child *[data-hovertext]:hover::after,
     height: 1em;
     margin-right: 0.5em;
     background-color: #999;
+    opacity: 0.75;
 }
 
 /* end plots */

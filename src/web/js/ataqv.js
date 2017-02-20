@@ -540,7 +540,7 @@ var ataqv = (function() {
                     d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
                     d3.selectAll('.plotItem[data-experiment="' + library.experimentID + '"]').classed('highlight', true).raise();
                     detail.innerHTML =
-                        '<div><h3>' + library.experimentID + '</h3>' +
+                        '<div><h3>Library ' + library.experimentID + '</h3>' +
                         '<table><tbody>' +
                         '<tr><th>Library</th><td>' + library.library + '</td></tr>' +
                         '<tr><th>Sample</th><td>' + library.sample + '</td></tr>' +
@@ -646,15 +646,22 @@ var ataqv = (function() {
                     d3.selectAll('.plotItem').classed('unhighlight', true);
                     d3.selectAll('.plotItem[data-sample="' + sample + '"]').raise().classed('highlight', true);
 
-                    let newDetail =
-                        '<div><h3>' + sample + '</h3>' +
-                        '<table><tbody>' +
-                        '<tr><th>Libraries:</th><td>' + s.libraries.length + '</td></tr>' +
-                        '<tr><th>Minimum distance:</th><td>' + s.minDistance + '</td></tr>' +
-                        '<tr><th>Maximum distance:</th><td>' + s.maxDistance + '</td></tr>' +
-                        '<tr><th>Mean distance:</th><td>' + s.meanDistance + '</td></tr>' +
-                        '<tr><th>Standard deviation:</th><td>' + s.distanceStandardDeviation + '</td></tr>' +
-                        '</tbody></table></div>';
+                    let newDetail = '<div><h3>Sample ' + sample + '</h3>' + '<table><tbody>';
+
+                    if (s.libraries.length > 1) {
+                        newDetail +=
+                            '<tr><th>Libraries:</th><td>' + s.libraries.length + '</td></tr>' +
+                            '<tr><th>Minimum distance:</th><td>' + s.minDistance + '</td></tr>' +
+                            '<tr><th>Maximum distance:</th><td>' + s.maxDistance + '</td></tr>' +
+                            '<tr><th>Mean distance:</th><td>' + s.meanDistance + '</td></tr>' +
+                            '<tr><th>Standard deviation:</th><td>' + s.distanceStandardDeviation + '</td></tr>';
+                    } else {
+                        newDetail +=
+                            '<tr><th>Library:</th><td>' + s.libraries[0].library + '</td></tr>' +
+                            '<tr><th>Distance:</th><td>' + s.meanDistance + '</td></tr>';
+                    }
+
+                    newDetail += '</tbody></table></div>';
 
                     detail.innerHTML = newDetail;
                 } else {
@@ -920,7 +927,7 @@ var ataqv = (function() {
                     d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
                     d3.selectAll('.plotItem[data-experiment="' + library.experimentID + '"]').classed('highlight', true).raise();
                     detail.innerHTML =
-                        '<div><h3>' + library.experimentID + '</h3>' +
+                        '<div><h3>Library ' + library.experimentID + '</h3>' +
                         '<table><tbody>' +
                         '<tr><th>Library</th><td>' + library.library + '</td></tr>' +
                         '<tr><th>Sample</th><td>' + library.sample + '</td></tr>' +
@@ -972,10 +979,14 @@ var ataqv = (function() {
                     d3.selectAll('.plotItem[data-sample="' + sample + '"]').raise().classed('highlight', true);
 
                     let newDetail =
-                        '<div><h3>' + sample + '</h3>' +
-                        '<table><tbody>' +
-                        '<tr><th>Libraries:</th><td>' + s.libraries.length + '</td></tr>' +
-                        '</tbody></table></div>';
+                        '<div><h3>Sample ' + sample + '</h3>' +
+                        '<table><tbody>';
+                    if (s.libraries.length > 1) {
+                        newDetail += '<tr><th>Libraries:</th><td>' + s.libraries.length + '</td></tr>';
+                    } else {
+                        newDetail += '<tr><th>Libraries:</th><td>' + s.libraries[0].library + '</td></tr>';
+                    }
+                    newDetail += '</tbody></table></div>';
                     detail.innerHTML = newDetail;
                 } else {
                     d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
