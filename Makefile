@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.6.2
+VERSION = 0.6.3
 
 #
 # PATHS
@@ -178,10 +178,10 @@ install-scripts: $(SCRIPTS)
 	install -m 0755 $^ $(PREFIX)/bin
 
 install-web: $(WEB_DIR)
-	install -d -m 0755 $(PREFIX)/web
-	cp -a $^/* $(PREFIX)/web
-	find $(PREFIX)/web -type d -exec chmod 755 {} \;
-	find $(PREFIX)/web -type f -exec chmod 644 {} \;
+	install -d -m 0755 $(PREFIX)/usr/share/ataqv/web
+	cp -a $^/* $(PREFIX)/usr/share/ataqv/web
+	find $(PREFIX)/usr/share/ataqv/web -type d -exec chmod 755 {} \;
+	find $(PREFIX)/usr/share/ataqv/web -type f -exec chmod 644 {} \;
 
 ifdef MODULEFILE_PATH
 
