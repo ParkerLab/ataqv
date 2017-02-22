@@ -7,7 +7,7 @@
 /* global d3, $ */
 
 var ataqv = (function() {
-    let consoleEnabled = true;
+    let consoleEnabled = false;
 
     let configuration = {};
     let plots = {};
@@ -1171,6 +1171,10 @@ var ataqv = (function() {
             let experimentIDs = Object.keys(configuration.metrics).sort();
 
             let result = {
+                reference_series: {
+                    source: configuration.reference_peak_metrics.source,
+                    line: []
+                },
                 series: {},
                 xMax: 100,
                 yMax: 0.0,
@@ -1208,8 +1212,23 @@ var ataqv = (function() {
                     });
                 }
             }
+
+            // add reference distribution
+            for (let p = 0; p < 100; p++) {
+                let fraction = configuration.reference_peak_metrics.cumulative_fraction_of_hqaa[p] || 0;
+                if (fraction > result.yMax) {
+                    result.yMax = fraction;
+                }
+
+                result.reference_series.line.push({
+                    x: p + 1,
+                    y: fraction
+                });
+            }
+
             return result;
-        }
+        },
+        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
     );
 
     plots.plotPeakTerritory = makeLinePlot(
@@ -1218,6 +1237,10 @@ var ataqv = (function() {
             let experimentIDs = Object.keys(configuration.metrics).sort();
 
             let result = {
+                reference_series: {
+                    source: configuration.reference_peak_metrics.source,
+                    line: []
+                },
                 series: {},
                 xMax: 100,
                 yMax: 0.0,
@@ -1256,8 +1279,23 @@ var ataqv = (function() {
                     });
                 }
             }
+
+            // add reference distribution
+            for (let p = 0; p < 100; p++) {
+                let fraction = configuration.reference_peak_metrics.cumulative_fraction_of_territory[p] || 0;
+                if (fraction > result.yMax) {
+                    result.yMax = fraction;
+                }
+
+                result.reference_series.line.push({
+                    x: p + 1,
+                    y: fraction
+                });
+            }
+
             return result;
-        }
+        },
+        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
     );
 
     function populateTables() {

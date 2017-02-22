@@ -7,7 +7,7 @@
 /* global d3, $ */
 
 var ataqv = (function() {
-    let consoleEnabled = true;
+    let consoleEnabled = false;
 
     let configuration = {};
     let plots = {};
@@ -1228,7 +1228,7 @@ var ataqv = (function() {
 
             return result;
         },
-        '<p>The dashed red line is the reference fragment length distribution. You can toggle it on and off.</p>'
+        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
     );
 
     plots.plotPeakTerritory = makeLinePlot(
@@ -1295,7 +1295,7 @@ var ataqv = (function() {
 
             return result;
         },
-        '<p>The dashed red line is the reference fragment length distribution. You can toggle it on and off.</p>'
+        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
     );
 
     function populateTables() {
