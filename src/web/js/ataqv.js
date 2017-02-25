@@ -345,8 +345,8 @@ var ataqv = (function() {
 
     function changeSampleVisibility() {
         for (let [sample, selected] of legendItemState) {
-            d3.selectAll('.plotItem[data-sample=' + sample + ']').classed('hidden', !selected);
-            d3.selectAll('.legendItem[data-sample=' + sample + ']').classed('targetHidden', !selected);
+            d3.selectAll('.plotItem[data-sample="' + sample + '"]').classed('hidden', !selected);
+            d3.selectAll('.legendItem[data-sample="' + sample + '"]').classed('targetHidden', !selected);
         }
     }
 
