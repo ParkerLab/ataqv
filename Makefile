@@ -22,10 +22,10 @@ INCLUDES := $(addprefix -I,$(CPP_DIR))
 SCRIPTS := $(wildcard $(SCRIPTS_DIR)/*)
 
 # where to install -- the default location assumes environment modules
-# are in use, but you can simply override PREFIX with a command like
-# 'make install PREFIX=...'
+# are in use, but you can simply override prefix with a command like
+# 'make install prefix=...'
 MODULES_ROOT = /lab/sw/modules
-PREFIX = $(MODULES_ROOT)/ataqv/$(VERSION)
+prefix = $(MODULES_ROOT)/ataqv/$(VERSION)
 
 # where to install the modulefile
 MODULEFILES_ROOT = /lab/sw/modulefiles
@@ -167,21 +167,21 @@ clean:
 install: checkdirs install-ataqv install-scripts install-web
 
 install-ataqv: $(BUILD_DIR)/ataqv
-	@echo "Installing to $(PREFIX)"
+	@echo "Installing to $(prefix)"
 	strip $(BUILD_DIR)/ataqv
-	install -d -m 0755 $(PREFIX)/bin
-	install -m 0755 build/ataqv $(PREFIX)/bin
+	install -d -m 0755 $(DESTDIR)$(prefix)/bin
+	install -m 0755 build/ataqv $(DESTDIR)$(prefix)/bin
 
 install-scripts: $(SCRIPTS)
 	for f in $^; do sed -e 's/{{VERSION}}/$(VERSION)/g' $$f > $(BUILD_DIR)/$$(basename $$f); done
-	install -d -m 0755 $(PREFIX)/bin
-	install -m 0755 $^ $(PREFIX)/bin
+	install -d -m 0755 $(DESTDIR)$(prefix)/bin
+	install -m 0755 $^ $(DESTDIR)$(prefix)/bin
 
 install-web: $(WEB_DIR)
-	install -d -m 0755 $(PREFIX)/usr/share/ataqv/web
-	cp -a $^/* $(PREFIX)/usr/share/ataqv/web
-	find $(PREFIX)/usr/share/ataqv/web -type d -exec chmod 755 {} \;
-	find $(PREFIX)/usr/share/ataqv/web -type f -exec chmod 644 {} \;
+	install -d -m 0755 $(DESTDIR)$(prefix)/share/ataqv/web
+	cp -a $^/* $(DESTDIR)$(prefix)/share/ataqv/web
+	find $(DESTDIR)$(prefix)/share/ataqv/web -type d -exec chmod 755 {} \;
+	find $(DESTDIR)$(prefix)/share/ataqv/web -type f -exec chmod 644 {} \;
 
 ifdef MODULEFILE_PATH
 
@@ -204,7 +204,7 @@ endef
 export MODULEFILE
 
 install-module: install
-	mkdir -p `dirname $(MODULEFILE_PATH)`
-	echo "$$MODULEFILE" > $(MODULEFILE_PATH)
+	mkdir -p `dirname $(DESTDIR)$(MODULEFILE_PATH)`
+	echo "$$MODULEFILE" > $(DESTDIR)$(MODULEFILE_PATH)
 
 endif
