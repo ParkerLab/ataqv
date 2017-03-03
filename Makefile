@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.6.3
+VERSION = 0.6.5
 
 #
 # PATHS
@@ -98,8 +98,8 @@ else
 	HTS_LIBS = -lhts
 endif
 
-LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses -ltinfo
-LDLIBS_STATIC = $(LDLIBS) -lrt
+LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses
+LDLIBS_STATIC = $(LDLIBS) -ltinfo -lrt
 
 #
 # Architecture flags
