@@ -4,8 +4,6 @@
 # run_ataqv_example: fetch some example ATAC-seq data and process it
 #
 
-set -e
-
 function perror() {
     >&2 printf "$1\n"
 }
