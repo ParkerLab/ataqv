@@ -38,6 +38,7 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqv/$(VERSION)
 CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing $(INCLUDES)
 CXXFLAGS = -std=c++11 -pthread -O3 $(CPPFLAGS)
 CXXFLAGS_DEV = -std=c++11 -pthread -O3 -g $(CPPFLAGS)
+CXXFLAGS_STATIC = -std=c++11 -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -static -static-libgcc -static-libstdc++ $(CPPFLAGS)
 
 #
 # Try to locate dependencies using environment variables
@@ -97,7 +98,8 @@ else
 	HTS_LIBS = -lhts
 endif
 
-LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses
+LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses -ltinfo
+LDLIBS_STATIC = $(LDLIBS) -lrt
 
 #
 # Architecture flags
@@ -127,6 +129,8 @@ endif
 
 all: checkdirs $(BUILD_DIR)/ataqv
 
+static: checkdirs $(BUILD_DIR)/ataqv-static
+
 checkdirs: $(BUILD_DIR) $(TEST_DIR)
 
 $(BUILD_DIR):
@@ -137,6 +141,9 @@ $(TEST_DIR):
 
 $(BUILD_DIR)/ataqv: $(BUILD_DIR)/ataqv.o $(BUILD_DIR)/Features.o $(BUILD_DIR)/HTS.o $(BUILD_DIR)/IO.o $(BUILD_DIR)/Metrics.o $(BUILD_DIR)/Peaks.o $(BUILD_DIR)/Utils.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+
+$(BUILD_DIR)/ataqv-static: $(CPP_DIR)/ataqv.cpp $(CPP_DIR)/Features.cpp $(CPP_DIR)/HTS.cpp $(CPP_DIR)/IO.cpp $(CPP_DIR)/Metrics.cpp $(CPP_DIR)/Peaks.cpp $(CPP_DIR)/Utils.cpp
+	$(CXX) -o $@ $^ $(CXXFLAGS_STATIC) $(LDFLAGS) $(LDLIBS_STATIC)
 
 $(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP) $(CPP_DIR)/Version.hpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
