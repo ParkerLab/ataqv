@@ -76,7 +76,7 @@ set -e
 # drmr:job processors=4 memory=8gb
 
 # ensure the alignments are coordinate-sorted
-samtools sort ${BAM} -O BAM -o ${SORTED_BAM}
+samtools sort -O BAM -o ${SORTED_BAM} -T ${BAM}.sort ${BAM}
 
 # create a BAM file of all the original data, with duplicates marked
 ${PICARD} MarkDuplicates I=${SORTED_BAM} O=${BAMMD} ASSUME_SORTED=true METRICS_FILE=${BAMMD}.markdup.metrics VALIDATION_STRINGENCY=LENIENT

@@ -60,12 +60,7 @@ The ``mkarv`` script that collects ataqv results and sets up a web
 application to visualize them requires Python 2.7 or newer.
 
 To run the test suite, you'll also need `LCOV`_, which can be
-installed via `Homebrew`_ or `Linuxbrew`_. Note that on Macs with
-XCode 8, LCOV <= 1.12 will not be able to find the coverage files,
-because of Apple's constant changes to their gcov version output. This
-has been fixed in LCOV, but not yet released -- when it is, and its
-Homebrew formula is updated, the test suite coverage report should
-work on Macs.
+installed via `Homebrew`_ or `Linuxbrew`_.
 
 Getting it running
 ==================
@@ -79,8 +74,8 @@ The easiest way to install ataqv is via `Homebrew`_ on Macs, or
   brew tap ParkerLab/tap
   brew install ataqv
 
-Manual build
-------------
+Manually
+--------
 
 You can also just clone the Git repository and build with ``make``.
 
@@ -106,7 +101,7 @@ compiler configuration can be made simpler::
 Or you can specify directories in BOOST_INCLUDE, BOOST_LIB,
 HTSLIB_INCLUDE, and HTSLIB_LIB separately.
 
-If you use custom locations, like this, you will probably need to set
+If you use custom locations like this, you will probably need to set
 LD_LIBRARY_PATH for the shared libraries to be found at runtime::
 
   export LD_LIBRARY_PATH=/path/to/boost/lib:/path/to/htslib/lib:$LD_LIBRARY_PATH
@@ -131,15 +126,13 @@ well::
 
   make HTSLIBCURL=yes
 
-Installing
-==========
+Manual installation
+^^^^^^^^^^^^^^^^^^^
 
-You can just copy ``build/ataqv`` and ``src/scripts/*`` wherever you
-like, or run them from your copy of the ataqv repository. If you want
-to install them to a bin directory somewhere, for example
-/usr/local/bin, you can run::
+The Makefile supports the common `DESTDIR` and `prefix` variables. To
+install to /usr/local::
 
-  make install PREFIX=/usr/local
+  make install prefix=/usr/local
 
 Support for the `Environment Modules`_ system is also included. You
 can install to the modules tree by defining the ``MODULES_ROOT`` and
@@ -151,6 +144,33 @@ can install to the modules tree by defining the ``MODULES_ROOT`` and
 
 And then you should be able to run ``module load ataqv`` to have
 everything available in your environment.
+
+You can create a distribution tarball with::
+
+  make dist
+
+It will create a .tar.gz file in the `build` subdirectory of the
+source tree. Extract that anywhere and add the `bin` subdirectory to
+your PATH environment variable. To use the distribution on another
+machine, that machine must have the same shared libraries as your
+build machine. If that's not possible, you can try to build a static
+distribution with::
+
+  make dist-static
+
+However, static compilation has only been tried on Linux (RHEL 6;
+Debian testing (Stretch) and unstable), and it may not work at all on
+your distribution.
+
+
+Last resort: installing a binary distribution
+---------------------------------------------
+
+It's better to build from source, but if you can't, there should be a
+Linux binary distribution available under `recent releases on
+Github`_. Simply download and extract the `ataqv-x.x.x.tar.gz` file
+and add the full path to the resulting `ataqv-x.x.x/bin` subdirectory
+to your PATH environment variable.
 
 *****
 Usage
@@ -242,6 +262,7 @@ to almost 40 minutes, but it still used the same amount of memory.
 .. _Linuxbrew: http://linuxbrew.sh/
 .. _tap: https://github.com/ParkerLab/homebrew-tap
 .. _Environment Modules: https://en.wikipedia.org/wiki/Environment_Modules_%28software%29
+.. _recent releases on GitHub: https://github.com/ParkerLab/ataqv/releases
 .. _bwa: http://bio-bwa.sourceforge.net/
 .. _Picard's MarkDuplicates: https://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates
 .. _MACS2: https://github.com/taoliu/MACS/

@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.6.5
+VERSION = 0.6.6
 
 #
 # PATHS
@@ -99,7 +99,8 @@ else
 endif
 
 LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses
-LDLIBS_STATIC = $(LDLIBS) -ltinfo -lrt
+HTSLIB_STATIC_DIR = $(HOME)/sw/bio/htslib/htslib
+LDLIBS_STATIC = -L$(HTSLIB_STATIC_DIR) $(LDLIBS) -ltinfo -lrt
 
 #
 # Architecture flags
@@ -130,6 +131,15 @@ endif
 all: checkdirs $(BUILD_DIR)/ataqv
 
 static: checkdirs $(BUILD_DIR)/ataqv-static
+
+dist: checkdirs $(BUILD_DIR)/ataqv
+	make install DESTDIR=$(BUILD_DIR)/ataqv-$(VERSION) prefix=
+	cd $(BUILD_DIR) && tar czf ataqv-$(VERSION).$(shell uname -m).$(shell uname -s).tar.gz ataqv-$(VERSION)
+
+dist-static: checkdirs $(BUILD_DIR)/ataqv-static
+	make install DESTDIR=$(BUILD_DIR)/ataqv-$(VERSION) prefix=
+	install -m 0755 $(BUILD_DIR)/ataqv-static $(BUILD_DIR)/ataqv-$(VERSION)/bin/ataqv
+	cd $(BUILD_DIR) && tar czf ataqv-$(VERSION).$(shell uname -m).$(shell uname -s).tar.gz ataqv-$(VERSION)
 
 checkdirs: $(BUILD_DIR) $(TEST_DIR)
 
