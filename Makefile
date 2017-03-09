@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.6.6
+VERSION = 0.7.0
 
 #
 # PATHS
@@ -35,7 +35,7 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqv/$(VERSION)
 # FLAGS
 #
 
-CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing $(INCLUDES)
+CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing -fPIC $(INCLUDES)
 CXXFLAGS = -std=c++11 -pthread -O3 $(CPPFLAGS)
 CXXFLAGS_DEV = -std=c++11 -pthread -O3 -g $(CPPFLAGS)
 CXXFLAGS_STATIC = -std=c++11 -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -static -static-libgcc -static-libstdc++ $(CPPFLAGS)
@@ -126,7 +126,7 @@ endif
 # TARGETS
 #
 
-.PHONY: all checkdirs clean install install-ataqv install-module install-scripts install-web test
+.PHONY: all checkdirs clean deb deb-static rpm install install-ataqv install-module install-scripts install-web test
 
 all: checkdirs $(BUILD_DIR)/ataqv
 
@@ -140,6 +140,20 @@ dist-static: checkdirs $(BUILD_DIR)/ataqv-static
 	make install DESTDIR=$(BUILD_DIR)/ataqv-$(VERSION) prefix=
 	install -m 0755 $(BUILD_DIR)/ataqv-static $(BUILD_DIR)/ataqv-$(VERSION)/bin/ataqv
 	cd $(BUILD_DIR) && tar czf ataqv-$(VERSION).$(shell uname -m).$(shell uname -s).tar.gz ataqv-$(VERSION)
+
+deb:
+	(make clean && cd .. && tar czf ataqv_$(VERSION).orig.tar.gz --exclude .git ataqv)
+	debuild
+
+deb-static: deb
+	make static
+	install -m 0755 $(BUILD_DIR)/ataqv-static debian/ataqv/usr/bin/ataqv
+	sed -i '/Depends: /d' debian/ataqv/DEBIAN/control
+	dh_builddeb
+
+rpm: deb-static
+	(cd .. && alien -r ataqv_$(VERSION)-1_amd64.deb)
+
 
 checkdirs: $(BUILD_DIR) $(TEST_DIR)
 
@@ -156,7 +170,7 @@ $(BUILD_DIR)/ataqv-static: $(CPP_DIR)/ataqv.cpp $(CPP_DIR)/Features.cpp $(CPP_DI
 	$(CXX) -o $@ $^ $(CXXFLAGS_STATIC) $(LDFLAGS) $(LDLIBS_STATIC)
 
 $(BUILD_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP) $(CPP_DIR)/Version.hpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 $(CPP_DIR)/Version.hpp: Makefile
 	@echo '//' >$@
@@ -176,9 +190,10 @@ $(TEST_DIR)/run_ataqv_tests: $(TEST_DIR)/run_ataqv_tests.o $(TEST_DIR)/test_feat
 	$(CXX) -o $@ $^ $(LDFLAGS) --coverage $(LDLIBS)
 
 $(TEST_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS_DEV) -fprofile-arcs -ftest-coverage -o $@ -c $<
+	$(CXX)  $(CXXFLAGS_DEV) -fprofile-arcs -ftest-coverage -o $@ -c $<
 
 clean:
+	@dh_clean
 	@rm -rf $(BUILD_DIR) $(TEST_DIR)
 
 install: checkdirs install-ataqv install-scripts install-web

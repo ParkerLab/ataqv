@@ -12,7 +12,7 @@ understand how well our ATAC-seq assays had worked, and to make it
 easier to spot differences that might be caused by library prep or
 sequencing.
 
-The main program, ataqv, examines your aligned reads and reports some
+The main program, ``ataqv``, examines your aligned reads and reports some
 basic metrics, including:
 
 * reads mapped in proper pairs
@@ -36,22 +36,55 @@ quality, counts of reads overlapping peaks, and peak territory.
 
 Web viewer demo: https://parkerlab.github.io/ataqv/demo/
 
+******************
+Where does it run?
+******************
+
+It's tested on Linux and Macs. It may compile and run on other UNIX
+systems.
+
 ****
 Help
 ****
 
-If you have questions or suggestions, mail us at `parkerlab-software@umich.edu`_.
+If you have questions or suggestions, mail us at
+`parkerlab-software@umich.edu`_, or file a `GitHub issue`_.
 
 ***************
 Getting started
 ***************
 
+There are several ways to get ``ataqv`` running on your system:
+install a binary package; install it with `Homebrew`_ or `Linuxbrew`_;
+or build it from source.
+
+Binary packages (Linux only)
+============================
+
+We provide several Linux binary packages under `recent releases on
+Github`_. Install ``.deb`` or ``.rpm`` files with ``dpkg`` or ``yum``,
+or download and extract the ``ataqv-x.x.x.tar.gz`` file and add the
+full path to the resulting ``ataqv-x.x.x/bin`` subdirectory to your
+PATH environment variable.
+
+Homebrew (Mac or Linux)
+=======================
+
+The easiest way to install ataqv from source is via `Homebrew`_ on
+Macs, or `Linuxbrew`_ on Linux, using our `tap`_. At a shell prompt::
+
+  brew tap ParkerLab/tap
+  brew install ataqv
+
+Building from source manually
+=============================
+
 Prerequisites
-=============
+-------------
 
 To build ataqv, you need:
 
-* Linux or a Mac
+* Linux or a Mac (it may work on other UNIX systems, but it's untested)
 * C++11 compiler (gcc 4.9 or newer, or clang on OS X)
 * `Boost`_
 * `HTSlib`_
@@ -62,22 +95,19 @@ application to visualize them requires Python 2.7 or newer.
 To run the test suite, you'll also need `LCOV`_, which can be
 installed via `Homebrew`_ or `Linuxbrew`_.
 
-Getting it running
-==================
+On Debian-based Linux distributions, you can install dependencies
+with::
 
-Homebrew
+  sudo apt install libboost-all-dev libhts-dev libncurses5-dev libtinfo-dev zlib1g-dev lcov
+
+and the latest supported option among::
+
+  sudo apt install libstdc++-6-dev
+  sudo apt install libstdc++-5-dev
+  sudo apt install libstdc++-4.9-dev
+
+Building
 --------
-
-The easiest way to install ataqv is via `Homebrew`_ on Macs, or
-`Linuxbrew`_ on Linux, using our `tap`_. At a shell prompt::
-
-  brew tap ParkerLab/tap
-  brew install ataqv
-
-Manually
---------
-
-You can also just clone the Git repository and build with ``make``.
 
 At your shell prompt::
 
@@ -107,10 +137,10 @@ LD_LIBRARY_PATH for the shared libraries to be found at runtime::
   export LD_LIBRARY_PATH=/path/to/boost/lib:/path/to/htslib/lib:$LD_LIBRARY_PATH
 
 Dependency notes
-^^^^^^^^^^^^^^^^
+----------------
 
 Boost
-"""""
+^^^^^
 
 If your Boost installation used their "tagged" layout, the libraries
 will include metadata in their names; on Linux this usually just means
@@ -119,15 +149,15 @@ support. Specify ``BOOST_TAGGED=yes`` in your make commands to link
 with those.
 
 HTSlib
-""""""
+^^^^^^
 
-If htslib was built to use libcurl, you'll need to link with that as
+If HTSlib was built to use libcurl, you'll need to link with that as
 well::
 
   make HTSLIBCURL=yes
 
-Manual installation
-^^^^^^^^^^^^^^^^^^^
+Installation
+------------
 
 The Makefile supports the common `DESTDIR` and `prefix` variables. To
 install to /usr/local::
@@ -149,8 +179,8 @@ You can create a distribution tarball with::
 
   make dist
 
-It will create a .tar.gz file in the `build` subdirectory of the
-source tree. Extract that anywhere and add the `bin` subdirectory to
+It will create a .tar.gz file in the ``build`` subdirectory of the
+source tree. Extract that anywhere and add the ``bin`` subdirectory to
 your PATH environment variable. To use the distribution on another
 machine, that machine must have the same shared libraries as your
 build machine. If that's not possible, you can try to build a static
@@ -160,17 +190,10 @@ distribution with::
 
 However, static compilation has only been tried on Linux (RHEL 6;
 Debian testing (Stretch) and unstable), and it may not work at all on
-your distribution.
-
-
-Last resort: installing a binary distribution
----------------------------------------------
-
-It's better to build from source, but if you can't, there should be a
-Linux binary distribution available under `recent releases on
-Github`_. Simply download and extract the `ataqv-x.x.x.tar.gz` file
-and add the full path to the resulting `ataqv-x.x.x/bin` subdirectory
-to your PATH environment variable.
+your distribution. You will almost certainly need HTSlib built without
+cURL support, as some of the library dependencies are not available as
+shared libraries. Supply the path to your custom HTSlib with ``make
+HTSLIB_STATIC_DIR=/path static``.
 
 *****
 Usage
@@ -199,8 +222,8 @@ Running
 The main program is ataqv. Run ``ataqv --help`` for complete
 instructions.
 
-When run, ataqv prints a human-readable summary to its standard output,
-and writes complete metrics to the file named with the
+When run, ataqv prints a human-readable summary to its standard
+output, and writes complete metrics to the JSON file named with the
 `--metrics-file` option.
 
 The JSON output can be incorporated into a web application that
@@ -262,6 +285,7 @@ to almost 40 minutes, but it still used the same amount of memory.
 .. _Linuxbrew: http://linuxbrew.sh/
 .. _tap: https://github.com/ParkerLab/homebrew-tap
 .. _Environment Modules: https://en.wikipedia.org/wiki/Environment_Modules_%28software%29
+.. _Github issue: https://github.com/ParkerLab/ataqv/issues
 .. _recent releases on GitHub: https://github.com/ParkerLab/ataqv/releases
 .. _bwa: http://bio-bwa.sourceforge.net/
 .. _Picard's MarkDuplicates: https://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates

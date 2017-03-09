@@ -1,0 +1,19 @@
+Source: ataqv
+Section: science
+Priority: optional
+Maintainer: Parker Lab Software <parkerlab-software@umich.edu>
+Build-Depends: debhelper (>= 9), libboost-all-dev(>= 1.47), libhts-dev (>= 1.0), libncurses5-dev (>= 5.9), libstdc++-4.9-dev | libstdc++-5-dev | libstdc++-6-dev, libtinfo-dev (>= 5.9), zlib1g-dev (>= 1:1.1.4), lcov
+Standards-Version: 3.9.8
+Homepage: https://github.com/ParkerLab/ataqv/
+Vcs-Git: https://github.com/ParkerLab/ataqv.git
+Vcs-Browser: https://github.com/ParkerLab/ataqv.git
+
+Package: ataqv
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Description: ATAC-seq QC and visualization
+ A toolkit for measuring and comparing ATAC-seq results, made in the
+ Parker lab at the University of Michigan. We wrote it to help us
+ understand how well our ATAC-seq assays had worked, and to make it
+ easier to spot differences that might be caused by library prep or
+ sequencing.
