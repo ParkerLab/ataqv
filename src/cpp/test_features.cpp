@@ -144,5 +144,5 @@ TEST_CASE("Feature operator<<", "features/operator<<") {
     Feature f("chr1", 1, 100, "peak_1");
     std::stringstream ss;
     ss << f;
-    REQUIRE("chr1\t1\t100\tpeak_1" == ss.str());
+    REQUIRE("chr1\t1\t100\tpeak_1\t0\t." == ss.str());
 }

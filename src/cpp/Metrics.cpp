@@ -4,8 +4,10 @@
 // Licensed under Version 3 of the GPL or any later version
 //
 
+#include <chrono>
 #include <cmath>
 #include <cstdarg>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -29,7 +31,10 @@ MetricsCollector::MetricsCollector(const std::string& name,
                                    const std::string& autosomal_reference_filename,
                                    const std::string& mitochondrial_reference_name,
                                    const std::string& peak_filename,
+                                   const std::string& tss_filename,
+                                   const int tss_extension,
                                    bool verbose,
+                                   const int thread_limit,
                                    bool ignore_read_groups,
                                    bool log_problematic_reads,
                                    const std::vector<std::string>& excluded_region_filenames) :
@@ -43,7 +48,10 @@ MetricsCollector::MetricsCollector(const std::string& name,
     autosomal_reference_filename(autosomal_reference_filename),
     mitochondrial_reference_name(mitochondrial_reference_name),
     peak_filename(peak_filename),
+    tss_filename(tss_filename),
+    tss_extension(tss_extension),
     verbose(verbose),
+    thread_limit(thread_limit),
     ignore_read_groups(ignore_read_groups),
     log_problematic_reads(log_problematic_reads),
     excluded_region_filenames(excluded_region_filenames)
@@ -76,6 +84,18 @@ std::string MetricsCollector::configuration_string() const {
     std::stringstream cs;
     cs << "ataqv " << version_string() << std::endl << std::endl
 
+       << "Operating parameters" << std::endl
+       << "====================" << std::endl;
+
+    cs
+        << "Thread limit: " << thread_limit << std::endl
+        << "Ignoring read groups: " << (ignore_read_groups ? "yes" : "no") << std::endl;
+
+    if (!tss_filename.empty()) {
+        cs << "TSS extension: " << tss_extension << std::endl;
+    }
+
+    cs << std::endl
        << "Experiment information" << std::endl
        << "======================" << std::endl
        << "Organism: " << organism << std::endl
@@ -166,6 +186,55 @@ bool MetricsCollector::is_mitochondrial(const std::string& reference_name) {
 }
 
 
+//
+// Load transcription start sites for the organism
+//
+void MetricsCollector::load_tss() {
+    if (tss_filename.empty()) {
+        throw FileException("TSS file has not been specified.");
+    }
+
+    if (verbose) {
+        std::cout << "Loading TSS on autosomal references from " << tss_filename << "." << std::endl;
+    }
+
+    boost::shared_ptr<boost::iostreams::filtering_istream> tss_istream;
+    try {
+        tss_istream = mistream(tss_filename);
+    } catch (FileException& e) {
+        throw FileException("Could not open the supplied TSS file \"" + tss_filename + "\": " + e.what());
+    }
+
+    boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
+    boost::chrono::duration<double> duration;
+    Feature tss;
+
+    while (*tss_istream >> tss) {
+        bool excluded = false;
+        for (auto er : excluded_regions) {
+            if (tss.overlaps(er)) {
+                if (verbose) {
+                    std::cout << "Excluding TSS [" << tss << "] which overlaps excluded region [" << er << "]" << std::endl;
+                }
+                excluded = true;
+                break;
+            }
+        }
+        if (!excluded && is_autosomal(tss.reference)) {
+            tss_tree.add(tss);
+        }
+    }
+
+    if (tss_tree.empty()) {
+        std::cout << "No TSS were found in " << tss_filename << std::endl;
+    } else if (verbose) {
+        duration = boost::chrono::high_resolution_clock::now() - start;
+        tss_tree.print_reference_feature_counts();
+        std::cout << "Loaded " << tss_tree.size() << " TSS in " << duration << "." << " (" << (tss_tree.size() / duration.count()) << " TSS/second)." << std::endl << std::endl;
+    }
+}
+
+
 ///
 /// Measure all the reads in a BAM file
 ///
@@ -173,14 +242,23 @@ void MetricsCollector::load_alignments() {
 
     samFile *alignment_file = nullptr;
     bam_hdr_t *alignment_file_header = nullptr;
+    hts_idx_t *alignment_file_index = nullptr;
     bam1_t *record = bam_init1();
 
     if (alignment_filename.empty()) {
         throw FileException("Alignment file has not been specified.");
     }
 
-    if ((alignment_file = sam_open(alignment_filename.c_str(), "r")) == 0) {
+    if ((alignment_file = sam_open(alignment_filename.c_str(), "r")) == nullptr) {
         throw FileException("Could not open alignment file \"" + alignment_filename + "\".");
+    }
+
+    if (!tss_filename.empty()) {
+        if ((alignment_file_index = sam_index_load(alignment_file, alignment_filename.c_str())) == nullptr) {
+            throw FileException("Before TSS enrichment can be calculated, you must create an index file\nfor alignment file \"" + alignment_filename + "\" with \"samtools index" + alignment_filename + "\".");
+        }
+
+        load_tss();
     }
 
     if (verbose) {
@@ -265,9 +343,6 @@ void MetricsCollector::load_alignments() {
                 std::cout << "Analyzed " << total_reads << " reads in " << duration << " (" << rate << " reads/second)." << std::endl;
             }
         }
-        bam_destroy1(record);
-        bam_hdr_destroy(alignment_file_header);
-        hts_close(alignment_file);
 
         for (auto& it : metrics) {
             Metrics* m = it.second;
@@ -277,7 +352,14 @@ void MetricsCollector::load_alignments() {
             } else {
                 m->make_aggregate_diagnoses();
                 m->determine_top_peaks();
+                m->calculate_tss_metrics();
             }
+        }
+
+        bam_destroy1(record);
+        bam_hdr_destroy(alignment_file_header);
+        if (alignment_file) {
+            hts_close(alignment_file);
         }
 
         if (verbose) {
@@ -288,7 +370,10 @@ void MetricsCollector::load_alignments() {
     } catch (FileException& e) {
         bam_destroy1(record);
         bam_hdr_destroy(alignment_file_header);
-        hts_close(alignment_file);
+        hts_idx_destroy(alignment_file_index);
+        if (alignment_file) {
+            hts_close(alignment_file);
+        }
         throw;
     }
 }
@@ -313,6 +398,13 @@ Metrics::Metrics(MetricsCollector* collector, const std::string& name): collecto
     if (!collector->peak_filename.empty()) {
         peaks_requested = true;
         load_peaks();
+    }
+
+    if (!collector->tss_filename.empty()) {
+        tss_requested = true;
+        for (int i = 1; i <= 1 + 2 * collector->tss_extension; i++) {
+            tss_coverage[i] = 0;
+        }
     }
 }
 
@@ -378,11 +470,6 @@ std::string Metrics::configuration_string() const {
 }
 
 
-bool Metrics::mapq_at_least(const int& mapq, const bam1_t* record) {
-    return (mapq <= record->core.qual);
-}
-
-
 bool Metrics::is_hqaa(const bam_hdr_t* header, const bam1_t* record) {
     bool hqaa = false;
 
@@ -393,7 +480,7 @@ bool Metrics::is_hqaa(const bam_hdr_t* header, const bam1_t* record) {
         IS_PAIRED_AND_MAPPED(record) &&
         IS_PROPERLYPAIRED(record) &&
         IS_ORIGINAL(record) &&
-        mapq_at_least(30, record) &&
+        (record->core.qual >= 30) &&
         (record->core.tid >= 0)) {
 
         std::string reference_name(header->target_name[record->core.tid]);
@@ -650,6 +737,7 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
             // (of course) has a valid reference name
             if (record->core.tid >= 0) {
                 std::string reference_name(header->target_name[record->core.tid]);
+
                 if (is_autosomal(reference_name)) {
                     total_autosomal_reads++;
                     if (IS_DUP(record)) {
@@ -750,7 +838,7 @@ void Metrics::load_peaks() {
     }
 
     if (collector->verbose) {
-        std::cout << "Loading peaks for read group " << name << " from " << peak_filename << "." << std::endl << std::flush;
+        std::cout << "Loading peaks for read group " << name << " from " << peak_filename << "." << std::endl;
     }
 
     boost::shared_ptr<boost::iostreams::filtering_istream> peak_istream;
@@ -792,6 +880,206 @@ void Metrics::load_peaks() {
         std::cout << "Loaded " << peaks.size() << " peaks in " << duration << "." << " (" << (peaks.size() / duration.count()) << " peaks/second)." << std::endl << std::endl;
     }
 }
+
+
+std::map<int, unsigned long long int> Metrics::get_tss_coverage_for_reference(const std::string &reference, const int extension) {
+    std::map<int, unsigned long long int> ref_tss_cov = {};
+
+    ReferenceFeatureCollection *tss_collection = collector->tss_tree.get_reference_feature_collection(reference);
+
+    if (!tss_collection->features.empty()) {
+        samFile *alignment_file = nullptr;
+        bam_hdr_t *alignment_file_header = nullptr;
+        hts_idx_t *alignment_file_index = nullptr;
+        bam1_t *record = bam_init1();
+
+        try {
+            if (collector->alignment_filename.empty()) {
+                throw FileException("Alignment file has not been specified.");
+            }
+
+            if ((alignment_file = sam_open(collector->alignment_filename.c_str(), "r")) == nullptr) {
+                throw FileException("Could not open alignment file \"" + collector->alignment_filename + "\".");
+            }
+
+            if ((alignment_file_index = sam_index_load(alignment_file, collector->alignment_filename.c_str())) == nullptr) {
+                throw FileException("Could not open index for alignment file \"" + collector->alignment_filename + "\".");
+            }
+
+            alignment_file_header = sam_hdr_read(alignment_file);
+            if (alignment_file_header == NULL) {
+                throw FileException("Could not read a valid header from alignment file \"" + collector->alignment_filename +  "\".");
+            }
+
+            for (auto tss : tss_collection->features) {
+                std::map<int, unsigned long long int> tss_cov = {};
+
+                std::map<std::string, bool> fragments_seen = {};
+
+                Feature tss_region(tss);
+                tss_region.start = std::max((unsigned long long int)0, tss_region.start - extension);
+                tss_region.end += extension;
+
+                std::stringstream query;
+
+                // The HTSlib iterator starts at the first record starting after the beginning of the region, so
+                // we ask for records further before and after the TSS region, then filter them ourselves
+                query << tss_region.reference << ":" << std::max(tss_region.start - extension * 2, 0ULL) << "-" << (tss_region.end + extension * 2);
+
+                hts_itr_t *alignment_iterator;
+                if ((alignment_iterator = sam_itr_querys(alignment_file_index, alignment_file_header, query.str().c_str())) == nullptr) {
+                    std::cerr <<  "Could not parse TSS region " << query.str() << std::endl;
+                    continue;
+                }
+
+                while (sam_itr_next(alignment_file, alignment_iterator, record) >= 0) {
+                    if (is_hqaa(alignment_file_header, record)) {
+                        std::string qname = get_qname(record);
+                        if (fragments_seen.count(qname) == 0) {
+                            Feature fragment;
+                            fragment.reference = reference;
+                            fragment.start = std::min(record->core.pos, record->core.mpos);
+                            fragment.end = fragment.start + abs(record->core.isize);
+                            fragments_seen[qname] = true;
+
+                            if (fragment.overlaps(tss_region)) {
+                                for (unsigned long long int pos = tss_region.start; pos <= tss_region.end; pos++) {
+                                    if (pos >= fragment.start && pos <= fragment.end) {
+                                        int base = tss.is_reverse() ? (tss_region.end - pos) : (pos - tss_region.start);
+                                        tss_cov[base]++;
+                                        ref_tss_cov[base]++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            bam_destroy1(record);
+            bam_hdr_destroy(alignment_file_header);
+            hts_idx_destroy(alignment_file_index);
+            if (alignment_file) {
+                hts_close(alignment_file);
+            }
+        } catch (FileException& e) {
+            bam_destroy1(record);
+            bam_hdr_destroy(alignment_file_header);
+            hts_idx_destroy(alignment_file_index);
+            if (alignment_file) {
+                hts_close(alignment_file);
+            }
+            throw;
+        }
+    }
+
+    return ref_tss_cov;
+}
+
+
+void Metrics::calculate_tss_metrics() {
+
+    if (!tss_requested) {
+        return;
+    }
+
+    std::cout << "Calculating TSS metrics..." << std::endl;
+    boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
+    boost::chrono::duration<double> duration;
+
+    double tss_count = (double) collector->tss_tree.size();
+
+    if (tss_count > 0) {
+        for (int i = 1; i <= 1 + 2 * collector->tss_extension; i++) {
+            tss_coverage[i] = 0;
+        }
+
+        std::vector<std::future<std::map<int, unsigned long long int>>> results = {};
+        int thread_count = 0;
+        for (auto reference : collector->tss_tree.get_references_by_feature_count()) {
+            results.push_back(std::async(std::launch::async, &Metrics::get_tss_coverage_for_reference, this, reference, collector->tss_extension));
+            thread_count++;
+            if (collector->verbose) {
+                std::cout << "Added TSS metrics job for " << reference << "; thread count=" << thread_count << std::endl;
+            }
+            while (thread_count == collector->thread_limit) {
+                for (auto result = results.begin(); result != results.end(); result++) {
+                    if (!(*result).valid()) {
+                        results.erase(result);
+                        thread_count--;
+                        break;
+                    } else {
+                        std::future_status status = (*result).wait_for(std::chrono::milliseconds(100));
+                        if (status == std::future_status::ready) {
+                            auto ref_cov = (*result).get();
+                            for (int i = 1; i <= 1 + 2 * collector->tss_extension; i++) {
+                                tss_coverage[i] += ref_cov[i];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (collector->verbose) {
+            std::cout << "All TSS jobs started. Waiting for last ones to complete." << std::endl;
+        }
+
+        while (!results.empty()) {
+            for (auto result = results.begin(); result != results.end(); result++) {
+                if (!(*result).valid()) {
+                    results.erase(result);
+                    break;
+                }
+
+                std::future_status status = (*result).wait_for(std::chrono::milliseconds(100));
+                if (status == std::future_status::ready) {
+                    auto ref_cov = (*result).get();
+                    for (int i = 1; i <= 1 + 2 * collector->tss_extension; i++) {
+                        tss_coverage[i] += ref_cov[i];
+                    }
+                }
+            }
+        }
+
+        // calculate the average read depth in each 100bp flank
+        double upstream_flank = 0.0;
+        int index = 0;
+        for (auto position = tss_coverage.begin(); index < 100; index++, position++) {
+            upstream_flank += (position->second / tss_count);
+        }
+        upstream_flank /= 100.0;
+
+        double downstream_flank = 0.0;
+        index = 0;
+        for (auto position = tss_coverage.rbegin(); index < 100; index++, position++) {
+            downstream_flank += (position->second / tss_count);
+        }
+        downstream_flank /= 100.0;
+
+        // average the two flanks
+        double mean_flank = (upstream_flank + downstream_flank) / 2;
+
+        // scale them to 1
+        double scale = 1 / mean_flank;
+
+        double mean_flank_scaled = (mean_flank * scale);
+
+        // calculate mean enrichment around TSS
+        for (auto pc : tss_coverage) {
+            tss_coverage_scaled[pc.first] = ((pc.second / tss_count) * scale) / mean_flank_scaled;
+        }
+
+        // and finally, take the value at TSS as our canonical enrichment score
+        tss_enrichment = tss_coverage_scaled[collector->tss_extension + 1];
+    }
+
+    duration = boost::chrono::high_resolution_clock::now() - start;
+    if (collector->verbose) {
+        std::cout << "Calculated TSS metrics in " << duration << "." << std::endl;
+    }
+}
+
 
 
 void Metrics::determine_top_peaks() {
@@ -874,10 +1162,13 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
        << "  Short to mononucleosomal ratio: " << std::setprecision(3) << std::fixed << fraction_string(m.hqaa_short_count, m.hqaa_mononucleosomal_count) << std::endl
        << "  High quality, nonduplicate, properly paired, uniquely mapped autosomal alignments: " << m.hqaa << std::endl
        << "    as a percentage of autosomal reads: " << std::setprecision(3) << std::fixed << percentage_string(m.hqaa, m.total_autosomal_reads, 3, "", "%") << std::endl
-       << "    as a percentage of all reads: " << std::setprecision(3) << std::fixed << percentage_string(m.hqaa, m.total_reads, 3, "", "%") << std::endl
+       << "    as a percentage of all reads: " << std::setprecision(3) << std::fixed << percentage_string(m.hqaa, m.total_reads, 3, "", "%") << std::endl;
 
-       << std::endl
+    if (m.tss_requested) {
+        os << "  TSS enrichment: " << m.tss_enrichment << std::endl;
+    }
 
+    os << std::endl
        << "  Paired Read Metrics" << std::endl
        << "  -------------------" << std::endl
        << "  Paired reads: " << m.paired_reads << percentage_string(m.paired_reads, m.total_reads) << std::endl
@@ -944,13 +1235,13 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
            << "  ------------" << std::endl
            << "  Peak count: " << m.peaks.size() << std::endl <<std::endl
 
-           << "  High quality autosomal aligments that overlapped peaks: "  << m.hqaa_in_peaks << percentage_string(m.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
-           << "  Number of high quality autosomal aligments overlapping the top 10,000 peaks: " << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top peak: " << std::fixed << m.top_peak_hqaa_read_count << percentage_string(m.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 10 peaks: " << std::fixed << m.top_10_peak_hqaa_read_count << percentage_string(m.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 100 peaks: "<< std::fixed << m.top_100_peak_hqaa_read_count << percentage_string(m.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 1000 peaks: " << std::fixed << m.top_1000_peak_hqaa_read_count << percentage_string(m.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 10,000 peaks: " << std::fixed << m.top_10000_peak_hqaa_read_count << percentage_string(m.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal aligments)") << std::endl;
+           << "  High quality autosomal alignments that overlapped peaks: "  << m.hqaa_in_peaks << percentage_string(m.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << "  Number of high quality autosomal alignments overlapping the top 10,000 peaks: " << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top peak: " << std::fixed << m.top_peak_hqaa_read_count << percentage_string(m.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 10 peaks: " << std::fixed << m.top_10_peak_hqaa_read_count << percentage_string(m.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 100 peaks: "<< std::fixed << m.top_100_peak_hqaa_read_count << percentage_string(m.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 1000 peaks: " << std::fixed << m.top_1000_peak_hqaa_read_count << percentage_string(m.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 10,000 peaks: " << std::fixed << m.top_10000_peak_hqaa_read_count << percentage_string(m.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl;
     }
 
     unsigned long long int mysteries = m.total_reads - m.unclassified_reads - m.properly_paired_and_mapped_reads - total_problems;
@@ -960,7 +1251,7 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
            << "      https://github.com/ParkerLab/ataqv/issues" << std::endl;
     }
 
-    os << std::endl << std::endl;
+    os << std::endl;
     return os;
 }
 
@@ -1082,6 +1373,14 @@ json Metrics::to_json() {
 
     long double short_mononucleosomal_ratio = fraction(hqaa_short_count, hqaa_mononucleosomal_count);
 
+    json tss_coverage_vec;
+    for (auto pc : tss_coverage_scaled) {
+        json pair;
+        pair.push_back(pc.first);
+        pair.push_back(pc.second);
+        tss_coverage_vec.push_back(pair);
+    }
+
     json result = {
         {"ataqv_version", version_string()},
         {"timestamp", iso8601_timestamp()},
@@ -1140,7 +1439,9 @@ json Metrics::to_json() {
              {"peak_percentiles", peak_percentiles},
              {"total_peaks", peak_count},
              {"total_peak_territory", total_peak_territory},
-             {"hqaa_overlapping_peaks_percent", percentage(hqaa_overlapping_peaks, hqaa)}
+             {"hqaa_overlapping_peaks_percent", percentage(hqaa_overlapping_peaks, hqaa)},
+             {"tss_coverage", tss_coverage_vec},
+             {"tss_enrichment", tss_enrichment}
          }
         }
     };

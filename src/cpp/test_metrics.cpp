@@ -23,6 +23,10 @@ TEST_CASE("MetricsCollector basics", "[metrics/collector]") {
 
     SECTION("MetricsCollector::configuration_string") {
         std::string expected = "ataqv " + version_string() + "\n\n" +
+            "Operating parameters\n" +
+            "====================\n" +
+            "Thread limit: 1\n" +
+            "Ignoring read groups: no\n\n" +
             "Experiment information\n" +
             "======================\n" +
             "Organism: human\n" +
@@ -88,7 +92,7 @@ TEST_CASE("Metrics::load_alignments with no excluded regions", "[metrics/load_al
     std::string alignment_file_name("SRR891275.bam");
     std::string peak_file_name("SRR891275.peaks.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, true);
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", true);
 
     collector.load_alignments();
 
@@ -103,7 +107,7 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
     std::string alignment_file_name("test.bam");
     std::string peak_file_name("test.peaks.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, true, false, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", 1000, true, 1, false, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
 
     collector.load_alignments();
 
@@ -176,7 +180,7 @@ TEST_CASE("Metrics::ignore_read_groups", "[metrics/ignore_read_groups]") {
     std::string alignment_file_name("test.bam");
     std::string peak_file_name("test.peaks.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, true, true, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", 1000, true, 1, true, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
 
     collector.load_alignments();
 

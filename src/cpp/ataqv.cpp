@@ -29,7 +29,11 @@ enum {
     OPT_VERBOSE,
     OPT_VERSION,
 
+    OPT_THREADS,
+
     OPT_PEAK_FILE,
+    OPT_TSS_FILE,
+    OPT_TSS_EXTENSION,
     OPT_EXCLUDED_REGION_FILE,
 
     OPT_METRICS_FILE,
@@ -69,7 +73,8 @@ void print_usage() {
 
               << "--help: show this usage message." << std::endl
               << "--verbose: show more details and progress updates." << std::endl
-              << "--version: print the version of the program." << std::endl << std::endl
+              << "--version: print the version of the program." << std::endl
+              << "--threads <n>: the maximum number of threads to use (right now, only for calculating TSS enrichment)." << std::endl << std::endl
 
               << "Optional Input" << std::endl
               << "--------------" << std::endl << std::endl
@@ -81,8 +86,17 @@ void print_usage() {
               << "    appended. If you specify a single filename instead of \"auto\" with read groups, the " << std::endl
               << "    same peaks will be used for all reads -- be sure this is what you want." << std::endl << std::endl
 
+              << "--tss-file \"file name\"" << std::endl
+              << "    A BED file of transcription start sites for the experiment organism. If supplied," << std::endl
+              << "    a TSS enrichment score will be calculated according to the ENCODE data standards." << std::endl
+              << "    This calculation requires that the BAM file of alignments be indexed." << std::endl << std::endl
+
+              << "--tss-extension \"size\"" << std::endl
+              << "    If a TSS enrichment score is requested, it will be calculated for a region of " << std::endl
+              << "    \"size\" bases to either side of transcription start sites. The default is 1000bp." << std::endl << std::endl
+
               << "--excluded-region-file \"file name\"" << std::endl
-              << "    A BED file containing excluded regions. Peaks overlapping these will be ignored." << std::endl
+              << "    A BED file containing excluded regions. Peaks or TSS overlapping these will be ignored." << std::endl
               << "    May be given multiple times." << std::endl
 
               << std::endl
@@ -194,6 +208,7 @@ int main(int argc, char **argv) {
 
     int c, option_index = 0;
     bool verbose = false;
+    int thread_limit = 1;
     bool log_problematic_reads = false;
 
     std::string name;
@@ -208,6 +223,8 @@ int main(int argc, char **argv) {
     std::string autosomal_reference_filename;
     std::string mitochondrial_reference_name = "chrM";
     std::string peak_filename;
+    std::string tss_filename;
+    int tss_extension = 1000;
     std::vector<std::string> excluded_region_filenames;
 
     std::string metrics_filename;
@@ -217,6 +234,7 @@ int main(int argc, char **argv) {
         {"help", no_argument, nullptr, OPT_HELP},
         {"verbose", no_argument, nullptr, OPT_VERBOSE},
         {"version", no_argument, nullptr, OPT_VERSION},
+        {"threads", required_argument, nullptr, OPT_THREADS},
         {"log-problematic-reads", no_argument, nullptr, OPT_LOG_PROBLEMATIC_READS},
         {"name", required_argument, nullptr, OPT_NAME},
         {"ignore-read-groups", no_argument, nullptr, OPT_IGNORE_READ_GROUPS},
@@ -226,6 +244,8 @@ int main(int argc, char **argv) {
         {"metrics-file", required_argument, nullptr, OPT_METRICS_FILE},
         {"excluded-region-file", required_argument, nullptr, OPT_EXCLUDED_REGION_FILE},
         {"peak-file", required_argument, nullptr, OPT_PEAK_FILE},
+        {"tss-file", required_argument, nullptr, OPT_TSS_FILE},
+        {"tss-extension", required_argument, nullptr, OPT_TSS_EXTENSION},
         {"autosomal-reference-file", required_argument, nullptr, OPT_AUTOSOMAL_REFERENCE_FILE},
         {"mitochondrial-reference-name", required_argument, nullptr, OPT_MITOCHONDRIAL_REFERENCE_NAME},
         {0, 0, 0, 0}
@@ -243,6 +263,9 @@ int main(int argc, char **argv) {
         case OPT_VERSION:
             print_version();
             exit(1);
+        case OPT_THREADS:
+            thread_limit = std::stoi(optarg);
+            break;
         case OPT_LOG_PROBLEMATIC_READS:
             log_problematic_reads = true;
             break;
@@ -269,6 +292,12 @@ int main(int argc, char **argv) {
             break;
         case OPT_PEAK_FILE:
             peak_filename = optarg;
+            break;
+        case OPT_TSS_FILE:
+            tss_filename = optarg;
+            break;
+        case OPT_TSS_EXTENSION:
+            tss_extension = std::stoi(optarg);
             break;
         case OPT_AUTOSOMAL_REFERENCE_FILE:
             autosomal_reference_filename = optarg;
@@ -318,7 +347,10 @@ int main(int argc, char **argv) {
             autosomal_reference_filename,
             mitochondrial_reference_name,
             peak_filename,
+            tss_filename,
+            tss_extension,
             verbose,
+            thread_limit,
             ignore_read_groups,
             log_problematic_reads,
             excluded_region_filenames);

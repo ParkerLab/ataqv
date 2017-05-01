@@ -36,7 +36,7 @@
 
 html {
     font-family: 'Source Sans Pro', sans-serif;
-    font-size: calc(1em + 0.1vw);
+    font-size: calc(1rem + 0.1vw);
     color: #393930;
 }
 
@@ -123,19 +123,19 @@ li {
     position: fixed;
     z-index: 9999;
     opacity: 1;
-    left: -9999em;
-    top: -9999em;
+    left: -9999rem;
+    top: -9999rem;
     width: 50vw;
     border: 1px solid #444;
-    border-radius: 10px;
+    border-radius: 1rem;
     background: #fff;
     color: #444;
     box-shadow: 0 0 20px 4px rgba(0, 0, 0, 0.5);
 }
 
 .help h2 {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
     display: flex;
     background: #f90;
     padding: 1em;
@@ -149,7 +149,7 @@ li {
     color: #fff;
 }
 
-.help h2 > div {
+.help h2 > span {
     flex: 1;
 }
 
@@ -356,7 +356,7 @@ th {
     text-align: left;
     vertical-align: bottom;
     border: none;
-    border-right: 1px solid #ccc;
+    border-right: 2px solid #555;
     white-space: nowrap;
     background-clip: padding-box;
     user-select: none;
@@ -366,7 +366,6 @@ th {
 
 table.dataTable thead {
     background: #1a1a1a !important;
-    border: 1px solid #000;
 }
 
 table.dataTable thead th {
@@ -377,8 +376,6 @@ table.dataTable thead th {
     font-weight: normal !important;
     text-align: right;
     vertical-align: bottom;
-    border: none;
-    border-right: 1px solid #000;
     white-space: nowrap;
     background-clip: padding-box;
     user-select: none;
@@ -614,6 +611,47 @@ td:last-child *[data-hovertext]:hover::after,
     left: 0;
 }
 
+#tooltip {
+    display: none;
+    opacity: 0;
+    position: absolute;
+    max-width: 400px;
+    border: none;
+    border-radius: 0.5rem;
+    background: #fff;
+    color: #333;
+    font-size: 0.75em;
+}
+
+#tooltip h3 {
+    background: #f90;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    padding: 0.5em;
+}
+
+#tooltip table {
+    margin: 1em;
+    width: auto;
+}
+
+#tooltip tbody tr {
+    border-bottom: 1px solid #eee;
+}
+
+#tooltip th {
+    background: transparent;
+    border-right: none;
+    font-weight: bold;
+    vertical-align: top;
+}
+
+#tooltip td {
+    vertical-align: top;
+    white-space: wrap;
+    word-break: keep-all;
+}
+
 #description {
     margin: 1em;
 }
@@ -641,7 +679,7 @@ td:last-child *[data-hovertext]:hover::after,
 }
 
 #spinner {
-    flex: 1
+    flex: 1;
     position: relative;
     text-align: right;
 }
@@ -655,7 +693,7 @@ td:last-child *[data-hovertext]:hover::after,
 }
 
 #tables th[colspan]:not([colspan="1"]) {
-    background: transparent;
+    background-color: #444;
     text-align: center;
 }
 
@@ -665,18 +703,63 @@ td:last-child *[data-hovertext]:hover::after,
 
 /* Plots */
 
+#plotTabContent {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+#plotSampleList {
+    margin: 0 0 1em 0;
+}
+
+#plotSampleList > div {
+    display: flex;
+    justify-content: space-between;
+}
+
+#plotSampleList > div * {
+    flex: 0 1 content;
+}
+
+#plotSampleList > nav {
+    background: #333;
+    padding: 1em;
+    margin: 0;
+    border-radius: 0.25em;
+}
+
+#plotSampleList ul {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-content: flex-start;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#plotSampleList ul li {
+    flex: 0 1 content;
+    padding: 0 3em 0 0;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
 #plots {
+    flex: 1 1 auto;
     position: relative;
     display: flex;
     flex-wrap: wrap;
 }
 
 .plotContainer {
-    min-width: 800px;
     flex: 1 1 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: stretch;
     position: relative;
     margin: 0 2em 2em 0;
@@ -690,55 +773,25 @@ td:last-child *[data-hovertext]:hover::after,
 }
 
 .plotbox {
-    flex: 1 1 60%;
-    background: #222;
-    border-top-left-radius: 0.25em;
-    border-top-right-radius: 0.25em;
-    position: relative;
     display: flex;
+    flex-wrap: nowrap;
     flex-direction: row;
     justify-content: space-between;
-    align-items: stretch;
-    padding: 1em 0;
+    background: #222;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    position: relative;
+    padding: 0.5rem;
 }
 
 .plot {
+    flex: 1 1 100%;
     position: relative;
-    flex: 0 1 50%;
-    height: 45vh;
+    height: 240px;
 }
 
 .plotBackground {
     fill: #111;
-}
-
-.detail {
-    position: relative;
-    flex: 0 1 50%;
-    font-size: 0.75em;
-    color: #f0f0f0;
-    padding: 0 1em;
-}
-
-.detail table thead {
-    border-bottom: 1px solid #555;
-}
-
-.detail tbody tr {
-    border-bottom: 1px solid #333;
-}
-
-.detail th {
-    background: transparent;
-    border-right: none;
-    font-weight: bold;
-    vertical-align: top;
-}
-
-.detail td {
-    vertical-align: top;
-    white-space: wrap;
-    word-break: break-all;
 }
 
 .axis {
@@ -758,11 +811,15 @@ td:last-child *[data-hovertext]:hover::after,
 }
 
 .origin line{
-	stroke: #777;
+    stroke: #777;
 }
 
 .axis text {
     fill: #eee;
+}
+
+.axis.x .tick text {
+    transform: translate(-0.5em, 1em) rotate(-45deg);
 }
 
 .plotItem {
@@ -796,6 +853,7 @@ td:last-child *[data-hovertext]:hover::after,
     stroke-width: 2;
     stroke-dasharray: 10, 1;
     z-index: 999999;
+    pointer-events: none;
 }
 
 .control {
@@ -807,7 +865,8 @@ td:last-child *[data-hovertext]:hover::after,
     justify-content: flex-start;
     background: #333;
     padding: 1em;
-    border-radius: 0.25em;
+    border-bottom-left-radius: 0.25em;
+    border-bottom-right-radius: 0.25em;
 }
 
 .control > * {
@@ -815,15 +874,26 @@ td:last-child *[data-hovertext]:hover::after,
 }
 
 .controls {
-    flex: 0 1 auto;
+    flex: 1 1 content;
     display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.plotContainer .controls {
+    justify-content: space-between;
+}
+
+.plotbox .controls {
     flex-direction: column;
     justify-content: flex-start;
 }
 
 .controls > * {
     flex: 0 0 auto;
-    margin: 0 0 0.25em 0;
+    margin: 0 0 0.25em 0.25em;
 }
 
 .controls label {
@@ -852,7 +922,7 @@ td:last-child *[data-hovertext]:hover::after,
 }
 
 .legend li {
-    position: r2elative;
+    position: relative;
     flex: 0 1 50%;
     display: flex;
     cursor: pointer;
@@ -877,19 +947,29 @@ td:last-child *[data-hovertext]:hover::after,
 /* end plots */
 
 @media screen and (min-width: 1024px) {
+    .plotContainer {
+        flex: 0 1 45%;
+    }
+
     .legend li {
-        flex-basis: 33%;
+        flex-basis: 25%;
     }
 }
 
 
 @media screen and (min-width: 1800px) {
     .plotContainer {
-        flex: 0 1 45%;
+        flex: 0 1 31%;
     }
 
     .legend li {
-        flex-basis: 50%;
+        flex-basis: 10%;
+    }
+}
+
+@media screen and (min-height: 1200px) {
+    .plot {
+        height: 320px;
     }
 }
 

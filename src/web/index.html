@@ -17,6 +17,7 @@
     </head>
     <body>
         <div id="mask"></div>
+        <div id="tooltip"></div>
         <div id="status" class="active">
             <div id="message">Loading experiments...</div>
             <div id="spinner">
@@ -39,152 +40,234 @@
         <div id="banner">
             <h1><a href="https://github.com/ParkerLab/ataqv/">ataqv</a></h1>
             <ul id="tabs" class="tabs">
-                <li class="tab active" data-tab="plotTabBody">
+                <li class="tab active" data-tab="plotTab">
                     <h1>
-                        <a class="tabLink" id="plotTab" href="#plotTabBody">Plots</a>
+                        <a class="tabLink" href="#plotTab">Plots</a>
                     </h1>
                 </li>
-                <li class="tab" data-tab="tableTabBody">
+                <li class="tab" data-tab="tableTab">
                     <h1>
-                        <a class="tabLink" id="table_tab" href="#tableTabBody">Tables</a>
+                        <a class="tabLink" href="#tableTab">Tables</a>
                     </h1>
                 </li>
-                <li class="tab" data-tab="experimentTabBody">
+                <li class="tab" data-tab="experimentTab">
                     <h1>
-                        <a class="tabLink" href="#experimentTabBody">Experiments</a>
+                        <a class="tabLink" href="#experimentTab">Experiments</a>
                     </h1>
                 </li>
-                <li><h1><a id="help" href="#plotTabBodyHelp" data-helpid="plotTabBodyHelp">Help</a></h1></li>
+                <li><h1><a id="help" class="helpOpener" href="#plotTabHelp" data-helpid="plotTabHelp">Help</a></h1></li>
             </ul>
         </div>
         <div id="main">
             <div id="description"></div>
             <div id="tabbodies">
-                <div id="plotTabBody" class="tabbody active">
-                    <div id="plots">
-                        <div class="plotContainer" id="fragmentLengthDistancePlot">
-                            <div class="plotHeader">
-                                <h2>Distance from reference fragment length distribution</h2>
-                            </div>
-                            <div class="plotMain">
-                                <div class="plotbox">
-                                    <div class="plot"></div>
-                                    <div class="detail"></div>
-                                </div>
-                                <div class="control">
-                                    <div class="controls">
-                                        <label>y axis:&nbsp;
-                                            <select class="yaxis-select plot-configuration" data-plot="plotFragmentLengthDistance">
-                                                <option value="hqaa" selected>High-quality autosomal (%)</option>
-                                                <option value="properly_paired_and_mapped_reads">Properly paired and mapped (%)</option>
-                                                <option value="short_mononucleosomal_ratio">Short-to-mononucleosomal ratio</option>
-                                                <option value="duplicate_autosomal_reads">Autosomal duplicates (%)</option>
-                                            </select>
-                                        </label>
-                                        <button class="reset">Reset zoom</button>
-                                        <button class="showall">Show all</button>
-                                        <button class="hideall">Hide all</button>
-                                    </div>
-                                    <div class="legend"></div>
+                <div id="plotTab" class="tabbody active">
+                    <div id="plotTabContent">
+                        <div id="plotSampleList">
+                            <div>
+                                <h2>Samples</h2>
+                                <div class="controls horizontal">
+                                    <button class="showall">Show all</button>
+                                    <button class="hideall">Hide all</button>
                                 </div>
                             </div>
+                            <nav class="legend"></nav>
                         </div>
-                        <div class="plotContainer" id="fragmentLengthPlot">
-                            <div class="plotHeader">
-                                <h2>Fragment length distribution</h2>
-                            </div>
-                            <div class="plotMain">
-                                <div class="plotbox">
-                                    <div class="plot"></div>
-                                    <div class="detail"></div>
+                        <div id="plots">
+                            <div class="plotContainer" id="fragmentLengthPlot">
+                                <div class="plotHeader">
+                                    <h2>Fragment length distribution</h2>
                                 </div>
-                                <div class="control">
-                                    <div class="controls">
-                                        <label>Smoothing:&nbsp;
-                                            <select class="resolution plot-configuration" data-plot="plotFragmentLength">
-                                                <option>1</option>
-                                                <option selected>10</option>
-                                                <option>20</option>
-                                                <option>50</option>
-                                            </select> bp
-                                        </label>
-                                        <label>Y axis scale:&nbsp;
-                                            <select class="yScale plot-configuration" data-plot="plotFragmentLength">
-                                                <option value="1" selected>Linear</option>
-                                                <option value="0.5">Exponential</option>
-                                            </select>
-                                        </label>
-                                        <label>Reference:&nbsp;
-                                            <input type="checkbox" class="referenceToggle" data-plot="fragmentLengthPlot" name="fragmentLengthPlotReference" checked>
-                                        </label>
-                                        <button class="reset">Reset zoom</button>
-                                        <button class="showall">Show all</button>
-                                        <button class="hideall">Hide all</button>
+                                <div class="plotMain">
+                                    <div class="plotbox">
+                                        <div class="plot"></div>
+                                        <div id="fragmentLengthPlotHelp" class="help">
+                                            <h2><span>Plot help: Fragment length distribution</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                                            <p>This plot shows the fragment length distribution of each experiment. The canonical ATAC-seq fragment length distribution has a sharp peak at short (50-100bp) fragment lengths, and broader peaks at fragment lengths that would span one, two or three nucleosomes.</p>
+                                            <p>Switching the y axis scale to exponential can reveal nucleosomal periodicity at higher fragment lengths.</p>
+                                            <p>Mouse over lines to see experiment details.</p>
+                                            <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
+                                            <p>Mouse over items in the sample list at the top of the page to highlight samples. Click them to toggle sample visibility.</p>
+
+                                            <p>The dashed red line is the reference fragment length distribution. You can toggle it on and off.</p>
+                                            <p>You can smooth the lines to make it easier to compare experiments, or make the plot more responsive if you have a lot of data. By default, smoothing is set to 10. For the most accurate plot, choose a smoothing value of one.</p>
+
+                                        </div>
+                                        <div class="controls">
+                                            <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="helpOpener" data-helpid="fragmentLengthPlotHelp"><i class="fa fa-info-circle"></i></button>
+                                        </div>
                                     </div>
-                                    <div class="legend"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="plotContainer" id="peakReadCountsPlot">
-                            <div class="plotHeader">
-                                <h2>Cumulative fraction of HQAA overlapping peaks</h2>
-                            </div>
-                            <div class="plotMain">
-                                <div class="plotbox">
-                                    <div class="plot"></div>
-                                    <div class="detail"></div>
-                                </div>
-                                <div class="control">
-                                    <div class="controls">
-                                        <label>Reference:&nbsp;
-                                            <input type="checkbox" class="referenceToggle" data-plot="peakReadCountsPlot" name="peakReadCountsPlotReference" checked>
-                                        </label>
-                                        <button class="reset">Reset zoom</button>
-                                        <button class="showall">Show all</button>
-                                        <button class="hideall">Hide all</button>
+                                    <div class="control">
+                                        <div class="controls">
+                                            <label>Smoothing:&nbsp;
+                                                <select class="resolution plot-configuration" data-plot="plotFragmentLength">
+                                                    <option>1</option>
+                                                    <option selected>10</option>
+                                                    <option>20</option>
+                                                    <option>50</option>
+                                                </select> bp
+                                            </label>
+                                            <label>Y axis scale:&nbsp;
+                                                <select class="yScale plot-configuration" data-plot="plotFragmentLength">
+                                                    <option value="1" selected>Linear</option>
+                                                    <option value="0.5">Exponential</option>
+                                                </select>
+                                            </label>
+                                            <label>Reference:&nbsp;
+                                                <input type="checkbox" class="referenceToggle" data-plot="fragmentLengthPlot" name="fragmentLengthPlotReference" checked>
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div class="legend"></div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="plotContainer" id="peakTerritoryPlot">
-                            <div class="plotHeader">
-                                <h2>Cumulative fraction of peak territory</h2>
-                            </div>
-                            <div class="plotMain">
-                                <div class="plotbox">
-                                    <div class="plot"></div>
-                                    <div class="detail"></div>
+                            <div class="plotContainer" id="fragmentLengthDistancePlot">
+                                <div class="plotHeader">
+                                    <h2>Distance from reference FLD</h2>
                                 </div>
-                                <div class="control">
-                                    <div class="controls">
-                                        <label>Reference:&nbsp;
-                                            <input type="checkbox" class="referenceToggle" data-plot="peakTerritoryPlot" name="peakTerritoryPlotReference" checked>
-                                        </label>
-                                        <button class="reset">Reset zoom</button>
-                                        <button class="showall">Show all</button>
-                                        <button class="hideall">Hide all</button>
+                                <div id="plotMain">
+                                    <div class="plotbox">
+                                        <div class="plot"></div>
+                                        <div id="fragmentLengthDistancePlotHelp" class="help">
+                                            <h2><span>Plot help: distance from reference FLD</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                                            <p>This plot shows how much the fragment length distribution of each experiment differs from the reference distribution defined for this instance of the ataqv results viewer. Generally, negative values indicate less transposition activity relative to the reference, while positive values indicate more. As you hover over libraries in this plot, watch the fragment length distribution plot (to the left or above, depending on your screen). Libraries on the right side of the reference should have clearer peaks than those on the left. It should be even more apparent if you set the fragment distribution length plot's y axis scale to exponential.</p>
+                                            <p>Mouse over dots to see experiment details.</p>
+                                            <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
+                                            <p>Mouse over items in the sample list at the top of the page to highlight samples. Click them to toggle sample visibility.</p>
+                                            <p>You can change the data source of the y axis with the Y AXIS select box below.</p>
+                                            <p>You can smooth the lines to make it easier to compare experiments, or make the plot more responsive if you have a lot of data.</p>
+                                        </div>
+                                        <div class="controls">
+                                            <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="helpOpener" data-helpid="fragmentLengthDistancePlotHelp"><i class="fa fa-info-circle"></i></button>
+                                        </div>
                                     </div>
-                                    <div class="legend"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="plotContainer" id="mapqPlot">
-                            <div class="plotHeader">
-                                <h2>Mapping quality distribution</h2>
-                            </div>
-                            <div class="plotMain">
-                                <div class="plotbox">
-                                    <div class="plot"></div>
-                                    <div class="detail"></div>
-                                </div>
-                                <div class="control">
-                                    <div class="controls">
-                                        <button class="reset">Reset zoom</button>
-                                        <button class="showall">Show all</button>
-                                        <button class="hideall">Hide all</button>
+                                    <div class="control">
+                                        <div class="controls">
+                                            <label>y axis:&nbsp;
+                                                <select class="yaxis-select plot-configuration" data-plot="plotFragmentLengthDistance">
+                                                    <option value="hqaa" selected>High-quality autosomal (%)</option>
+                                                    <option value="properly_paired_and_mapped_reads">Properly paired and mapped (%)</option>
+                                                    <option value="duplicate_autosomal_reads">Autosomal duplicates (%)</option>
+                                                    <option value="short_mononucleosomal_ratio">Short-to-mononucleosomal ratio</option>
+                                                    <option value="tss_enrichment">TSS enrichment</option>
+                                                </select>
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div class="legend"></div>
+                                </div>
+                            </div>
+                            <div class="plotContainer" id="tssEnrichmentPlot">
+                                <div class="plotHeader">
+                                    <h2>TSS enrichment</h2>
+                                </div>
+                                <div class="plotMain">
+                                    <div class="plotbox">
+                                        <div class="plot"></div>
+                                        <div id="tssEnrichmentPlotHelp" class="help">
+                                            <h2><span>Plot help: TSS enrichment</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                                            <p>This plot shows mean enrichment of transposition events around transcription start sites.</p>
+                                            <p>Mouse over lines to see experiment details.</p>
+                                            <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
+                                            <p>Mouse over items in the sample list at the top of the page to highlight samples. Click them to toggle sample visibility.</p>
+                                        </div>
+                                        <div class="controls">
+                                            <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="helpOpener" data-helpid="tssEnrichmentPlotHelp"><i class="fa fa-info-circle"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="control">
+                                        <div class="controls">
+                                            <div>&nbsp;</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="plotContainer" id="peakReadCountsPlot">
+                                <div class="plotHeader">
+                                    <h2>Cumulative fraction of HQAA in peaks</h2>
+                                </div>
+                                <div class="plotMain">
+                                    <div class="plotbox">
+                                        <div class="plot"></div>
+                                        <div id="peakReadCountsPlotHelp" class="help">
+                                            <h2><span>Plot help: Cumulative fraction of HQAA in peaks</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                                            <p>This plot shows each experiment's fraction of high-quality autosomal alignments that mapped within peaks.</p>
+                                            <p>Mouse over lines to see experiment details.</p>
+                                            <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
+                                            <p>Mouse over items in the sample list at the top of the page to highlight samples. Click them to toggle sample visibility.</p>
+
+                                            <p>The dashed red line represents the cumulative fraction of HQAA in the reference peak metrics defined when this viewer was created. You can toggle it on and off.</p>
+                                        </div>
+                                        <div class="controls">
+                                            <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="helpOpener" data-helpid="peakReadCountsPlotHelp"><i class="fa fa-info-circle"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="control">
+                                        <div class="controls">
+                                            <label>Reference:&nbsp;
+                                                <input type="checkbox" class="referenceToggle" data-plot="peakReadCountsPlot" name="peakReadCountsPlotReference" checked>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="plotContainer" id="peakTerritoryPlot">
+                                <div class="plotHeader">
+                                    <h2>Cumulative fraction of peak territory</h2>
+                                </div>
+                                <div class="plotMain">
+                                    <div class="plotbox">
+                                        <div class="plot"></div>
+                                        <div id="peakTerritoryPlotHelp" class="help">
+                                            <h2><span>Plot help: Cumulative fraction of peak territory</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                                            <p>This plot shows each experiment's cumulative fraction of peak territory.</p>
+                                            <p>Mouse over lines to see experiment details.</p>
+                                            <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
+                                            <p>Mouse over items in the sample list at the top of the page to highlight samples. Click them to toggle sample visibility.</p>
+
+                                            <p>The dashed red line represents the cumulative fraction of peak territory in the reference peak metrics defined when this viewer was created. You can toggle it on and off.</p>
+
+                                        </div>
+                                        <div class="controls">
+                                            <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="helpOpener" data-helpid="peakTerritoryPlotHelp"><i class="fa fa-info-circle"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="control">
+                                        <div class="controls">
+                                            <label>Reference:&nbsp;
+                                                <input type="checkbox" class="referenceToggle" data-plot="peakTerritoryPlot" name="peakTerritoryPlotReference" checked>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="plotContainer" id="mapqPlot">
+                                <div class="plotHeader">
+                                    <h2>Mapping quality distribution</h2>
+                                </div>
+                                <div class="plotMain">
+                                    <div class="plotbox">
+                                        <div class="plot"></div>
+                                        <div id="mapqPlotHelp" class="help">
+                                            <h2><span>Plot help: Mapping quality distribution</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+                                            <p>This plot shows each experiment's mapping quality distribution.</p>
+                                            <p>Mouse over lines to see experiment details.</p>
+                                            <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
+                                            <p>Mouse over items in the sample list at the top of the page to highlight samples. Click them to toggle sample visibility.</p>
+                                        </div>
+                                        <div class="controls">
+                                            <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="helpOpener" data-helpid="mapqPlotHelp"><i class="fa fa-info-circle"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="control">
+                                        <div class="controls">
+                                            <div>&nbsp;</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -194,7 +277,7 @@
                     </div>
                 </div>
             </div>
-            <div id="tableTabBody" class="tabbody">
+            <div id="tableTab" class="tabbody">
                 <div id="tables">
                     <div class="tableContainer">
                         <h2>Quality Indicators</h2>
@@ -218,6 +301,9 @@
                                     </th>
                                     <th data-metric="fragment_length_distance">
                                         <span data-hovertext="The distance of the experiment's fragment length distribution to a reference distribution. Negative distance should be associated with under-transposition, positive distance should be associated with over-transposition.">Fragment length distribution distance from reference</span>
+                                    </th>
+                                    <th data-metric="tss_enrichment">
+                                        <span data-hovertext="The TSS enrichment score, calculated per ENCODE ATAC-seq data standards.">TSS enrichment</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -416,7 +502,7 @@
                     </div>
                 </div>
             </div>
-            <div id="experimentTabBody" class="tabbody">
+            <div id="experimentTab" class="tabbody">
                 <div id="experiments">
                     <table id="experimentsTable" width="100%">
                         <thead>
@@ -449,25 +535,25 @@
                     </div>
                 </div>
             </div>
-            <div class="help" id="plotTabBodyHelp">
-                <h2><div>Using the Plots tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+            <div class="help" id="plotTabHelp">
+                <h2><span>Using the Plots tab</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
                 <p>Each plot has specific help, but generally you can:</p>
                 <ul>
                     <li>Double click or use the mouse wheel or trackpad scrolling to zoom.</li>
                     <li>Drag to pan.</li>
                     <li>Hover over plot dots or lines to highlight them and see experiment details.</li>
-                    <li>Hover over legend items to highlight samples in the plot.</li>
-                    <li>Click legend items to toggle sample visibility in the plot.</li>
+                    <li>Hover over samples to highlight samples in the plot.</li>
+                    <li>Click samples to toggle sample visibility in the plot.</li>
                 </ul>
             </div>
-            <div class="help" id="tableTabBodyHelp">
-                <h2><div>Using the Tables tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+            <div class="help" id="tableTabHelp">
+                <h2><span>Using the Tables tab</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
                 <p>Hover over table headings to see descriptions of the metrics.</p>
                 <p>Filter the table by entering text in the Search box. Clear that box to restore the full table.</p>
                 <p>Most table headings can be clicked to sort the table.</p>
             </div>
-            <div class="help" id="experimentTabBodyHelp">
-                <h2><div>Using the Experiments tab</div><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
+            <div class="help" id="experimentTabHelp">
+                <h2><span>Using the Experiments tab</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
                 <p>If a URL was specified when running ataqv, the "Experiment description" column will contain links to more information on the experiments.</p>
                 <p>The original ataqv metrics files used to produce this viewer can be downloaded via the links in the last column. They're plain JSON files that you can use to produce your own plots with R or Pandas, or analyze further with your own programs.</p>
                 <p>You can search the experiment list by entering text in the Search box.</p>

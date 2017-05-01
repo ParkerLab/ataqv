@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.7.0
+VERSION = 0.9.0
 
 #
 # PATHS
@@ -36,7 +36,7 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqv/$(VERSION)
 #
 
 CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing -fPIC $(INCLUDES)
-CXXFLAGS = -std=c++11 -pthread -O3 $(CPPFLAGS)
+CXXFLAGS = -std=c++11 -pthread -O3 -g $(CPPFLAGS)
 CXXFLAGS_DEV = -std=c++11 -pthread -O3 -g $(CPPFLAGS)
 CXXFLAGS_STATIC = -std=c++11 -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -static -static-libgcc -static-libstdc++ $(CPPFLAGS)
 
@@ -98,7 +98,7 @@ else
 	HTS_LIBS = -lhts
 endif
 
-LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses
+LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses -lpthread
 HTSLIB_STATIC_DIR = $(HOME)/sw/bio/htslib/htslib
 LDLIBS_STATIC = -L$(HTSLIB_STATIC_DIR) $(LDLIBS) -ltinfo -lrt
 
@@ -151,7 +151,7 @@ deb-static: deb
 	sed -i '/Depends: /d' debian/ataqv/DEBIAN/control
 	dh_builddeb
 
-rpm: deb-static
+rpm: ../ataqv_$(VERSION)-1_amd64.deb
 	(cd .. && alien -r ataqv_$(VERSION)-1_amd64.deb)
 
 

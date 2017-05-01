@@ -32,13 +32,7 @@ bool operator< (const Peak& p1, const Peak& p2) {
            (p1.end < p2.end ||
             (p1.end == p2.end &&
              (p1.overlapping_hqaa < p2.overlapping_hqaa ||
-              (p1.overlapping_hqaa == p2.overlapping_hqaa && sort_strings_numerically(p1.name, p2.name))
-             )
-            )
-           )
-          )
-         )
-        );
+              (p1.overlapping_hqaa == p2.overlapping_hqaa && sort_strings_numerically(p1.name, p2.name))))))));
 }
 
 
@@ -53,7 +47,7 @@ std::istream& operator>>(std::istream& is, Peak& peak) {
     std::stringstream peak_stream;
     std::getline(is, peak_string);
     peak_stream.str(peak_string);
-    peak_stream >> peak.reference >> peak.start >> peak.end >> peak.name;
+    peak_stream >> peak.reference >> peak.start >> peak.end >> peak.name >> peak.score >> peak.strand;
     peak.overlapping_hqaa = 0;
     return is;
 }
@@ -125,8 +119,8 @@ ReferencePeakCollection* PeakTree::get_reference_peaks(const std::string& refere
 void PeakTree::increment_overlapping_hqaa(const Feature& hqaa) {
     ReferencePeakCollection* rpc = get_reference_peaks(hqaa.reference);
     if (rpc->overlaps(hqaa)) {
-        auto peak = std::upper_bound(rpc->peaks.begin(), rpc->peaks.end(), hqaa, feature_overlap_comparator);
-        auto end = rpc->peaks.end();
+        auto peak = std::lower_bound(rpc->peaks.begin(), rpc->peaks.end(), hqaa, feature_overlap_comparator);
+        auto end = std::upper_bound(peak, rpc->peaks.end(), hqaa, feature_overlap_comparator);
 
         for (; peak != end; ++peak) {
             if (peak->overlaps(hqaa)) {

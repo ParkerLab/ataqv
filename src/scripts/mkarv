@@ -352,24 +352,23 @@ def parse_arguments():
     parser.add_argument('-m', '--maximum-fragment-length', type=int, default=1000, help='The maximum fragment length for which the distance to the reference fragment length count distribution will be measured.')
     parser.add_argument('-d', '--description', help='A description for the viewer instance.')
 
-    parser.add_argument('-p', '--peak-reference', default="calculate", help=(
-        """A reference set of peak metrics to plot. It can be specified as "calculate", """
-        """the default, in which case these metrics will be averaged """
-        """from the given metrics. It can also be the name of a JSON file, """
-        """which must contain an object with two keys, "cumulative_fraction_of_hqaa" """
+    parser.add_argument('-p', '--peak-reference', default="SRR891268", help=(
+        """A reference set of peak metrics to plot. The default value is "SRR891268", """
+        """the peak metrics of that sample in the ATAC-seq paper, as generated with MACS2 """
+        """in our pipeline. It can be specified as "calculate", in which case these """
+        """metrics will be averaged from the given metrics. It can also be the name of a """
+        """JSON file, which must contain an object with two keys, "cumulative_fraction_of_hqaa" """
         """and "cumulative_fraction_of_territory", the value of each being an array """
         """of fractions of high-quality autosomal alignments (HQAA) or total """
         """peak territory, respectively. A tab- or comma-separated value file may also be given, """
         """in which each line contains two fractions, of HQAA and peak territory. """
         """All of these arrays should represent values at percentiles from 1-100."""
-        """The peak reference may also be specified as "SRR891268", in which case the """
-        """peak metrics of that sample in the ATAC-seq paper, as generated with MACS2 """
-        """in our pipeline, will be used."""
     ))
 
-    parser.add_argument('-r', '--reference', default="calculate", help=(
-        """How to make the reference fragment length count distribution. """
-        """It can be specified as "calculate", the default, in which case a"""
+    parser.add_argument('-r', '--reference', default="SRR891268", help=(
+        """How to make the reference fragment length count distribution. The default """
+        """value is "SRR891268", the fragment length distribution of that sample in the """
+        """ATAC-seq paper. It can be specified as "calculate", in which case a """
         """distance will be calculated for each set of metrics """
         """from a reference distribution constructed from the rest """
         """of the given metrics. It can also be the name of a file """
@@ -378,9 +377,6 @@ def parse_arguments():
         """lengths to counts (e.g. "{0: 0, 1: 10, 2: 17}", or it """
         """may be a tab- or comma-separated value file in which """
         """each line contains a fragment length and count. It may """
-        """also be specified as "SRR891268", in which case the """
-        """fragment length distribution from that sample in the """
-        """ATAC-seq paper will be used as the reference."""
     ))
 
     parser.add_argument('-t', '--template-directory', default=locate_template_directory(sys.argv[0]), help=("""The location of the web app directory template."""))

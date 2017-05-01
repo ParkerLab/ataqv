@@ -60,7 +60,12 @@ public:
 
     std::string peak_filename = "auto";
 
+    std::string tss_filename = "";
+    const int tss_extension = 1000;
+    FeatureTree tss_tree;
+
     bool verbose = false;
+    int thread_limit = 1;
     bool ignore_read_groups = false;
     bool log_problematic_reads = false;
 
@@ -76,7 +81,10 @@ public:
                      const std::string& autosomal_reference_filename = "",
                      const std::string& mitochondrial_reference_name = "chrM",
                      const std::string& peak_filename = "",
+                     const std::string& tss_filename = "",
+                     const int tss_extension = 1000,
                      bool verbose = false,
+                     const int thread_limit = 1,
                      bool ignore_read_groups = false,
                      bool log_problematic_reads = false,
                      const std::vector<std::string>& excluded_region_filenames = {});
@@ -85,6 +93,7 @@ public:
     std::string configuration_string() const;
     bool is_autosomal(const std::string &reference_name);
     bool is_mitochondrial(const std::string& reference_name);
+    void load_tss();
     void load_alignments();
     json to_json();
 };
@@ -189,13 +198,23 @@ public:
     unsigned long long int top_1000_peak_hqaa_read_count = 0;
     unsigned long long int top_10000_peak_hqaa_read_count = 0;
 
+    std::map<int, unsigned long long int> tss_coverage = {};
+    std::map<int, double> tss_coverage_scaled = {};
+    double tss_enrichment = 0.0;
+
     bool log_problematic_reads = false;
     bool peaks_requested = false;
+    bool tss_requested = false;
 
     Metrics(MetricsCollector* collector, const std::string& name = nullptr);
 
     void add_alignment(const bam_hdr_t* header, const bam1_t* record);
     std::string configuration_string() const;
+    void add_tss_coverage(const Feature& fragment);
+    std::map<int, unsigned long long int> get_tss_coverage_for_reference(const std::string &reference, const int extension);
+    void calculate_tss_metrics();
+    std::map<int, unsigned long long int> calculate_tss_metric_for_reference(const std::string &reference, const int extension, FeatureTree &fragment_tree);
+
     void determine_top_peaks();
     void increment_overlapping_read_count(Peak* peak);
     bool is_autosomal(const std::string &reference_name);

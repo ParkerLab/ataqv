@@ -6,6 +6,8 @@
 
 /* global d3, $ */
 
+'use strict;'
+
 var ataqv = (function() {
     let consoleEnabled = false;
 
@@ -13,6 +15,7 @@ var ataqv = (function() {
     let plots = {};
     let legendItemState = new Map();
     let dispatch = d3.dispatch('legendChange', 'plotItemInspect', 'sampleInspect');
+    let tooltip = d3.select('#tooltip');
 
     function localStorageAvailable() {
         try {
@@ -23,6 +26,41 @@ var ataqv = (function() {
         }
         catch(e) {
             return false;
+        }
+    }
+
+    function showTooltip() {
+        let cx = d3.event.clientX + 10;
+        let cy = d3.event.clientY - 28;
+        let px = d3.event.pageX + 10;
+        let py = d3.event.pageY - 28;
+
+        tooltip.style('z-index', 99999).style('display', 'block');
+
+        let tooltipBounds = tooltip.node().getBoundingClientRect();
+        let tooltipHeight = tooltipBounds.height;
+        let tooltipWidth = tooltipBounds.width;
+
+        d3.select(d3.event.target).raise();
+        d3.event.target.classList.add('opaque');
+
+        if ((document.documentElement.clientWidth - cx) < tooltipWidth) {
+            px -= tooltipWidth + 20;
+        }
+
+        if ((document.documentElement.clientHeight - cy) < tooltipHeight) {
+            py -= tooltipHeight - 20;
+        }
+
+        tooltip.style('left', px + 'px').style('top', py + 'px');
+        tooltip.transition().duration(200).style('opacity', 1);
+    }
+
+    function hideTooltip(d, i) {
+        if (d3.event) {
+            d3.event.target.classList.remove('opaque');
+            tooltip.transition().duration(100).style('opacity', 0);
+            tooltip.style('z-index', -99999);
         }
     }
 
@@ -38,7 +76,9 @@ var ataqv = (function() {
 
     function showHelp(helpID) {
         let help = document.getElementById(helpID);
-        help.classList.add('visibleHelp');
+        if (help) {
+            help.classList.add('visibleHelp');
+        }
     }
 
     function hideMask() {
@@ -216,12 +256,14 @@ var ataqv = (function() {
             hideHelp();
         }, true);
 
-        document.getElementById('help').addEventListener('click', function(evt) {
-            evt.preventDefault();
-            showMask();
-            let helpID = evt.target.dataset.helpid;
-            showHelp(helpID);
-        }, true);
+        for (let helpOpener of querySelectorAll(['.helpOpener'])) {
+            helpOpener.addEventListener('click', function(evt) {
+                evt.preventDefault();
+                showMask();
+                let helpID = evt.target.dataset.helpid;
+                showHelp(helpID);
+            }, true);
+        }
 
         for (let helpCloser of querySelectorAll(['.help .cleaner'])) {
             helpCloser.addEventListener('click', hideHelp, true);
@@ -234,11 +276,25 @@ var ataqv = (function() {
 
             switch (evt.keyCode) {
             case 27: hideHelp(); break;
-            case 69: activateTab('experimentTabBody'); break;
-            case 84: activateTab('tableTabBody'); break;
-            case 80: activateTab('plotTabBody'); break;
+            case 69: activateTab('experimentTab'); break;
+            case 84: activateTab('tableTab'); break;
+            case 80: activateTab('plotTab'); break;
             }
         });
+
+        dispatch.on('plotItemInspect' , function() {
+            let experimentID = this;
+            let experiment = configuration.metrics[experimentID];
+            if (experiment) {
+                d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
+                d3.selectAll('.plotItem[data-experiment="' + experimentID + '"]').classed('highlight', true).raise();
+            } else {
+                d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
+            }
+
+            showTooltip();
+        });
+
     }
 
     function listExperiments() {
@@ -345,8 +401,8 @@ var ataqv = (function() {
 
     function changeSampleVisibility() {
         for (let [sample, selected] of legendItemState) {
-            d3.selectAll('.plotItem[data-sample=' + sample + ']').classed('hidden', !selected);
-            d3.selectAll('.legendItem[data-sample=' + sample + ']').classed('targetHidden', !selected);
+            d3.selectAll('.plotItem[data-sample="' + sample + '"]').classed('hidden', !selected);
+            d3.selectAll('.legendItem[data-sample="' + sample + '"]').classed('targetHidden', !selected);
         }
     }
 
@@ -369,24 +425,12 @@ var ataqv = (function() {
     function makeFragmentLengthDistancePlot() {
         let containerID = 'fragmentLengthDistancePlot';
         let container = document.getElementById(containerID);
-        let plotElement = container.querySelector('.plot');
-        let detail = container.querySelector('.detail');
-
-        let help = (
-            '<p>Mouse over dots to see experiment details.</p>' +
-                '<p>Double click or use the mouse wheel or trackpad scroll to zoom. Drag to pan.</p>' +
-                '<p>Mouse over legend items to highlight samples. Click them to toggle sample visibility.</p>'
-        );
-
-        let yAxisSelect = container.querySelector('.yaxis-select');
-        if (yAxisSelect) {
-            help += '<p>You can change the data source of the y axis with the Y AXIS select box below.</p>';
-        }
 
         return function() {
+            let plotElement = container.querySelector('.plot');
             plotElement.innerHTML = '';
-            detail.innerHTML = help;
 
+            let yAxisSelect = container.querySelector('.yaxis-select');
             let yAxisLabel = yAxisSelect.options[yAxisSelect.selectedIndex].innerHTML;
 
             function getYValue(experiment) {
@@ -394,6 +438,9 @@ var ataqv = (function() {
                 let yAxisSource = yAxisSelect.value;
                 switch(yAxisSource) {
                 case 'short_mononucleosomal_ratio':
+                    y = experiment[yAxisSource];
+                    break;
+                case 'tss_enrichment':
                     y = experiment[yAxisSource];
                     break;
                 case 'duplicate_autosomal_reads':
@@ -436,16 +483,6 @@ var ataqv = (function() {
                 }
             }
 
-            for (let s of samples.values()) {
-                s.minDistance = d3.min(s.libraries, function(d) {return d.x;});
-                s.maxDistance = d3.max(s.libraries, function(d) {return d.x;});
-                s.meanDistance = (s.libraries.reduce(function(a, b) {return {x: a.x + b.x};}, {x: 0}).x / s.libraries.length);
-                let squaresOfDifferences = s.libraries.map(function(a) {return Math.pow(a.x - s.meanDistance, 2);});
-                let meanSquareOfDifferences = squaresOfDifferences.reduce(function(a, b) {return a + b;}, 0) / squaresOfDifferences.length;
-                let stddev = Math.sqrt(meanSquareOfDifferences);
-                s.distanceStandardDeviation = stddev;
-            }
-
             let margin = {top: 15, right: 20, bottom: 100, left: 100};
             let width = getWidth(plotElement) - margin.left - margin.right;
             let height = getHeight(plotElement) - margin.bottom;
@@ -467,6 +504,7 @@ var ataqv = (function() {
             // setup fill color
             let cValue = function(d) { return d.sample;};
             let color = d3.scaleOrdinal(d3.schemeCategory20c);
+            color.domain([...samples.keys()].sort());
 
             let limit = Math.max(Math.abs(d3.min(data, xValue)), Math.abs(d3.max(data, xValue))) * 1.05;
             if (d3.min(data, xValue) < 0) {
@@ -474,7 +512,7 @@ var ataqv = (function() {
             } else {
                 xScale.domain([0, limit]);
             }
-            yScale.domain([0, d3.max(data, yValue) + 10]);
+            yScale.domain([0, d3.max(data, yValue) * 1.05]);
 
             let svg = d3.select(plotElement).append('svg')
                 .attr('class', 'plotRoot')
@@ -506,18 +544,13 @@ var ataqv = (function() {
                 .style('border', '1px solid #f00')
                 .text(yAxisLabel);
 
-            yAxisG.selectAll('text.label').call(wrapY, height * 0.8, height * -0.5);
+            yAxisG.selectAll('text.label').call(wrapY, height, height * -0.5);
 
             // x-axis
             let xAxisG = main.append('g')
                 .attr('class', 'x axis')
                 .attr('transform', 'translate(0,' + height + ')')
                 .call(xAxis);
-
-            xAxisG.selectAll('text')
-                .attr('dx', '-1.25em')
-                .attr('dy', '0.75em')
-                .attr('transform', 'rotate(-45)');
 
             xAxisG.append('text')
                 .attr('class', 'label')
@@ -532,27 +565,6 @@ var ataqv = (function() {
                         return (d == 0);
                     });
             }
-
-            dispatch.on('plotItemInspect.' + containerID, function() {
-                let experiment = configuration.metrics[this];
-                if (experiment) {
-                    let library = makeLibrary(this);
-                    d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
-                    d3.selectAll('.plotItem[data-experiment="' + library.experimentID + '"]').classed('highlight', true).raise();
-                    detail.innerHTML =
-                        '<div><h3>Library ' + library.experimentID + '</h3>' +
-                        '<table><tbody>' +
-                        '<tr><th>Library</th><td>' + library.library + '</td></tr>' +
-                        '<tr><th>Sample</th><td>' + library.sample + '</td></tr>' +
-                        '<tr><th>Description</th><td>' + library.description + '</td></tr>' +
-                        '<tr><th>' + yAxisLabel + '</th><td>' + formatNumberForLocale(library.y) + '</td></tr>' +
-                        '<tr><th>Distance</th><td>' + d3.format('.10g')(library.x) + '</td></tr>' +
-                        '</tbody></table></div>';
-                } else {
-                    d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
-                    detail.innerHTML = help;
-                }
-            });
 
             let dots = main.append('svg')
                 .attr('width', width)
@@ -578,8 +590,20 @@ var ataqv = (function() {
                 .on('click', function(d) {
                     d3.select(d3.event.target).lower();
                 })
-                .on('mouseover', function(d) {dispatch.call('plotItemInspect', d.experimentID);})
-                .on('mouseout', function() {dispatch.call('plotItemInspect', null);});
+                .on('mouseover', function(d) {
+                    tooltip.html(
+                        '<h3>Library ' + d.experimentID + '</h3>' +
+                            '<table><tbody>' +
+                            '<tr><th>Library</th><td>' + d.library + '</td></tr>' +
+                            '<tr><th>Sample</th><td>' + d.sample + '</td></tr>' +
+                            '<tr><th>Description</th><td>' + d.description + '</td></tr>' +
+                            '<tr><th>' + yAxisLabel + '</th><td>' + formatNumberForLocale(d.y) + '</td></tr>' +
+                            '<tr><th>Distance</th><td>' + d3.format('.10g')(d.x) + '</td></tr>' +
+                            '</tbody></table>'
+                    );
+                    dispatch.call('plotItemInspect', d.experimentID);
+                })
+                .on('mouseout', function() {tooltip.html(''); dispatch.call('plotItemInspect', null);});
 
             function zoomed() {
                 let transform = d3.event.transform;
@@ -605,108 +629,24 @@ var ataqv = (function() {
 
             svg.call(zoom);
 
-            // draw legend
-            let legendContainer = container.querySelector('.legend');
-            legendContainer.innerHTML = '';
-
-            let legend = document.createElement('ul');
-            for (let sampleID of [...samples.keys()].sort()) {
-                let legendItem = document.createElement('li');
-                legendItem.classList.add('legendItem');
-                if (samples.size < 7) {
-                    legendItem.style.flexBasis = '100%';
-                }
-
-                if (!legendItemState.get(sampleID)) {
-                    legendItem.classList.add('targetHidden');
-                }
-
-                legendItem.dataset.sample = sampleID;
-
-                let legendItemColor = document.createElement('span');
-                legendItemColor.classList.add('legendItemColor');
-                legendItemColor.style.backgroundColor = color(sampleID);
-                legendItem.appendChild(legendItemColor);
-
-                let legendItemLabel = document.createElement('span');
-                legendItemLabel.classList.add('legendItemLabel');
-                legendItemLabel.innerHTML = sampleID;
-                legendItem.appendChild(legendItemLabel);
-
-                legend.appendChild(legendItem);
-            }
-            legendContainer.appendChild(legend);
-
-            legend.addEventListener('click', selectLegendItem, true);
-
-            dispatch.on('sampleInspect.' + containerID, function() {
-                let sample = String(this);
-                let s = samples.get(sample);
-                if (s) {
-                    d3.selectAll('.plotItem').classed('unhighlight', true);
-                    d3.selectAll('.plotItem[data-sample="' + sample + '"]').raise().classed('highlight', true);
-
-                    let newDetail = '<div><h3>Sample ' + sample + '</h3>' + '<table><tbody>';
-
-                    if (s.libraries.length > 1) {
-                        newDetail +=
-                            '<tr><th>Libraries:</th><td>' + s.libraries.length + '</td></tr>' +
-                            '<tr><th>Minimum distance:</th><td>' + s.minDistance + '</td></tr>' +
-                            '<tr><th>Maximum distance:</th><td>' + s.maxDistance + '</td></tr>' +
-                            '<tr><th>Mean distance:</th><td>' + s.meanDistance + '</td></tr>' +
-                            '<tr><th>Standard deviation:</th><td>' + s.distanceStandardDeviation + '</td></tr>';
-                    } else {
-                        newDetail +=
-                            '<tr><th>Library:</th><td>' + s.libraries[0].library + '</td></tr>' +
-                            '<tr><th>Distance:</th><td>' + s.meanDistance + '</td></tr>';
-                    }
-
-                    newDetail += '</tbody></table></div>';
-
-                    detail.innerHTML = newDetail;
-                } else {
-                    d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
-                    detail.innerHTML = help;
-                }
-            });
-
-            legend.addEventListener('mouseover', function(evt) {
-                evt.preventDefault();
-                if (evt.target.classList.contains('legendItemColor') || evt.target.classList.contains('legendItemLabel')) {
-                    let li = evt.target.classList.contains('legendItem') ? evt.target : closest(evt.target, 'legendItem');
-                    if (li && li.dataset && li.dataset.sample) {
-                        dispatch.call('sampleInspect', li.dataset.sample);
-                    }
-                }
-            }, true);
-
-            legend.addEventListener('mouseout', function(evt) {
-                evt.preventDefault();
-                if (evt.target.classList.contains('legendItemColor') || evt.target.classList.contains('legendItemLabel')) {
-                    let li = evt.target.classList.contains('legendItem') ? evt.target : closest(evt.target, 'legendItem');
-                    if (li && li.dataset && li.dataset.sample) {
-                        dispatch.call('sampleInspect', null);
-                    }
-                }
-            }, true);
-
-            d3.select(container).select('.hideall').on('click', deselectAllLegendItems);
-            d3.select(container).select('.showall').on('click', selectAllLegendItems);
-
             function reset() {
-                detail.innerHTML = help;
                 svg.transition()
                     .duration(500)
                     .call(zoom.transform, d3.zoomIdentity);
             }
 
             container.querySelector('.reset').addEventListener('click', reset, true);
+            d3.select(container).select('.helpOpener').on('click', function() {
+                let helpID = this.dataset.helpid;
+                showHelp(helpID);
+            });
+
         };
     }
 
     plots.plotFragmentLengthDistance = makeFragmentLengthDistancePlot();
 
-    function makeLinePlot(containerID, provideData, extraHelp) {
+    function makeLinePlot(containerID, provideData) {
         //
         // containerID is the ID of a .plotContainer
         //
@@ -725,30 +665,16 @@ var ataqv = (function() {
         //
         let container = document.getElementById(containerID);
 
-        let help = ('<p>Mouse over lines to see experiment details.</p>' +
-                    '<p>Double click or use the mouse wheel or trackpad scroll to zoom. Drag to pan.</p>' +
-                    '<p>Mouse over legend items to highlight samples. Click them to toggle sample visibility.</p>');
-
-        let resolutionSelect = container.querySelector('.resolution');
-        if (resolutionSelect) {
-            help += '<p>You can smooth the lines to make it easier to compare experiments, or make the plot more ' +
-                'responsive if you have a lot of data.</p>';
-        }
-
-        if (extraHelp) {
-            help += extraHelp;
-        }
-
         return function() {
             let plotElement = container.querySelector('.plot');
-            let detail = container.querySelector('.detail');
-            let legendContainer = container.querySelector('.legend');
-
             plotElement.innerHTML = '';
-            detail.innerHTML = help;
-            legendContainer.innerHTML = '';
 
             let data = provideData(containerID);
+
+            if (!data) {
+                container.remove();
+                return;
+            }
 
             let samples = new Map();
             let experimentIDs = Object.keys(configuration.metrics).sort();
@@ -770,8 +696,7 @@ var ataqv = (function() {
 
             // setup x
             let xValue = function(d) {return d.x;};
-            let xScale = d3.scaleLinear().range([0, width]).domain([0, data.xMax]);
-
+            let xScale = d3.scaleLinear().range([0, width]).domain([data.xMin, data.xMax]);
             let xMap = function(d) {return xScale(xValue(d));};
             let xAxis = d3.axisBottom(xScale).tickSize(-height);
 
@@ -782,12 +707,13 @@ var ataqv = (function() {
             let yScaleExponent = yScaleSelect ? Number.parseFloat(yScaleSelect.value) : 1;
 
             // The scale is switched by changing the exponent;
-            // d3.scalePow with exponent 1 is effective linear.
-            let yScale = d3.scalePow().exponent(yScaleExponent).range([height, 0]).domain([0, data.yMax]);
+            // d3.scalePow with exponent 1 is effectively linear.
+            let yScale = d3.scalePow().exponent(yScaleExponent).range([height, 0]).domain([data.yMin, data.yMax * 1.05]);
             let yMap = function(d) { return yScale(yValue(d));};
             let yAxis = d3.axisLeft(yScale).tickSize(-width).ticks(5);
 
             let color = d3.scaleOrdinal(d3.schemeCategory20c);
+            color.domain([...samples.keys()].sort());
 
             let svg = d3.select(plotElement).append('svg')
                 .attr('class', 'plotRoot')
@@ -817,7 +743,6 @@ var ataqv = (function() {
                 .style('text-anchor', 'middle')
                 .text(data.xLabel);
 
-
             // y-axis
             let yAxisG = main.append('g')
                 .attr('class', 'y axis')
@@ -825,12 +750,12 @@ var ataqv = (function() {
 
             yAxisG.append('text')
                 .attr('class', 'label')
-                .attr('transform', 'rotate(-90), translate(0, -' + (margin.left - 30) + ')')
+                .attr('transform', 'rotate(-90), translate(0, -' + (margin.left - 20) + ')')
                 .style('text-anchor', 'middle')
                 .style('border', '1px solid #f00')
                 .text(data.yLabel);
 
-            yAxisG.selectAll('text.label').call(wrapY, height * 0.8, height * -0.5);
+            yAxisG.selectAll('text.label').call(wrapY, height, height * -0.5);
 
             function zoomed() {
                 let transform = d3.event.transform;
@@ -906,126 +831,46 @@ var ataqv = (function() {
 
             function makeMouseoverHandler(d) {
                 return function() {
+                    tooltip.html(
+                        '<h3>Library ' + d.experimentID + '</h3>' +
+                            '<table><tbody>' +
+                            '<tr><th>Library</th><td>' + d.library + '</td></tr>' +
+                            '<tr><th>Sample</th><td>' + d.sample + '</td></tr>' +
+                            '<tr><th>Description</th><td>' + d.description + '</td></tr>' +
+                            '</tbody></table>'
+                    );
                     dispatch.call('plotItemInspect', d.experimentID);
                 };
             }
 
             function handleMouseout() {
+                tooltip.html('');
                 dispatch.call('plotItemInspect', null);
             }
 
             dispatch.on('plotItemInspect.' + containerID, function() {
-                let experiment = configuration.metrics[this];
+                let experimentID = this;
+                let experiment = configuration.metrics[experimentID];
                 if (experiment) {
-                    let library = {
-                        experimentID: this,
-                        library: experiment.library.library || this,
-                        sample: (experiment.library.sample || experiment.name),
-                        description: experiment.library.description
-                    };
-
                     d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
-                    d3.selectAll('.plotItem[data-experiment="' + library.experimentID + '"]').classed('highlight', true).raise();
-                    detail.innerHTML =
-                        '<div><h3>Library ' + library.experimentID + '</h3>' +
-                        '<table><tbody>' +
-                        '<tr><th>Library</th><td>' + library.library + '</td></tr>' +
-                        '<tr><th>Sample</th><td>' + library.sample + '</td></tr>' +
-                        '<tr><th>Description</th><td>' + library.description + '</td></tr>' +
-                        '</tbody></table></div>';
+                    d3.selectAll('.plotItem[data-experiment="' + experimentID + '"]').classed('highlight', true).raise();
                 } else {
                     d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
-                    detail.innerHTML = help;
                 }
                 d3.selectAll('.reference').raise();
             });
-
-            // draw legend
-            let legend = document.createElement('ul');
-            for (let sampleID of [...samples.keys()].sort()) {
-                let legendItem = document.createElement('li');
-                legendItem.classList.add('legendItem');
-                if (samples.size < 7) {
-                    legendItem.style.flexBasis = '100%';
-                }
-
-                if (!legendItemState.get(sampleID)) {
-                    legendItem.classList.add('targetHidden');
-                }
-
-                legendItem.dataset.sample = sampleID;
-
-                let legendItemColor = document.createElement('span');
-                legendItemColor.classList.add('legendItemColor');
-                legendItemColor.style.backgroundColor = color(sampleID);
-                legendItem.appendChild(legendItemColor);
-
-                let legendItemLabel = document.createElement('span');
-                legendItemLabel.classList.add('legendItemLabel');
-                legendItemLabel.innerHTML = sampleID;
-                legendItem.appendChild(legendItemLabel);
-
-                legend.appendChild(legendItem);
-            }
-            legendContainer.appendChild(legend);
-
-            legend.addEventListener('click', selectLegendItem, true);
-
-            dispatch.on('sampleInspect.' + containerID, function() {
-                let sample = String(this);
-                let s = samples.get(sample);
-                if (s) {
-                    d3.selectAll('.plotItem').classed('unhighlight', true);
-                    d3.selectAll('.plotItem[data-sample="' + sample + '"]').raise().classed('highlight', true);
-
-                    let newDetail =
-                        '<div><h3>Sample ' + sample + '</h3>' +
-                        '<table><tbody>';
-                    if (s.libraries.length > 1) {
-                        newDetail += '<tr><th>Libraries:</th><td>' + s.libraries.length + '</td></tr>';
-                    } else {
-                        newDetail += '<tr><th>Libraries:</th><td>' + s.libraries[0].library + '</td></tr>';
-                    }
-                    newDetail += '</tbody></table></div>';
-                    detail.innerHTML = newDetail;
-                } else {
-                    d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
-                    detail.innerHTML = help;
-                }
-                d3.selectAll('.reference').raise();
-            });
-
-            legend.addEventListener('mouseover', function(evt) {
-                evt.preventDefault();
-                if (evt.target.classList.contains('legendItemColor') || evt.target.classList.contains('legendItemLabel')) {
-                    let li = evt.target.classList.contains('legendItem') ? evt.target : closest(evt.target, 'legendItem');
-                    if (li && li.dataset && li.dataset.sample) {
-                        dispatch.call('sampleInspect', li.dataset.sample);
-                    }
-                }
-            }, true);
-
-            legend.addEventListener('mouseout', function(evt) {
-                evt.preventDefault();
-                if (evt.target.classList.contains('legendItemColor') || evt.target.classList.contains('legendItemLabel')) {
-                    let li = evt.target.classList.contains('legendItem') ? evt.target : closest(evt.target, 'legendItem');
-                    if (li && li.dataset && li.dataset.sample) {
-                        dispatch.call('sampleInspect', null);
-                    }
-                }
-            }, true);
-
-            d3.select(container).select('.hideall').on('click', deselectAllLegendItems);
-            d3.select(container).select('.showall').on('click', selectAllLegendItems);
 
             function reset() {
-                detail.innerHTML = help;
                 svg.transition()
                     .duration(500)
                     .call(zoom.transform, d3.zoomIdentity);
             }
 
             d3.select(container).select('.reset').on('click', reset);
+            d3.select(container).select('.helpOpener').on('click', function() {
+                let helpID = this.dataset.helpid;
+                showHelp(helpID);
+            });
         };
     }
 
@@ -1048,7 +893,9 @@ var ataqv = (function() {
                     source: configuration.fragment_length_reference.source,
                     line: []
                 },
+                xMin: 0,
                 xMax: maximumInterestingFragmentLength,
+                yMin: 0,
                 yMax: 0.0,
                 xLabel: 'Fragment length (bp)',
                 yLabel: 'Fraction of all reads'
@@ -1112,8 +959,227 @@ var ataqv = (function() {
             }
 
             return result;
+        }
+    );
+
+    plots.plotTSSEnrichment = makeLinePlot(
+        'tssEnrichmentPlot',
+        function(containerID) {
+            let experimentIDs = Object.keys(configuration.metrics).sort();
+
+            let result = {
+                series: {},
+                xMin: 0.0,
+                xMax: 0.0,
+                yMin: 1,
+                yMax: 0.0,
+                xLabel: 'Position relative to TSS',
+                yLabel: 'Enrichment'
+            };
+
+            let container = document.getElementById(containerID);
+            let resolutionSelect = container.querySelector('.resolution');
+            let resolution = resolutionSelect ? Number.parseInt(resolutionSelect.value) : 10;
+
+            let tss_coverage_present = false;
+            for (let e = 0; e < experimentIDs.length; e++) {
+                let experimentID = experimentIDs[e];
+                let experiment = configuration.metrics[experimentID];
+
+                result.series[experimentID] = {
+                    experimentID: experimentID,
+                    library: experiment.library.library,
+                    description: experiment.library.description,
+                    sample: (experiment.library.sample || experiment.name),
+                    line: []
+                };
+
+                if (experiment.tss_coverage) {
+                    tss_coverage_present = true;
+                    let tssRegionSize = ((experiment.tss_coverage.length - 1) / 2);
+                    if (0 - tssRegionSize < result.xMin) {
+                        result.xMin = 0 - tssRegionSize;
+                    }
+                    result.xMax = tssRegionSize;
+
+                    let index = 0;
+                    let mean = 0.0;
+                    for (let position of experiment.tss_coverage) {
+                        index++;
+                        mean += position[1];
+                        if (index % resolution == 0) {
+                            mean /= resolution;
+                            result.series[experimentID].line.push({
+                                x: index - tssRegionSize - 1,
+                                y: mean
+                            });
+
+                            if (mean > result.yMax) {
+                                result.yMax = mean;
+                            }
+                            mean = 0.0;
+                        }
+                    }
+                }
+            }
+            if (tss_coverage_present === false) {
+                result = null;
+            }
+            return result;
+        }
+    );
+
+    plots.plotPeakReadCounts = makeLinePlot(
+        'peakReadCountsPlot',
+        function(containerID) {
+            let experimentIDs = Object.keys(configuration.metrics).sort();
+
+            let result = {
+                reference_series: {
+                    source: configuration.reference_peak_metrics.source,
+                    line: []
+                },
+                series: {},
+                xMin: 0,
+                xMax: 100,
+                yMin: 0,
+                yMax: 0.0,
+                xLabel: 'Peak percentile',
+                yLabel: 'Cumulative fraction of high-quality autosomal reads'
+            };
+
+            let peaks_present = false;
+            for (let e = 0; e < experimentIDs.length; e++) {
+                let experimentID = experimentIDs[e];
+                let experiment = configuration.metrics[experimentID];
+
+                result.series[experimentID] = {
+                    experimentID: experimentID,
+                    library: experiment.library.library,
+                    description: experiment.library.description,
+                    sample: (experiment.library.sample || experiment.name),
+                    line: []
+                };
+
+                if (experiment.peak_percentiles && experiment.peak_percentiles.cumulative_fraction_of_hqaa.length != 0) {
+                    peaks_present = true;
+                }
+
+                let percentiles = experiment.peak_percentiles
+                    ? experiment.peak_percentiles.cumulative_fraction_of_hqaa
+                    : new Array(100).fill(0);
+
+                let cumulativeFractionOfHQAA = 0.0;
+                for (let percentile = 0; percentile < 100; percentile++) {
+                    cumulativeFractionOfHQAA = percentile < percentiles.length ? percentiles[percentile] : cumulativeFractionOfHQAA;
+
+                    if (cumulativeFractionOfHQAA > result.yMax) {
+                        result.yMax = cumulativeFractionOfHQAA;
+                    }
+
+                    result.series[experimentID].line.push({
+                        x: percentile + 1,
+                        y: cumulativeFractionOfHQAA
+                    });
+                }
+            }
+
+            // add reference distribution
+            for (let p = 0; p < 100; p++) {
+                let fraction = configuration.reference_peak_metrics.cumulative_fraction_of_hqaa[p] || 0;
+                if (fraction > result.yMax) {
+                    result.yMax = fraction;
+                }
+
+                result.reference_series.line.push({
+                    x: p + 1,
+                    y: fraction
+                });
+            }
+
+            if (peaks_present === false) {
+                result = null;
+            }
+            return result;
         },
-        '<p>Switching the y axis scale to exponential can reveal nucleosomal periodicity at higher fragment lengths.</p><p>The dashed red line is the reference fragment length distribution. You can toggle it on and off.</p>'
+        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
+    );
+
+    plots.plotPeakTerritory = makeLinePlot(
+        'peakTerritoryPlot',
+        function(containerID) {
+            let experimentIDs = Object.keys(configuration.metrics).sort();
+
+            let result = {
+                reference_series: {
+                    source: configuration.reference_peak_metrics.source,
+                    line: []
+                },
+                series: {},
+                xMin: 0,
+                xMax: 100,
+                yMin: 0,
+                yMax: 0.0,
+                xLabel: 'Peak percentile',
+                yLabel: 'Cumulative fraction of peak territory'
+            };
+
+            let peaks_present = false;
+            for (let e = 0; e < experimentIDs.length; e++) {
+                let experimentID = experimentIDs[e];
+                let experiment = configuration.metrics[experimentID];
+
+                result.series[experimentID] = {
+                    experimentID: experimentID,
+                    library: experiment.library.library,
+                    description: experiment.library.description,
+                    sample: (experiment.library.sample || experiment.name),
+                    line: []
+                };
+
+                if (experiment.peak_percentiles && experiment.peak_percentiles.cumulative_fraction_of_territory.length != 0) {
+                    peaks_present = true;
+                }
+
+                let percentiles = experiment.peak_percentiles
+                    ? experiment.peak_percentiles.cumulative_fraction_of_territory
+                    : new Array(100).fill(0);
+
+
+                let cumulativeFractionOfTerritory = 0.0;
+                for (let percentile = 0; percentile < 100; percentile++) {
+                    cumulativeFractionOfTerritory = percentile < percentiles.length ? percentiles[percentile] : cumulativeFractionOfTerritory;
+
+                    if (cumulativeFractionOfTerritory > result.yMax) {
+                        result.yMax = cumulativeFractionOfTerritory;
+                    }
+
+                    result.series[experimentID].line.push({
+                        x: percentile + 1,
+                        y: cumulativeFractionOfTerritory
+                    });
+                }
+            }
+
+            // add reference distribution
+            for (let p = 0; p < 100; p++) {
+                let fraction = configuration.reference_peak_metrics.cumulative_fraction_of_territory[p] || 0;
+                if (fraction > result.yMax) {
+                    result.yMax = fraction;
+                }
+
+                result.reference_series.line.push({
+                    x: p + 1,
+                    y: fraction
+                });
+            }
+
+            if (peaks_present === false) {
+                result = null;
+            }
+            return result;
+        },
+        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
     );
 
     plots.plotMapq = makeLinePlot(
@@ -1123,7 +1189,9 @@ var ataqv = (function() {
 
             let result = {
                 series: {},
+                xMin: 0,
                 xMax: 0.0,
+                yMin: 0,
                 yMax: 0.0,
                 xLabel: 'Mapping quality',
                 yLabel: 'Fraction of all reads'
@@ -1163,139 +1231,6 @@ var ataqv = (function() {
             }
             return result;
         }
-    );
-
-    plots.plotPeakReadCounts = makeLinePlot(
-        'peakReadCountsPlot',
-        function(containerID) {
-            let experimentIDs = Object.keys(configuration.metrics).sort();
-
-            let result = {
-                reference_series: {
-                    source: configuration.reference_peak_metrics.source,
-                    line: []
-                },
-                series: {},
-                xMax: 100,
-                yMax: 0.0,
-                xLabel: 'Peak percentile',
-                yLabel: 'Cumulative fraction of high-quality autosomal reads'
-            };
-
-            for (let e = 0; e < experimentIDs.length; e++) {
-                let experimentID = experimentIDs[e];
-                let experiment = configuration.metrics[experimentID];
-
-                result.series[experimentID] = {
-                    experimentID: experimentID,
-                    library: experiment.library.library,
-                    description: experiment.library.description,
-                    sample: (experiment.library.sample || experiment.name),
-                    line: []
-                };
-
-                let percentiles = experiment.peak_percentiles
-                    ? experiment.peak_percentiles.cumulative_fraction_of_hqaa
-                    : new Array(100).fill(0);
-
-                let cumulativeFractionOfHQAA = 0.0;
-                for (let percentile = 0; percentile < 100; percentile++) {
-                    cumulativeFractionOfHQAA = percentile < percentiles.length ? percentiles[percentile] : cumulativeFractionOfHQAA;
-
-                    if (cumulativeFractionOfHQAA > result.yMax) {
-                        result.yMax = cumulativeFractionOfHQAA;
-                    }
-
-                    result.series[experimentID].line.push({
-                        x: percentile + 1,
-                        y: cumulativeFractionOfHQAA
-                    });
-                }
-            }
-
-            // add reference distribution
-            for (let p = 0; p < 100; p++) {
-                let fraction = configuration.reference_peak_metrics.cumulative_fraction_of_hqaa[p] || 0;
-                if (fraction > result.yMax) {
-                    result.yMax = fraction;
-                }
-
-                result.reference_series.line.push({
-                    x: p + 1,
-                    y: fraction
-                });
-            }
-
-            return result;
-        },
-        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
-    );
-
-    plots.plotPeakTerritory = makeLinePlot(
-        'peakTerritoryPlot',
-        function(containerID) {
-            let experimentIDs = Object.keys(configuration.metrics).sort();
-
-            let result = {
-                reference_series: {
-                    source: configuration.reference_peak_metrics.source,
-                    line: []
-                },
-                series: {},
-                xMax: 100,
-                yMax: 0.0,
-                xLabel: 'Peak percentile',
-                yLabel: 'Cumulative fraction of peak territory'
-            };
-
-            for (let e = 0; e < experimentIDs.length; e++) {
-                let experimentID = experimentIDs[e];
-                let experiment = configuration.metrics[experimentID];
-
-                result.series[experimentID] = {
-                    experimentID: experimentID,
-                    library: experiment.library.library,
-                    description: experiment.library.description,
-                    sample: (experiment.library.sample || experiment.name),
-                    line: []
-                };
-
-                let percentiles = experiment.peak_percentiles
-                    ? experiment.peak_percentiles.cumulative_fraction_of_territory
-                    : new Array(100).fill(0);
-
-
-                let cumulativeFractionOfTerritory = 0.0;
-                for (let percentile = 0; percentile < 100; percentile++) {
-                    cumulativeFractionOfTerritory = percentile < percentiles.length ? percentiles[percentile] : cumulativeFractionOfTerritory;
-
-                    if (cumulativeFractionOfTerritory > result.yMax) {
-                        result.yMax = cumulativeFractionOfTerritory;
-                    }
-
-                    result.series[experimentID].line.push({
-                        x: percentile + 1,
-                        y: cumulativeFractionOfTerritory
-                    });
-                }
-            }
-
-            // add reference distribution
-            for (let p = 0; p < 100; p++) {
-                let fraction = configuration.reference_peak_metrics.cumulative_fraction_of_territory[p] || 0;
-                if (fraction > result.yMax) {
-                    result.yMax = fraction;
-                }
-
-                result.reference_series.line.push({
-                    x: p + 1,
-                    y: fraction
-                });
-            }
-
-            return result;
-        },
-        '<p>The dashed red line represents the reference distribution. You can toggle it on and off.</p>'
     );
 
     function populateTables() {
@@ -1377,6 +1312,7 @@ var ataqv = (function() {
         addPlotConfigurationHandlers();
         window.setTimeout(function() {
             listExperiments();
+            populateSampleList();
             window.setTimeout(function() {
                 setStatus('Creating plots...', true);
                 populatePlots();
@@ -1388,6 +1324,7 @@ var ataqv = (function() {
                             clearStatus();
                             document.getElementById('tabbodies').style.position = 'relative';
                             document.getElementById('tabbodies').style.top = 0;
+                            addEventListeners();
                         }, 10);
                     }, 100);
                 }, 100);
@@ -1398,9 +1335,90 @@ var ataqv = (function() {
     function populatePlots() {
         plots.plotFragmentLengthDistance();
         plots.plotFragmentLength();
+        plots.plotTSSEnrichment();
         plots.plotMapq();
         plots.plotPeakReadCounts();
         plots.plotPeakTerritory();
+    }
+
+    function populateSampleList() {
+        let color = d3.scaleOrdinal(d3.schemeCategory20c);
+
+        let samples = new Map();
+        let experimentIDs = Object.keys(configuration.metrics).sort();
+        for (let e = 0; e < experimentIDs.length; e++) {
+            let experimentID = experimentIDs[e];
+            let experiment = configuration.metrics[experimentID];
+            if (experiment) {
+                let sample = experiment.library.sample || experiment.name;
+                let library = experiment.library.library || experiment.name;
+
+                if (samples.get(sample)) {
+                    samples.get(sample).libraries.push(library);
+                } else {
+                    samples.set(sample, {libraries: [library]});
+                }
+            }
+        }
+        color.domain([...samples.keys()].sort());
+        let listContainer = document.getElementById('plotSampleList');
+        let list = listContainer.querySelector('nav');
+        let sampleList = document.createElement('ul');
+        for (let sampleID of [...samples.keys()].sort()) {
+            let legendItem = document.createElement('li');
+            legendItem.classList.add('legendItem');
+            legendItem.dataset.sample = sampleID;
+
+            let legendItemColor = document.createElement('span');
+            legendItemColor.classList.add('legendItemColor');
+            legendItemColor.style.backgroundColor = color(sampleID);
+            legendItem.appendChild(legendItemColor);
+
+            let legendItemLabel = document.createElement('span');
+            legendItemLabel.classList.add('legendItemLabel');
+            legendItemLabel.innerHTML = sampleID;
+            legendItem.appendChild(legendItemLabel);
+
+            sampleList.appendChild(legendItem);
+
+        }
+        list.appendChild(sampleList);
+
+        sampleList.addEventListener('mouseover', function(evt) {
+            evt.preventDefault();
+            if (evt.target.classList.contains('legendItemColor') || evt.target.classList.contains('legendItemLabel')) {
+                let li = evt.target.classList.contains('legendItem') ? evt.target : closest(evt.target, 'legendItem');
+                if (li && li.dataset && li.dataset.sample) {
+                    dispatch.call('sampleInspect', li.dataset.sample);
+                }
+            }
+        }, true);
+
+        sampleList.addEventListener('mouseout', function(evt) {
+            evt.preventDefault();
+            if (evt.target.classList.contains('legendItemColor') || evt.target.classList.contains('legendItemLabel')) {
+                let li = evt.target.classList.contains('legendItem') ? evt.target : closest(evt.target, 'legendItem');
+                if (li && li.dataset && li.dataset.sample) {
+                    dispatch.call('sampleInspect', null);
+                }
+            }
+        }, true);
+
+        sampleList.addEventListener('click', selectLegendItem, true);
+        d3.select(listContainer).select('.hideall').on('click', deselectAllLegendItems);
+        d3.select(listContainer).select('.showall').on('click', selectAllLegendItems);
+
+        dispatch.on('sampleInspect', function() {
+            let sample = String(this);
+            let s = samples.get(sample);
+            if (s) {
+                d3.selectAll('.plotItem').classed('unhighlight', true);
+                d3.selectAll('.plotItem[data-sample="' + sample + '"]').raise().classed('highlight', true);
+            } else {
+                d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
+            }
+            d3.selectAll('.reference').raise();
+        });
     }
 
     function initialize() {
@@ -1412,7 +1430,6 @@ var ataqv = (function() {
             legendItemState.set(experiment.library.sample || experiment.name, true);
         }
 
-        addEventListeners();
         loadExperiments();
     }
 

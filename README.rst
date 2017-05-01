@@ -25,6 +25,10 @@ basic metrics, including:
 If you also have a file of peaks called on your data, that file can be
 examined to report read coverage of the peaks.
 
+With a file of transcription start sites, ataqv can report a TSS
+enrichment metric based on the transposition activity around those
+locations.
+
 The report is printed as plain text to standard output, and detailed
 metrics are written to JSON files for further processing.
 
