@@ -255,7 +255,7 @@ void MetricsCollector::load_alignments() {
 
     if (!tss_filename.empty()) {
         if ((alignment_file_index = sam_index_load(alignment_file, alignment_filename.c_str())) == nullptr) {
-            throw FileException("Before TSS enrichment can be calculated, you must create an index file\nfor alignment file \"" + alignment_filename + "\" with \"samtools index" + alignment_filename + "\".");
+            throw FileException("Before TSS enrichment can be calculated, you must create an index file\nfor alignment file \"" + alignment_filename + "\" with \"samtools index " + alignment_filename + "\".");
         }
 
         load_tss();
