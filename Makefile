@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.9.0
+VERSION = 0.9.1
 
 #
 # PATHS
@@ -193,8 +193,8 @@ $(TEST_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
 	$(CXX)  $(CXXFLAGS_DEV) -fprofile-arcs -ftest-coverage -o $@ -c $<
 
 clean:
-	@dh_clean
 	@rm -rf $(BUILD_DIR) $(TEST_DIR)
+	@test -x dh_clean && dh_clean || /bin/true
 
 install: checkdirs install-ataqv install-scripts install-web
 

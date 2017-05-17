@@ -738,42 +738,42 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
             if (record->core.tid >= 0) {
                 std::string reference_name(header->target_name[record->core.tid]);
 
-                if (is_autosomal(reference_name)) {
-                    total_autosomal_reads++;
-                    if (IS_DUP(record)) {
-                        duplicate_autosomal_reads++;
-                    } else {
-                        // nonduplicate, properly paired and uniquely mapped
-                        // autosomal reads will be the basis of our fragment
-                        // size and peak statistics
-                        if (is_hqaa(header, record)) {
-                            hqaa++;
-
-                            hqaa_fragment_length_counts[fragment_length]++;
-
-                            if (50 <= fragment_length && fragment_length <= 100) {
-                                hqaa_short_count++;
-                            }
-
-                            if (150 <= fragment_length && fragment_length <= 200) {
-                                hqaa_mononucleosomal_count++;
-                            }
-
-                            if (!peaks.empty()) {
-                                peaks.increment_overlapping_hqaa(Feature(header, record));
-                            }
-                        }
-                    }
-                } else if (is_mitochondrial(reference_name)) {
+                if (is_mitochondrial(reference_name)) {
                     total_mitochondrial_reads++;
                     if (IS_DUP(record)) {
                         duplicate_mitochondrial_reads++;
                     }
+                } else {
+                    if (is_autosomal(reference_name)) {
+                        total_autosomal_reads++;
+                        if (IS_DUP(record)) {
+                            duplicate_autosomal_reads++;
+                        } else {
+                            // nonduplicate, properly paired and uniquely mapped
+                            // autosomal reads will be the basis of our fragment
+                            // size and peak statistics
+                            if (is_hqaa(header, record)) {
+                                hqaa++;
+
+                                // record proper pairs' fragment lengths
+                                fragment_length_counts[fragment_length]++;
+
+                                if (50 <= fragment_length && fragment_length <= 100) {
+                                    hqaa_short_count++;
+                                }
+
+                                if (150 <= fragment_length && fragment_length <= 200) {
+                                    hqaa_mononucleosomal_count++;
+                                }
+
+                                if (!peaks.empty()) {
+                                    peaks.increment_overlapping_hqaa(Feature(header, record));
+                                }
+                            }
+                        }
+                    }
                 }
             }
-
-            // record proper pairs' fragment lengths
-            fragment_length_counts[fragment_length]++;
 
             // Keep track of the longest fragment seen in a proper
             // pair (ignoring secondary and supplementary
@@ -912,8 +912,6 @@ std::map<int, unsigned long long int> Metrics::get_tss_coverage_for_reference(co
             }
 
             for (auto tss : tss_collection->features) {
-                std::map<int, unsigned long long int> tss_cov = {};
-
                 std::map<std::string, bool> fragments_seen = {};
 
                 Feature tss_region(tss);
@@ -946,7 +944,6 @@ std::map<int, unsigned long long int> Metrics::get_tss_coverage_for_reference(co
                                 for (unsigned long long int pos = tss_region.start; pos <= tss_region.end; pos++) {
                                     if (pos >= fragment.start && pos <= fragment.end) {
                                         int base = tss.is_reverse() ? (tss_region.end - pos) : (pos - tss_region.start);
-                                        tss_cov[base]++;
                                         ref_tss_cov[base]++;
                                     }
                                 }
@@ -1291,20 +1288,6 @@ json Metrics::to_json() {
         fragment_length_counts_json.push_back(flc);
     }
 
-    std::vector<std::string> hqaa_fragment_length_counts_fields = {"fragment_length", "read_count", "fraction_of_hqaa"};
-    json hqaa_fragment_length_counts_json;
-    max_fragment_length = std::max(1000, hqaa_fragment_length_counts.empty() ? 0 : hqaa_fragment_length_counts.rbegin()->first);
-    for (int fragment_length = 0; fragment_length <= max_fragment_length; fragment_length++) {
-        int count = hqaa_fragment_length_counts[fragment_length];
-        json flc;
-        flc.push_back(fragment_length);
-        flc.push_back(count);
-        long double fraction_of_hqaa_reads = hqaa != 0 ? (count / (long double) hqaa) : std::nan("");
-        flc.push_back(fraction_of_hqaa_reads);
-
-        hqaa_fragment_length_counts_json.push_back(flc);
-    }
-
     std::vector<std::string> mapq_counts_fields = {"mapq", "read_count"};
 
     json mapq_counts_json;
@@ -1428,8 +1411,6 @@ json Metrics::to_json() {
              {"fragment_length_counts_fields", fragment_length_counts_fields},
              {"fragment_length_counts", fragment_length_counts_json},
              {"fragment_length_distance", nullptr},
-             {"hqaa_fragment_length_counts_fields", hqaa_fragment_length_counts_fields},
-             {"hqaa_fragment_length_counts", hqaa_fragment_length_counts_json},
              {"mapq_counts_fields", mapq_counts_fields},
              {"mapq_counts", mapq_counts_json},
              {"mean_mapq", mean_mapq()},

@@ -182,7 +182,6 @@ public:
     unsigned long long int hqaa = 0;  // primary, properly paired and mapped to autosomal references
 
     std::map<int, unsigned long long int> fragment_length_counts = {};
-    std::map<int, unsigned long long int> hqaa_fragment_length_counts = {};
 
     unsigned long long int hqaa_short_count = 0;
     unsigned long long int hqaa_mononucleosomal_count = 0;

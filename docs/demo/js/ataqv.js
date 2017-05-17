@@ -774,7 +774,7 @@ var ataqv = (function() {
             }
 
             let zoom = d3.zoom()
-                .scaleExtent([1, 2])
+                .scaleExtent([0.5, 2])
                 .on('zoom', zoomed);
 
             svg.call(zoom);
@@ -971,7 +971,7 @@ var ataqv = (function() {
                 series: {},
                 xMin: 0.0,
                 xMax: 0.0,
-                yMin: 1,
+                yMin: 0.0,
                 yMax: 0.0,
                 xLabel: 'Position relative to TSS',
                 yLabel: 'Enrichment'

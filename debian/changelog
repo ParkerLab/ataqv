@@ -1,3 +1,9 @@
+ataqv (0.9.1-1) unstable; urgency=low
+
+  * Count only HQAA fragment lengths, not just any properly paired and mapped
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Thu, 18 May 2017 11:00:00 -0500
+
 ataqv (0.9.0-1) unstable; urgency=low
 
   * TSS enrichment

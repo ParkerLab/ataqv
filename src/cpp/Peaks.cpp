@@ -122,7 +122,7 @@ void PeakTree::increment_overlapping_hqaa(const Feature& hqaa) {
         auto peak = std::lower_bound(rpc->peaks.begin(), rpc->peaks.end(), hqaa, feature_overlap_comparator);
         auto end = std::upper_bound(peak, rpc->peaks.end(), hqaa, feature_overlap_comparator);
 
-        for (; peak != end; ++peak) {
+        for (; peak != end; peak++) {
             if (peak->overlaps(hqaa)) {
                 peak->overlapping_hqaa++;
             } else {
