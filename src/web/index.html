@@ -284,25 +284,25 @@
                         <table id="indicators" class="data" width="100%">
                             <thead>
                                 <tr>
-                                    <th data-metric="name" class="name" data-order="0:asc">
+                                    <th data-metric="name" class="name" data-order="0:asc" data-priority="1">
                                         <span>Name</span>
                                     </th>
-                                    <th data-metric="library.sample" class="name" data-order="1:asc">
+                                    <th data-metric="library.sample" class="name" data-order="1:asc" data-priority="3">
                                         <span>Sample</span>
                                     </th>
-                                    <th data-metric="library.library" class="name" data-order="2:asc">
+                                    <th data-metric="library.library" class="name" data-order="2:asc" data-priority="2">
                                         <span>Library</span>
                                     </th>
-                                    <th data-metric="percentages.hqaa__total_reads" >
+                                    <th data-metric="percentages.hqaa__total_reads" data-priority="1">
                                         <span data-hovertext="High quality autosomal alignments, as a percentage of all reads. We define these as the primary (not marked duplicate, supplementary, or secondary) alignments of reads properly paired and mapped to autosomes with mapping quality of at least 30. If this metric seems low, look for mitochondrial contamination in the reference metrics below.">High quality autosomal alignments&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="short_mononucleosomal_ratio">
+                                    <th data-metric="short_mononucleosomal_ratio" data-priority="1">
                                         <span data-hovertext="The ratio of fragments 50-100bp long to fragments 150-200bp long. This can indicate under- or over-transposition -- which should also be apparent on the fragment length distribution plot.">Short-to-mononucleosomal ratio</span>
                                     </th>
-                                    <th data-metric="fragment_length_distance">
+                                    <th data-metric="fragment_length_distance" data-priority="1">
                                         <span data-hovertext="The distance of the experiment's fragment length distribution to a reference distribution. Negative distance should be associated with under-transposition, positive distance should be associated with over-transposition.">Fragment length distribution distance from reference</span>
                                     </th>
-                                    <th data-metric="tss_enrichment">
+                                    <th data-metric="tss_enrichment" data-priority="1">
                                         <span data-hovertext="The TSS enrichment score, calculated per ENCODE ATAC-seq data standards.">TSS enrichment</span>
                                     </th>
                                 </tr>
@@ -317,34 +317,34 @@
                         <table id="summary" class="data" width="100%">
                             <thead>
                                 <tr>
-                                    <th data-metric="name" class="name" data-order="0:asc">
+                                    <th data-metric="name" class="name" data-order="0:asc" data-priority="1">
                                         <span>Name</span>
                                     </th>
-                                    <th data-metric="library.sample" class="name" data-order="1:asc">
+                                    <th data-metric="library.sample" class="name" data-order="1:asc" data-priority="3">
                                         <span>Sample</span>
                                     </th>
-                                    <th data-metric="library.library" class="name" data-order="2:asc">
+                                    <th data-metric="library.library" class="name" data-order="2:asc" data-priority="2">
                                         <span>Library</span>
                                     </th>
-                                    <th data-metric="total_reads" data-metrictype="integer">
+                                    <th data-metric="total_reads" data-metrictype="integer" data-priority="1">
                                         <span data-hovertext="The total number of reads from the experiment.">Total reads</span>
                                     </th>
-                                    <th data-metric="percentages.properly_paired_and_mapped_reads__total_reads">
+                                    <th data-metric="percentages.properly_paired_and_mapped_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Properly paired and mapped reads, as a percentage of all reads.">Properly paired and mapped&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="percentages.secondary_reads__total_reads">
+                                    <th data-metric="percentages.secondary_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Alternate alignments of reads, of lower quality than their primary alignments.">Secondary&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="percentages.supplementary_reads__total_reads">
+                                    <th data-metric="percentages.supplementary_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Aligned segments of reads mapped in chimeric alignments.">Supplementary&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="percentages.duplicate_reads__total_reads">
+                                    <th data-metric="percentages.duplicate_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Duplicate alignments as a percentage of total reads.">Duplicate&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="mean_mapq">
+                                    <th data-metric="mean_mapq" data-priority="1">
                                         <span data-hovertext="The mean mapping quality of the experiment's reads.">Mean mapping quality</span>
                                     </th>
-                                    <th data-metric="median_mapq" data-metrictype="integer">
+                                    <th data-metric="median_mapq" data-metrictype="integer" data-priority="1">
                                         <span data-hovertext="The median mapping quality of the experiment's reads.">Median mapping quality</span>
                                     </th>
                                 </tr>
@@ -359,28 +359,28 @@
                         <table id="basic_problems" class="data" width="100%">
                             <thead>
                                 <tr>
-                                    <th data-metric="name" class="name" data-order="0:asc">
+                                    <th data-metric="name" class="name" data-order="0:asc" data-priority="1">
                                         <span>Name</span>
                                     </th>
-                                    <th data-metric="library.sample" class="name" data-order="1:asc">
+                                    <th data-metric="library.sample" class="name" data-order="1:asc" data-priority="3">
                                         <span>Sample</span>
                                     </th>
-                                    <th data-metric="library.library" class="name" data-order="2:asc">
+                                    <th data-metric="library.library" class="name" data-order="2:asc" data-priority="2">
                                         <span>Library</span>
                                     </th>
-                                    <th data-metric="percentages.unmapped_reads__total_reads">
+                                    <th data-metric="percentages.unmapped_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Unmapped reads, as a percentage of all reads.">Unmapped&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="percentages.unmapped_mate_reads__total_reads">
+                                    <th data-metric="percentages.unmapped_mate_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Unmapped mate reads, as a percentage of all reads.">Unmapped mate&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="percentages.qcfailed_reads__total_reads">
+                                    <th data-metric="percentages.qcfailed_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Reads failing quality controls, as a percentage of all reads.">QC&nbsp;fail&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="percentages.unpaired_reads__total_reads">
+                                    <th data-metric="percentages.unpaired_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Unpaired reads, as a percentage of all reads.">Unpaired&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="percentages.reads_mapped_with_zero_quality__total_reads">
+                                    <th data-metric="percentages.reads_mapped_with_zero_quality__total_reads" data-priority="1">
                                         <span data-hovertext="Alignments with mapping quality of zero, as a percentage of all reads.">Zero mapping quality&nbsp;(%)</span>
                                     </th>
                                 </tr>
@@ -395,35 +395,35 @@
                         <table id="other_problems" class="data" width="100%">
                             <thead>
                                 <tr>
-                                    <th data-metric="name" class="name" rowspan="2" data-order="0:asc">
+                                    <th data-metric="name" class="name" rowspan="2" data-order="0:asc" data-priority="1">
                                         <span>Name</span>
                                     </th>
-                                    <th data-metric="library.sample" class="name" rowspan="2" data-order="1:asc">
+                                    <th data-metric="library.sample" class="name" rowspan="2" data-order="1:asc" data-priority="3">
                                         <span>Sample</span>
                                     </th>
-                                    <th data-metric="library.library" class="name" rowspan="2" data-order="2:asc">
+                                    <th data-metric="library.library" class="name" rowspan="2" data-order="2:asc" data-priority="2">
                                         <span>Library</span>
                                     </th>
                                     <th colspan="7">Of all reads, the percentage that paired and mapped but:</th>
                                 </tr>
 
                                 <tr>
-                                    <th data-metric="percentages.rf_reads__total_reads">
+                                    <th data-metric="percentages.rf_reads__total_reads" data-priority="1">
                                         <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand.">RF</span>
                                     </th>
-                                    <th data-metric="percentages.ff_reads__total_reads">
+                                    <th data-metric="percentages.ff_reads__total_reads" data-priority="1">
                                         <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand.">FF</span>
                                     </th>
-                                    <th data-metric="percentages.rr_reads__total_reads">
+                                    <th data-metric="percentages.rr_reads__total_reads" data-priority="1">
                                         <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand.">RR</span>
                                     </th>
-                                    <th data-metric="percentages.reads_with_mate_mapped_to_different_reference__total_reads">
+                                    <th data-metric="percentages.reads_with_mate_mapped_to_different_reference__total_reads" data-priority="1">
                                         <span data-hovertext="Each read of the pair mapped to a different reference (chromosome).">on different chromosomes</span>
                                     </th>
-                                    <th data-metric="percentages.reads_with_mate_too_distant__total_reads">
+                                    <th data-metric="percentages.reads_with_mate_too_distant__total_reads" data-priority="1">
                                         <span data-hovertext="The reads of the pair aligned to locations that are too far apart to be plausible, given the fragment lengths in the dataset.">too far from mate</span>
                                     </th>
-                                    <th data-metric="percentages.reads_mapped_and_paired_but_improperly__total_reads">
+                                    <th data-metric="percentages.reads_mapped_and_paired_but_improperly__total_reads" data-priority="1">
                                         <span data-hovertext="We don't know why these are not marked properly paired and mapped. Sorry. You can have ataqv log problematic reads, so you can try to diagnose them. Let us know what you find.">just not properly</span>
                                     </th>
                                 </tr>
@@ -438,13 +438,13 @@
                         <table id="reference" class="data" width="100%">
                             <thead>
                                 <tr>
-                                    <th data-metric="name" class="name" rowspan="2" data-order="0:asc">
+                                    <th data-metric="name" class="name" rowspan="2" data-order="0:asc" data-priority="1">
                                         <span>Name</span>
                                     </th>
-                                    <th data-metric="library.sample" class="name" rowspan="2" data-order="1:asc">
+                                    <th data-metric="library.sample" class="name" rowspan="2" data-order="1:asc" data-priority="3">
                                         <span>Sample</span>
                                     </th>
-                                    <th data-metric="library.library" class="name" rowspan="2" data-order="2:asc">
+                                    <th data-metric="library.library" class="name" rowspan="2" data-order="2:asc" data-priority="2">
                                         <span>Library</span>
                                     </th>
                                     <th colspan="2">Autosomal</th>
@@ -452,16 +452,16 @@
                                 </tr>
 
                                 <tr>
-                                    <th data-metric="percentages.total_autosomal_reads__total_reads">
+                                    <th data-metric="percentages.total_autosomal_reads__total_reads" data-priority="1">
                                         <span data-hovertext="The number of reads aligned to autosomes, as a percentage of all reads.">% of all reads</span>
                                     </th>
-                                    <th data-metric="percentages.duplicate_autosomal_reads__total_autosomal_reads">
+                                    <th data-metric="percentages.duplicate_autosomal_reads__total_autosomal_reads" data-priority="1">
                                         <span data-hovertext="The percentage of reads aligned to autosomes that were duplicates.">Duplicates (% of autosomal alignments)</span>
                                     </th>
-                                    <th data-metric="percentages.total_mitochondrial_reads__total_reads">
+                                    <th data-metric="percentages.total_mitochondrial_reads__total_reads" data-priority="1">
                                         <span data-hovertext="The number of reads aligned to the mitochondrial reference, as a percentage of all reads.">% of all reads</span>
                                     </th>
-                                    <th data-metric="percentages.duplicate_mitochondrial_reads__total_mitochondrial_reads">
+                                    <th data-metric="percentages.duplicate_mitochondrial_reads__total_mitochondrial_reads" data-priority="1">
                                         <span data-hovertext="The percentage of reads mapped to the mitochondrial reference that were duplicates.">Duplicates&nbsp;(% of mitochondrial alignments)</span>
                                     </th>
                                 </tr>
@@ -476,19 +476,19 @@
                         <table id="peaks" class="data" width="100%">
                             <thead>
                                 <tr>
-                                    <th data-metric="name" class="name" data-order="0:asc">
+                                    <th data-metric="name" class="name" data-order="0:asc" data-priority="1">
                                         <span>Name</span>
                                     </th>
-                                    <th data-metric="library.sample" class="name" data-order="0:asc">
+                                    <th data-metric="library.sample" class="name" data-order="0:asc" data-priority="3">
                                         <span>Sample</span>
                                     </th>
-                                    <th data-metric="library.library" class="name" data-order="1:asc">
+                                    <th data-metric="library.library" class="name" data-order="1:asc" data-priority="2">
                                         <span>Library</span>
                                     </th>
-                                    <th data-metric="total_peaks" data-metrictype="integer">
+                                    <th data-metric="total_peaks" data-metrictype="integer" data-priority="1">
                                         <span data-hovertext="The total number of peaks called.">Total peaks</span>
                                     </th>
-                                    <th data-metric="hqaa_overlapping_peaks_percent">
+                                    <th data-metric="hqaa_overlapping_peaks_percent" data-priority="1">
                                         <span data-hovertext="The percentage of high quality autosomal alignments that overlapped called peaks.">High quality autosomal alignments overlapping peaks&nbsp;(%)</span>
                                     </th>
                                 </tr>
