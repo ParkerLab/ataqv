@@ -961,10 +961,6 @@ td:last-child *[data-hovertext]:hover::after,
     .plotContainer {
         flex: 0 1 31%;
     }
-
-    .legend li {
-        flex-basis: 10%;
-    }
 }
 
 @media screen and (min-height: 1200px) {
