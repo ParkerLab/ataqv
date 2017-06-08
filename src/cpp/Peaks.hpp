@@ -45,10 +45,26 @@ private:
     std::map<std::string, ReferencePeakCollection, numeric_string_comparator> tree = {};
 
 public:
+    unsigned long long int total_peak_territory = 0;
+
+    unsigned long long int duplicates_in_peaks = 0;
+    unsigned long long int duplicates_not_in_peaks = 0;
+
+    unsigned long long int ppm_in_peaks = 0;
+    unsigned long long int ppm_not_in_peaks = 0;
+
+    unsigned long long int hqaa_in_peaks = 0;
+    unsigned long long int top_peak_hqaa_read_count = 0;
+    unsigned long long int top_10_peak_hqaa_read_count = 0;
+    unsigned long long int top_100_peak_hqaa_read_count = 0;
+    unsigned long long int top_1000_peak_hqaa_read_count = 0;
+    unsigned long long int top_10000_peak_hqaa_read_count = 0;
+
     void add(Peak& peak);
+    void determine_top_peaks();
     bool empty();
     ReferencePeakCollection* get_reference_peaks(const std::string& reference_name);
-    void increment_overlapping_hqaa(const Feature& hqaa);
+    void record_alignment(const Feature& aligment, bool is_hqaa, bool is_properly_paired_and_mapped, bool is_duplicate);
     std::vector<Peak> list_peaks();
     std::vector<Peak> list_peaks_by_overlapping_hqaa_descending();
     std::vector<Peak> list_peaks_by_size_descending();

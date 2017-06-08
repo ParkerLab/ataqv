@@ -101,8 +101,14 @@ bool ReferencePeakCollection::overlaps(const Feature& feature) const {
 }
 
 
+void ReferencePeakCollection::sort() {
+    std::sort(peaks.begin(), peaks.end());
+}
+
+
 void PeakTree::add(Peak& peak) {
     tree[peak.reference].add(peak);
+    total_peak_territory += peak.size();
 }
 
 
@@ -116,25 +122,68 @@ ReferencePeakCollection* PeakTree::get_reference_peaks(const std::string& refere
 }
 
 
-void PeakTree::increment_overlapping_hqaa(const Feature& hqaa) {
-    ReferencePeakCollection* rpc = get_reference_peaks(hqaa.reference);
-    if (rpc->overlaps(hqaa)) {
-        auto peak = std::lower_bound(rpc->peaks.begin(), rpc->peaks.end(), hqaa, feature_overlap_comparator);
-        auto end = std::upper_bound(peak, rpc->peaks.end(), hqaa, feature_overlap_comparator);
+void PeakTree::record_alignment(const Feature& alignment, bool is_hqaa, bool is_properly_paired_and_mapped, bool is_duplicate) {
+    ReferencePeakCollection* rpc = get_reference_peaks(alignment.reference);
+    if (rpc->overlaps(alignment)) {
+        if (is_hqaa) {
+            hqaa_in_peaks++;
+            auto peak = std::lower_bound(rpc->peaks.begin(), rpc->peaks.end(), alignment, feature_overlap_comparator);
+            auto end = std::upper_bound(peak, rpc->peaks.end(), alignment, feature_overlap_comparator);
 
-        for (; peak != end; peak++) {
-            if (peak->overlaps(hqaa)) {
-                peak->overlapping_hqaa++;
-            } else {
-                break;
+            for (; peak != end; peak++) {
+                if (peak->overlaps(alignment)) {
+                    peak->overlapping_hqaa++;
+                } else {
+                    break;
+                }
             }
+        }
+
+        if (is_properly_paired_and_mapped) {
+            ppm_in_peaks++;
+            if (is_duplicate) {
+                duplicates_in_peaks++;
+            }
+        }
+    } else if (is_properly_paired_and_mapped) {
+        ppm_not_in_peaks++;
+        if (is_duplicate) {
+            duplicates_not_in_peaks++;
         }
     }
 }
 
 
-void ReferencePeakCollection::sort() {
-    std::sort(peaks.begin(), peaks.end());
+void PeakTree::determine_top_peaks() {
+    unsigned long long int count = 0;
+    unsigned long long int cumulative_hqaa_in_peaks = 0;
+    for (auto peak: list_peaks_by_overlapping_hqaa_descending()) {
+        count++;
+        cumulative_hqaa_in_peaks += peak.overlapping_hqaa;
+        if (count == 1) {
+            top_peak_hqaa_read_count = cumulative_hqaa_in_peaks;
+        }
+
+        if (count <= 10) {
+            top_10_peak_hqaa_read_count = cumulative_hqaa_in_peaks;
+        }
+
+        if (count <= 100) {
+            top_100_peak_hqaa_read_count = cumulative_hqaa_in_peaks;
+        }
+
+        if (count <= 1000) {
+            top_1000_peak_hqaa_read_count = cumulative_hqaa_in_peaks;
+        }
+
+        if (count <= 10000) {
+            top_10000_peak_hqaa_read_count = cumulative_hqaa_in_peaks;
+        }
+
+        if (count > 10000) {
+            break;
+        }
+    }
 }
 
 

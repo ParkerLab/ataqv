@@ -166,7 +166,7 @@ SRR891268_FRAGMENT_LENGTH_COUNTS = {
 }
 
 SRR891268_PEAK_METRICS = {
-    'source': 'Peaks called for SRR891268',
+    'source': 'peaks called for SRR891268',
     "cumulative_fraction_of_hqaa": [
         0.0163964049731551, 0.027216153163411, 0.0359637644705181, 0.0434291741484764, 0.0500183908169834,
         0.0559392293145575, 0.0612923988882941, 0.0662007173115321, 0.0707229858326414, 0.0749044167859025,
@@ -338,7 +338,7 @@ def construct_fragment_length_reference(data, max_fragment_length):
     add_fraction_of_reads(reference_distribution)
 
     return {
-        'source': 'Calculated from ' + ', '.join(sorted([m['name'] for m in metrics])),
+        'source': 'calculated from ' + ', '.join(sorted([m['name'] for m in metrics])),
         'distribution': reference_distribution
     }
 
@@ -381,7 +381,7 @@ def add_fragment_length_distances(data, reference, max_fragment_length):
     elif reference == 'SRR891268':
         add_fraction_of_reads(SRR891268_FRAGMENT_LENGTH_COUNTS)
         fragment_length_reference = {
-            'source': 'The fragment length distribution from SRR891268',
+            'source': 'the fragment length distribution from SRR891268',
             'distribution': SRR891268_FRAGMENT_LENGTH_COUNTS
         }
     else:
@@ -401,7 +401,7 @@ def add_fragment_length_distances(data, reference, max_fragment_length):
         add_fraction_of_reads(loaded_distribution)
 
         fragment_length_reference = {
-            'source': 'Loaded from ' + reference,
+            'source': 'loaded from ' + reference,
             'distribution': loaded_distribution
         }
 
@@ -429,7 +429,7 @@ def add_fragment_length_distances(data, reference, max_fragment_length):
 
 def calculate_reference_peak_metrics(data):
     reference_peak_metrics = {
-        'source': 'Calculated from ' + ', '.join(sorted([m['name'] for m in data['metrics'].values()])),
+        'source': 'calculated from ' + ', '.join(sorted([m['name'] for m in data['metrics'].values()])),
         'cumulative_fraction_of_hqaa': [],
         'cumulative_fraction_of_territory': []
     }
@@ -453,7 +453,7 @@ def add_reference_peak_metrics(data, reference):
 
         try:
             reference_peak_metrics = json.load(open_maybe_gzipped(reference))
-            reference_peak_metrics['source'] = 'Loaded from {}'.format(reference)
+            reference_peak_metrics['source'] = 'loaded from {}'.format(reference)
         except:
             with open(reference, 'rb') as f:
                 dialect = csv.Sniffer().sniff(f.read(1024))
@@ -461,7 +461,7 @@ def add_reference_peak_metrics(data, reference):
                 reader = csv.reader(f, dialect)
 
                 reference_peak_metrics = {
-                    'source': 'Loaded from {}'.format(reference),
+                    'source': 'loaded from {}'.format(reference),
                     'cumulative_fraction_of_hqaa': [],
                     'cumulative_fraction_of_territory': []
                 }

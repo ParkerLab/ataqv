@@ -12,10 +12,11 @@
 #include <string>
 
 #include <htslib/bgzf.h>
+#include <htslib/kstring.h>
 #include <htslib/sam.h>
 
+#include "Exceptions.hpp"
 #include "Utils.hpp"
-
 
 ///
 /// Most of these conditions are taken directly from samtools

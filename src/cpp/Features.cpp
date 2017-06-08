@@ -56,11 +56,6 @@ bool feature_overlap_comparator(const Feature& f1, const Feature& f2) {
 }
 
 
-bool feature_size_descending_comparator(const Feature& f1, const Feature& f2) {
-    return f1.size() > f2.size();
-}
-
-
 bool Feature::is_reverse() const {
     return strand == "-";
 }
@@ -123,28 +118,8 @@ void ReferenceFeatureCollection::add(const Feature& feature) {
 }
 
 
-bool ReferenceFeatureCollection::overlaps(const Feature& feature) const {
-    return !features.empty() &&
-        reference == feature.reference && (
-            (
-                (start <= feature.start && feature.start <= end) ||
-                (start <= feature.end && feature.end <= end)
-            ) ||
-            (
-                (feature.start <= start && start <= feature.end) ||
-                (feature.start <= end && end <= feature.end)
-            )
-        );
-}
-
-
 void FeatureTree::add(Feature& feature) {
     tree[feature.reference].add(feature);
-}
-
-
-bool FeatureTree::empty() {
-    return tree.empty();
 }
 
 
@@ -153,49 +128,11 @@ ReferenceFeatureCollection* FeatureTree::get_reference_feature_collection(const 
 }
 
 
-void ReferenceFeatureCollection::sort() {
-    std::sort(features.begin(), features.end());
-}
-
-
-std::vector<Feature> FeatureTree::list_features() {
-    std::vector<Feature> features;
-    for (auto ref_features : tree) {
-        for (auto feature: ref_features.second.features) {
-            features.push_back(feature);
-        }
-    }
-    std::sort(features.begin(), features.end());
-    return features;
-}
-
-
-std::vector<Feature> FeatureTree::list_features_by_size_descending() {
-    std::vector<Feature> features;
-    for (auto ref_features : tree) {
-        for (auto feature: ref_features.second.features) {
-            features.push_back(feature);
-        }
-    }
-    std::sort(features.begin(), features.end(), feature_size_descending_comparator);
-    return features;
-}
-
-
 void FeatureTree::print_reference_feature_counts(std::ostream* os) {
     std::ostream out(os ? os->rdbuf() : std::cout.rdbuf());
     for (auto reffeatures : tree) {
         out << reffeatures.first << " feature count: " << reffeatures.second.features.size() << std::endl;
     }
-}
-
-
-std::vector<std::string> FeatureTree::get_references() {
-    std::vector<std::string> references;
-    for (auto it : tree) {
-        references.push_back(it.first);
-    }
-    return references;
 }
 
 

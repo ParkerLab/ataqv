@@ -438,9 +438,10 @@ var ataqv = (function() {
                 let yAxisSource = yAxisSelect.value;
                 switch(yAxisSource) {
                 case 'short_mononucleosomal_ratio':
-                    y = experiment[yAxisSource];
-                    break;
                 case 'tss_enrichment':
+                case 'duplicate_fraction_in_peaks':
+                case 'duplicate_fraction_not_in_peaks':
+                case 'peak_duplicate_ratio':
                     y = experiment[yAxisSource];
                     break;
                 case 'duplicate_autosomal_reads':
@@ -1425,6 +1426,11 @@ var ataqv = (function() {
         if (configuration.description) {
             document.getElementById('description').innerHTML = configuration.description;
         }
+
+        for (let fls of querySelectorAll('.fragment_length_reference_source')) {
+            fls.innerHTML = configuration.fragment_length_reference.source;
+        }
+
         for (let experimentID in configuration.metrics) {
             let experiment = configuration.metrics[experimentID];
             legendItemState.set(experiment.library.sample || experiment.name, true);

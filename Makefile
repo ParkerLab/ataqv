@@ -9,7 +9,7 @@ VERSION = 0.9.1
 #
 
 SRC_DIR = src
-CPP_DIR = $(SRC_DIR)/cpp
+CPP_DIR = $(shell readlink -f $(SRC_DIR)/cpp)
 SCRIPTS_DIR = $(SRC_DIR)/scripts
 WEB_DIR = $(SRC_DIR)/web
 BUILD_DIR = build
@@ -184,7 +184,7 @@ $(CPP_DIR)/Version.hpp: Makefile
 test: checkdirs $(TEST_DIR)/run_ataqv_tests
 	@cp testdata/* $(TEST_DIR)
 	@cd $(TEST_DIR) && ./run_ataqv_tests -i
-	@cd $(TEST_DIR) && lcov --quiet --capture --derive-func-data --directory . --output-file ataqv.info && lcov --remove ataqv.info catch.hpp --remove ataqv.info json.hpp --output-file ataqv.info && genhtml ataqv.info -o ataqv
+	@cd $(TEST_DIR) && lcov --no-external --quiet --capture --derive-func-data --directory $(CPP_DIR) --directory . --output-file ataqv.info && lcov --remove ataqv.info $(CPP_DIR)/catch.hpp --output-file ataqv.info && lcov --remove ataqv.info $(CPP_DIR)/json.hpp --output-file ataqv.info && genhtml ataqv.info -o ataqv
 
 $(TEST_DIR)/run_ataqv_tests: $(TEST_DIR)/run_ataqv_tests.o $(TEST_DIR)/test_features.o $(TEST_DIR)/test_hts.o $(TEST_DIR)/test_io.o $(TEST_DIR)/test_metrics.o $(TEST_DIR)/test_peaks.o $(TEST_DIR)/test_utils.o $(TEST_DIR)/Features.o $(TEST_DIR)/HTS.o $(TEST_DIR)/IO.o $(TEST_DIR)/Metrics.o $(TEST_DIR)/Peaks.o $(TEST_DIR)/Utils.o
 	$(CXX) -o $@ $^ $(LDFLAGS) --coverage $(LDLIBS)

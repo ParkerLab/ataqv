@@ -147,3 +147,19 @@ TEST_CASE("Test SAM header parsing", "[hts/parse_sam_header]") {
     auto references = header["SQ"];
     REQUIRE(references.size() == 84);
 }
+
+TEST_CASE("Test bad HTS record") {
+    std::string sam("data:@SQ\tSN:chr20\tLN:63025520\nSRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23\n");
+
+    samFile *in = sam_open(sam.c_str(), "r");
+    bam_hdr_t *header = sam_hdr_read(in);
+    bam1_t *record = bam_init1();
+
+    REQUIRE(sam_read1(in, header, record) >= 0);
+
+    // Append a bad aux tag to trigger the exception
+    std::string tag("ZZ");
+    unsigned char data = 'N';
+    bam_aux_append(record, tag.c_str(), 'B', 1, &data);
+    REQUIRE_THROWS_AS(record_to_string(header, record), HTSException);
+}

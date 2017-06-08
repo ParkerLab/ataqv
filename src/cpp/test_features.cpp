@@ -146,3 +146,10 @@ TEST_CASE("Feature operator<<", "features/operator<<") {
     ss << f;
     REQUIRE("chr1\t1\t100\tpeak_1\t0\t." == ss.str());
 }
+
+TEST_CASE("ReferenceFeatureCollection rejects additions on different reference", "features/ReferenceFeatureCollection/enforce_same_reference") {
+    ReferenceFeatureCollection collection;
+    collection.reference = "chr1";
+    Feature f("chr2", 1, 100, "peak_1");
+    REQUIRE_THROWS_AS(collection.add(f), std::out_of_range);
+}

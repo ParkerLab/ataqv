@@ -190,12 +190,8 @@ bool MetricsCollector::is_mitochondrial(const std::string& reference_name) {
 // Load transcription start sites for the organism
 //
 void MetricsCollector::load_tss() {
-    if (tss_filename.empty()) {
-        throw FileException("TSS file has not been specified.");
-    }
-
     if (verbose) {
-        std::cout << "Loading TSS on autosomal references from " << tss_filename << "." << std::endl;
+        std::cout << "Loading TSS file '" << tss_filename << "'." << std::endl;
     }
 
     boost::shared_ptr<boost::iostreams::filtering_istream> tss_istream;
@@ -225,9 +221,7 @@ void MetricsCollector::load_tss() {
         }
     }
 
-    if (tss_tree.empty()) {
-        std::cout << "No TSS were found in " << tss_filename << std::endl;
-    } else if (verbose) {
+    if (verbose) {
         duration = boost::chrono::high_resolution_clock::now() - start;
         tss_tree.print_reference_feature_counts();
         std::cout << "Loaded " << tss_tree.size() << " TSS in " << duration << "." << " (" << (tss_tree.size() / duration.count()) << " TSS/second)." << std::endl << std::endl;
@@ -351,7 +345,7 @@ void MetricsCollector::load_alignments() {
                 metrics.erase(it.first);
             } else {
                 m->make_aggregate_diagnoses();
-                m->determine_top_peaks();
+                m->peaks.determine_top_peaks();
                 m->calculate_tss_metrics();
             }
         }
@@ -765,14 +759,14 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
                                 if (150 <= fragment_length && fragment_length <= 200) {
                                     hqaa_mononucleosomal_count++;
                                 }
-
-                                if (!peaks.empty()) {
-                                    peaks.increment_overlapping_hqaa(Feature(header, record));
-                                }
                             }
                         }
                     }
                 }
+            }
+
+            if (!peaks.empty()) {
+                peaks.record_alignment(Feature(header, record), is_hqaa(header, record), IS_PAIRED_AND_MAPPED(record) && IS_PROPERLYPAIRED(record), IS_DUP(record));
             }
 
             // Keep track of the longest fragment seen in a proper
@@ -831,9 +825,7 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
 void Metrics::load_peaks() {
     std::string peak_filename = collector->peak_filename;
 
-    if (peak_filename.empty()) {
-        throw FileException("Peak file has not been specified.");
-    } else if (peak_filename == "auto") {
+    if (peak_filename == "auto") {
         peak_filename = make_metrics_filename(".peaks");
     }
 
@@ -868,13 +860,10 @@ void Metrics::load_peaks() {
         }
         if (!excluded) {
             peaks.add(peak);
-            total_peak_territory += peak.size();
         }
     }
 
-    if (peaks.empty()) {
-        std::cout << "No peaks were found in " << peak_filename << std::endl;
-    } else if (collector->verbose) {
+    if (collector->verbose) {
         duration = boost::chrono::high_resolution_clock::now() - start;
         peaks.print_reference_peak_counts();
         std::cout << "Loaded " << peaks.size() << " peaks in " << duration << "." << " (" << (peaks.size() / duration.count()) << " peaks/second)." << std::endl << std::endl;
@@ -1078,34 +1067,6 @@ void Metrics::calculate_tss_metrics() {
 }
 
 
-
-void Metrics::determine_top_peaks() {
-    unsigned long long int count = 0;
-    for (auto peak: peaks.list_peaks_by_overlapping_hqaa_descending()) {
-        count++;
-        hqaa_in_peaks += peak.overlapping_hqaa;
-        if (count == 1) {
-            top_peak_hqaa_read_count = hqaa_in_peaks;
-        }
-
-        if (count <= 10) {
-            top_10_peak_hqaa_read_count = hqaa_in_peaks;
-        }
-
-        if (count <= 100) {
-            top_100_peak_hqaa_read_count = hqaa_in_peaks;
-        }
-
-        if (count <= 1000) {
-            top_1000_peak_hqaa_read_count = hqaa_in_peaks;
-        }
-
-        if (count <= 10000) {
-            top_10000_peak_hqaa_read_count = hqaa_in_peaks;
-        }
-    }
-}
-
 std::ostream& operator<<(std::ostream& os, const Library& library) {
     os
         << "Library: " << library.library << std::endl
@@ -1232,13 +1193,13 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
            << "  ------------" << std::endl
            << "  Peak count: " << m.peaks.size() << std::endl <<std::endl
 
-           << "  High quality autosomal alignments that overlapped peaks: "  << m.hqaa_in_peaks << percentage_string(m.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << "  High quality autosomal alignments that overlapped peaks: "  << m.peaks.hqaa_in_peaks << percentage_string(m.peaks.hqaa_in_peaks, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
            << "  Number of high quality autosomal alignments overlapping the top 10,000 peaks: " << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top peak: " << std::fixed << m.top_peak_hqaa_read_count << percentage_string(m.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 10 peaks: " << std::fixed << m.top_10_peak_hqaa_read_count << percentage_string(m.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 100 peaks: "<< std::fixed << m.top_100_peak_hqaa_read_count << percentage_string(m.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 1000 peaks: " << std::fixed << m.top_1000_peak_hqaa_read_count << percentage_string(m.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
-           << std::setfill(' ') << std::setw(20) << std::right << "Top 10,000 peaks: " << std::fixed << m.top_10000_peak_hqaa_read_count << percentage_string(m.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl;
+           << std::setfill(' ') << std::setw(20) << std::right << "Top peak: " << std::fixed << m.peaks.top_peak_hqaa_read_count << percentage_string(m.peaks.top_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 10 peaks: " << std::fixed << m.peaks.top_10_peak_hqaa_read_count << percentage_string(m.peaks.top_10_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 100 peaks: "<< std::fixed << m.peaks.top_100_peak_hqaa_read_count << percentage_string(m.peaks.top_100_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 1000 peaks: " << std::fixed << m.peaks.top_1000_peak_hqaa_read_count << percentage_string(m.peaks.top_1000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl
+           << std::setfill(' ') << std::setw(20) << std::right << "Top 10,000 peaks: " << std::fixed << m.peaks.top_10000_peak_hqaa_read_count << percentage_string(m.peaks.top_10000_peak_hqaa_read_count, m.hqaa, 3, " (", "% of all high quality autosomal alignments)") << std::endl;
     }
 
     unsigned long long int mysteries = m.total_reads - m.unclassified_reads - m.properly_paired_and_mapped_reads - total_problems;
@@ -1347,7 +1308,7 @@ json Metrics::to_json() {
     long double cumulative_fraction_of_territory = 0.0;
     for (auto peak: peaks.list_peaks_by_size_descending()) {
         count++;
-        cumulative_fraction_of_territory += (peak.size() / (long double)total_peak_territory);
+        cumulative_fraction_of_territory += (peak.size() / (long double)peaks.total_peak_territory);
 
         if (percentile_indices.count(count) == 1) {
             peak_percentiles["cumulative_fraction_of_territory"].push_back(cumulative_fraction_of_territory);
@@ -1408,6 +1369,14 @@ json Metrics::to_json() {
              {"hqaa_tf_count", hqaa_short_count},
              {"hqaa_mononucleosomal_count", hqaa_mononucleosomal_count},
              {"short_mononucleosomal_ratio", short_mononucleosomal_ratio},
+             {"hqaa_in_peaks", peaks.hqaa_in_peaks},
+             {"duplicates_in_peaks", peaks.duplicates_in_peaks},
+             {"duplicates_not_in_peaks", peaks.duplicates_not_in_peaks},
+             {"ppm_in_peaks", peaks.ppm_in_peaks},
+             {"ppm_not_in_peaks", peaks.ppm_not_in_peaks},
+             {"duplicate_fraction_in_peaks", fraction(peaks.duplicates_in_peaks, peaks.ppm_in_peaks)},
+             {"duplicate_fraction_not_in_peaks", fraction(peaks.duplicates_not_in_peaks, peaks.ppm_not_in_peaks)},
+             {"peak_duplicate_ratio", fraction(fraction(peaks.duplicates_not_in_peaks, peaks.ppm_not_in_peaks), fraction(peaks.duplicates_in_peaks, peaks.ppm_in_peaks))},
              {"fragment_length_counts_fields", fragment_length_counts_fields},
              {"fragment_length_counts", fragment_length_counts_json},
              {"fragment_length_distance", nullptr},
@@ -1419,7 +1388,7 @@ json Metrics::to_json() {
              {"peaks", peak_list},
              {"peak_percentiles", peak_percentiles},
              {"total_peaks", peak_count},
-             {"total_peak_territory", total_peak_territory},
+             {"total_peak_territory", peaks.total_peak_territory},
              {"hqaa_overlapping_peaks_percent", percentage(hqaa_overlapping_peaks, hqaa)},
              {"tss_coverage", tss_coverage_vec},
              {"tss_enrichment", tss_enrichment}

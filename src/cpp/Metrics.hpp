@@ -188,15 +188,6 @@ public:
 
     std::map<int, unsigned long long int> mapq_counts = {};
 
-    unsigned long long int total_peak_territory = 0;
-
-    unsigned long long int hqaa_in_peaks = 0;
-    unsigned long long int top_peak_hqaa_read_count = 0;
-    unsigned long long int top_10_peak_hqaa_read_count = 0;
-    unsigned long long int top_100_peak_hqaa_read_count = 0;
-    unsigned long long int top_1000_peak_hqaa_read_count = 0;
-    unsigned long long int top_10000_peak_hqaa_read_count = 0;
-
     std::map<int, unsigned long long int> tss_coverage = {};
     std::map<int, double> tss_coverage_scaled = {};
     double tss_enrichment = 0.0;
@@ -214,8 +205,6 @@ public:
     void calculate_tss_metrics();
     std::map<int, unsigned long long int> calculate_tss_metric_for_reference(const std::string &reference, const int extension, FeatureTree &fragment_tree);
 
-    void determine_top_peaks();
-    void increment_overlapping_read_count(Peak* peak);
     bool is_autosomal(const std::string &reference_name);
     bool is_mitochondrial(const std::string& reference_name);
     bool is_ff(const bam1_t* record);
@@ -230,7 +219,6 @@ public:
     double mean_mapq() const;
     double median_mapq() const;
     json to_json();
-    void update_overlapping_peaks(const bam_hdr_t *header, const bam1_t *record);
 };
 
 std::ostream& operator<<(std::ostream& os, const Metrics& metrics);

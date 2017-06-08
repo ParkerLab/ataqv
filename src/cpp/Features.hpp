@@ -47,8 +47,6 @@ public:
     unsigned long long int end = 0;
 
     void add(const Feature& feature);
-    bool overlaps(const Feature& feature) const;
-    void sort();
 };
 
 
@@ -58,13 +56,9 @@ private:
 
 public:
     void add(Feature& feature);
-    bool empty();
     ReferenceFeatureCollection* get_reference_feature_collection(const std::string& reference_name);
     std::vector<std::string> get_references_by_feature_count();
-    std::vector<Feature> list_features();
-    std::vector<Feature> list_features_by_size_descending();
     void print_reference_feature_counts(std::ostream* os = nullptr);
-    std::vector<std::string> get_references();
     size_t size() const;
 };
 

@@ -2,11 +2,7 @@
 #include <iostream>
 #include <string>
 
-#include "Exceptions.hpp"
 #include "HTS.hpp"
-#include "Utils.hpp"
-
-#include <htslib/kstring.h>
 
 
 std::string get_qname(const bam1_t* record) {
