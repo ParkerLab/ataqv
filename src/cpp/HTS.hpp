@@ -24,7 +24,7 @@
 #define IS_DUP(bam) (bam->core.flag & BAM_FDUP)
 #define IS_MATE_REVERSE(bam) (bam->core.flag & BAM_FMREVERSE)
 #define IS_MATE_UNMAPPED(bam) (bam->core.flag & BAM_FMUNMAP)
-#define IS_ORIGINAL(bam) ((bam->core.flag & (BAM_FSECONDARY|BAM_FSUPPLEMENTARY)) == 0)
+#define IS_PRIMARY(bam) ((bam->core.flag & (BAM_FSECONDARY|BAM_FSUPPLEMENTARY)) == 0)
 #define IS_PAIRED(bam) (bam->core.flag & BAM_FPAIRED)
 #define IS_PAIRED_AND_MAPPED(bam) ((bam->core.flag & BAM_FPAIRED) && !(bam->core.flag & BAM_FUNMAP) && !(bam->core.flag & BAM_FMUNMAP))
 #define IS_PROPERLYPAIRED(bam) ((bam->core.flag & (BAM_FPAIRED|BAM_FPROPER_PAIR)) == (BAM_FPAIRED|BAM_FPROPER_PAIR) && !(bam->core.flag & BAM_FUNMAP) && !(bam->core.flag & BAM_FMUNMAP))

@@ -473,7 +473,7 @@ bool Metrics::is_hqaa(const bam_hdr_t* header, const bam1_t* record) {
         !IS_DUP(record) &&
         IS_PAIRED_AND_MAPPED(record) &&
         IS_PROPERLYPAIRED(record) &&
-        IS_ORIGINAL(record) &&
+        IS_PRIMARY(record) &&
         (record->core.qual >= 30) &&
         (record->core.tid >= 0)) {
 
@@ -781,8 +781,11 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
             // identify those that mapped too far from their
             // mates.
             //
-            if (maximum_proper_pair_fragment_size < fragment_length) {
+            if (IS_PRIMARY(record) &&  maximum_proper_pair_fragment_size < fragment_length) {
                 maximum_proper_pair_fragment_size = fragment_length;
+                if (collector->verbose) {
+                    std::cerr << "New maximum proper pair fragment length: " << maximum_proper_pair_fragment_size << " from [" << record_to_string(header, record) << "]" << std::endl;
+                }
             }
         } else if (record->core.tid != record->core.mtid) {
             // Compare the record's reference ID to its mate's
@@ -915,7 +918,7 @@ std::map<int, unsigned long long int> Metrics::get_tss_coverage_for_reference(co
 
                 hts_itr_t *alignment_iterator;
                 if ((alignment_iterator = sam_itr_querys(alignment_file_index, alignment_file_header, query.str().c_str())) == nullptr) {
-                    std::cerr <<  "Could not parse TSS region " << query.str() << std::endl;
+                    std::cerr <<  "Could not find TSS region " << query.str() << " in your BAM file. Check that your TSS file's chromosome naming scheme matches your reference." << std::endl;
                     continue;
                 }
 
@@ -969,7 +972,10 @@ void Metrics::calculate_tss_metrics() {
         return;
     }
 
-    std::cout << "Calculating TSS metrics..." << std::endl;
+    if (collector->verbose) {
+        std::cout << "Calculating TSS metrics..." << std::endl;
+    }
+
     boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
     boost::chrono::duration<double> duration;
 
