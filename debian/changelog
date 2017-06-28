@@ -1,3 +1,9 @@
+ataqv (0.9.2-1) unstable; urgency=low
+
+  * Peak duplicate metrics; correct maximum fragment length measurement.
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Wed, 28 Jun 2017 10:40:00 -0500
+
 ataqv (0.9.1-1) unstable; urgency=low
 
   * Count only HQAA fragment lengths, not just any properly paired and mapped
