@@ -1,3 +1,9 @@
+ataqv (0.9.4-1) unstable; urgency=low
+
+  * Fixes for Mac, newer HTSlib.
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Fri, 28 Jul 2018 16:30:00 -0500
+
 ataqv (0.9.3-1) unstable; urgency=low
 
   * Only consider autosomal alignments for peak duplicate metrics

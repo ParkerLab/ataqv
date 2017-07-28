@@ -15,13 +15,31 @@
 
 
 TEST_CASE("Test HTS file handling") {
-    std::string sam("data:@SQ\tSN:chr20\tLN:63025520\nSRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23\n");
+    samFile *in;
+    bam_hdr_t *header;
+    bam1_t *record;
+    int result = -1;
 
-    samFile *in = sam_open(sam.c_str(), "r");
-    bam_hdr_t *header = sam_hdr_read(in);
-    bam1_t *record = bam_init1();
+    // first try new HTSlib data URL
+    std::string sam("data:,@SQ\tSN:chr20\tLN:63025520\nSRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23\n");
 
-    REQUIRE(sam_read1(in, header, record) >= 0);
+    in = sam_open(sam.c_str(), "r");
+    header = sam_hdr_read(in);
+    record = bam_init1();
+    result = sam_read1(in, header, record);
+
+    if (result < 0) {
+        // old, dirty, filthy, commaless and abruptly unsupported
+        // HTSlib data URL
+        std::string sam("data:@SQ\tSN:chr20\tLN:63025520\nSRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23\n");
+
+        in = sam_open(sam.c_str(), "r");
+        header = sam_hdr_read(in);
+        record = bam_init1();
+        result = sam_read1(in, header, record);
+    }
+
+    REQUIRE(result >= 0);
 
     SECTION("TEST HTS::get_qname", "[hts/get_qname]") {
         REQUIRE("SRR891268.122333488" == get_qname(record));
@@ -149,13 +167,31 @@ TEST_CASE("Test SAM header parsing", "[hts/parse_sam_header]") {
 }
 
 TEST_CASE("Test bad HTS record") {
-    std::string sam("data:@SQ\tSN:chr20\tLN:63025520\nSRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23\n");
+    samFile *in;
+    bam_hdr_t *header;
+    bam1_t *record;
+    int result = -1;
 
-    samFile *in = sam_open(sam.c_str(), "r");
-    bam_hdr_t *header = sam_hdr_read(in);
-    bam1_t *record = bam_init1();
+    // first try new HTSlib data URL
+    std::string sam("data:,@SQ\tSN:chr20\tLN:63025520\nSRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23\n");
 
-    REQUIRE(sam_read1(in, header, record) >= 0);
+    in = sam_open(sam.c_str(), "r");
+    header = sam_hdr_read(in);
+    record = bam_init1();
+    result = sam_read1(in, header, record);
+
+    if (result < 0) {
+        // old, dirty, filthy, commaless and abruptly unsupported
+        // HTSlib data URL
+        std::string sam("data:@SQ\tSN:chr20\tLN:63025520\nSRR891268.122333488\t83\tchr20\t60087\t60\t50M\t=\t60058\t-79\tAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGAC\tJJJJJJJJJJJJJJJJJIHHGIGIIIJJJJJIIGGIJHHHHHFFFFFCBB\tMD:Z:50\tPG:Z:MarkDuplicates\tNM:i:0\tAS:i:50\tXS:i:23\n");
+
+        in = sam_open(sam.c_str(), "r");
+        header = sam_hdr_read(in);
+        record = bam_init1();
+        result = sam_read1(in, header, record);
+    }
+
+    REQUIRE(result >= 0);
 
     // Append a bad aux tag to trigger the exception
     std::string tag("ZZ");

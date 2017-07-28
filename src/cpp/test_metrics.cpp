@@ -44,7 +44,7 @@ TEST_CASE("MetricsCollector basics", "[metrics/collector]") {
     }
 
     SECTION("MetricsCollector::to_json") {
-        json collector_json = collector.to_json();
+        nlohmann::json collector_json = collector.to_json();
         REQUIRE("null" == collector_json.dump());  // that's all you get with no metrics
     }
 
@@ -158,7 +158,7 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
 
     REQUIRE(metrics->tss_enrichment == Approx(4.119850));
 
-    json j = collector.to_json();
+    nlohmann::json j = collector.to_json();
     unsigned long long int total_reads = j[0]["metrics"]["total_reads"];
     unsigned long long int hqaa = j[0]["metrics"]["hqaa"];
     REQUIRE(total_reads == metrics->total_reads);
@@ -231,7 +231,7 @@ TEST_CASE("Metrics::ignore_read_groups", "[metrics/ignore_read_groups]") {
 
     REQUIRE(metrics->peaks.size() == 37276);
 
-    json j = collector.to_json();
+    nlohmann::json j = collector.to_json();
     unsigned long long int total_reads = j[0]["metrics"]["total_reads"];
     unsigned long long int hqaa = j[0]["metrics"]["hqaa"];
     REQUIRE(total_reads == metrics->total_reads);

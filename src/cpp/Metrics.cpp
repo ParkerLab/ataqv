@@ -1221,8 +1221,8 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
 }
 
 
-json Library::to_json() {
-    json result = {
+nlohmann::json Library::to_json() {
+    nlohmann::json result = {
         {"library", library},
         {"sample", sample},
         {"description", description},
@@ -1240,14 +1240,14 @@ json Library::to_json() {
 }
 
 
-json Metrics::to_json() {
+nlohmann::json Metrics::to_json() {
     std::vector<std::string> fragment_length_counts_fields = {"fragment_length", "read_count", "fraction_of_all_reads"};
-    json fragment_length_counts_json;
+    nlohmann::json fragment_length_counts_json;
     int max_fragment_length = std::min(1000, std::max(1000, fragment_length_counts.empty() ? 0 : fragment_length_counts.rbegin()->first));
 
     for (int fragment_length = 0; fragment_length <= max_fragment_length; fragment_length++) {
         int count = fragment_length_counts[fragment_length];
-        json flc;
+        nlohmann::json flc;
         flc.push_back(fragment_length);
         flc.push_back(count);
         long double fraction_of_total_reads = total_reads == 0 ? std::nan("") : count / (long double) total_reads;
@@ -1258,9 +1258,9 @@ json Metrics::to_json() {
 
     std::vector<std::string> mapq_counts_fields = {"mapq", "read_count"};
 
-    json mapq_counts_json;
+    nlohmann::json mapq_counts_json;
     for (auto it : mapq_counts) {
-        json mc;
+        nlohmann::json mc;
         mc.push_back(it.first);
         mc.push_back(it.second);
         mapq_counts_json.push_back(mc);
@@ -1272,7 +1272,7 @@ json Metrics::to_json() {
         "territory"
     };
 
-    std::vector<json> peak_list;
+    std::vector<nlohmann::json> peak_list;
 
     std::set<unsigned long long int> percentile_indices;
     std::map<std::string, std::vector<long double>> peak_percentiles = {
@@ -1292,7 +1292,7 @@ json Metrics::to_json() {
     for (auto peak: default_peak_list) {
         hqaa_overlapping_peaks += peak.overlapping_hqaa;
 
-        json jp;
+        nlohmann::json jp;
         jp.push_back(peak.name);
         jp.push_back(peak.overlapping_hqaa);
         jp.push_back(peak.size());
@@ -1324,15 +1324,15 @@ json Metrics::to_json() {
 
     long double short_mononucleosomal_ratio = fraction(hqaa_short_count, hqaa_mononucleosomal_count);
 
-    json tss_coverage_vec;
+    nlohmann::json tss_coverage_vec;
     for (auto pc : tss_coverage_scaled) {
-        json pair;
+        nlohmann::json pair;
         pair.push_back(pc.first);
         pair.push_back(pc.second);
         tss_coverage_vec.push_back(pair);
     }
 
-    json result = {
+    nlohmann::json result = {
         {"ataqv_version", version_string()},
         {"timestamp", iso8601_timestamp()},
         {"metrics",
@@ -1419,8 +1419,8 @@ std::ostream& operator<<(std::ostream& os, const MetricsCollector& collector) {
     return os;
 }
 
-json MetricsCollector::to_json() {
-    json result;
+nlohmann::json MetricsCollector::to_json() {
+    nlohmann::json result;
     for (auto m : metrics) {
         result.push_back(m.second->to_json());
     }

@@ -22,9 +22,6 @@
 #include "Peaks.hpp"
 
 
-using json = nlohmann::json;
-
-
 class MetricsCollector;
 class Metrics;
 
@@ -95,7 +92,7 @@ public:
     bool is_mitochondrial(const std::string& reference_name);
     void load_tss();
     void load_alignments();
-    json to_json();
+    nlohmann::json to_json();
 };
 
 
@@ -118,7 +115,7 @@ public:
     std::string predicted_median_insert_size = "";  // PI
     std::string programs = "";  // PG
 
-    json to_json();
+    nlohmann::json to_json();
 };
 
 std::ostream& operator<<(std::ostream& os, const Library& library);
@@ -218,7 +215,7 @@ public:
     bool mapq_at_least(const int& mapq, const bam1_t* record);
     double mean_mapq() const;
     double median_mapq() const;
-    json to_json();
+    nlohmann::json to_json();
 };
 
 std::ostream& operator<<(std::ostream& os, const Metrics& metrics);

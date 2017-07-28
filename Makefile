@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.9.3
+VERSION = 0.9.4
 
 #
 # PATHS
@@ -194,7 +194,7 @@ $(TEST_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
 
 clean:
 	@rm -rf $(BUILD_DIR) $(TEST_DIR)
-	@test -x dh_clean && dh_clean || /bin/true
+	@test -x dh_clean && dh_clean || true
 
 install: checkdirs install-ataqv install-scripts install-web
 
