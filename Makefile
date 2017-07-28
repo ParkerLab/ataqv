@@ -2,14 +2,14 @@
 # VARIABLES
 #
 
-VERSION = 0.9.2
+VERSION = 0.9.3
 
 #
 # PATHS
 #
 
 SRC_DIR = src
-CPP_DIR = $(shell readlink -f $(SRC_DIR)/cpp)
+CPP_DIR = $(shell realpath -e $(SRC_DIR)/cpp)
 SCRIPTS_DIR = $(SRC_DIR)/scripts
 WEB_DIR = $(SRC_DIR)/web
 BUILD_DIR = build

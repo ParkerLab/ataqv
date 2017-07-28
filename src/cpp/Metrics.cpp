@@ -740,6 +740,11 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
                 } else {
                     if (is_autosomal(reference_name)) {
                         total_autosomal_reads++;
+
+                        if (!peaks.empty()) {
+                            peaks.record_alignment(Feature(header, record), is_hqaa(header, record), IS_DUP(record));
+                        }
+
                         if (IS_DUP(record)) {
                             duplicate_autosomal_reads++;
                         } else {
@@ -763,10 +768,6 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
                         }
                     }
                 }
-            }
-
-            if (!peaks.empty()) {
-                peaks.record_alignment(Feature(header, record), is_hqaa(header, record), IS_PAIRED_AND_MAPPED(record) && IS_PROPERLYPAIRED(record), IS_DUP(record));
             }
 
             // Keep track of the longest fragment seen in a proper

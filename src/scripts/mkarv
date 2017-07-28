@@ -6,12 +6,15 @@ import argparse
 import collections
 import csv
 import decimal
+import functools
 import gzip
 import json
 import logging
+import multiprocessing
 import os.path
 import re
 import shutil
+import signal
 import sys
 import textwrap
 
@@ -30,6 +33,10 @@ METADATA_FIELDS = [
 ]
 
 METRICS_EXTENSION_RE = re.compile('\.json(\.gz)?$')
+
+
+def worker_init():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -241,10 +248,11 @@ def parse_arguments():
         """) + '\n\n'
     )
 
+    parser.add_argument('-c', '--concurrency', type=int, default=1, dest='concurrency', help='The number of concurrent processes to use (default: 1).')
+    parser.add_argument('-d', '--description', help='A description for the viewer instance.')
     parser.add_argument('-f', '--force', action='store_true', help='Overwrite the output directory if it exists.')
     parser.add_argument('-i', '--indent', action='store_true', help='If indent is given, JSON output will be pretty-printed and indented.')
     parser.add_argument('-m', '--maximum-fragment-length', type=int, default=1000, help='The maximum fragment length for which the distance to the reference fragment length count distribution will be measured.')
-    parser.add_argument('-d', '--description', help='A description for the viewer instance.')
 
     parser.add_argument('-p', '--peak-reference', default="SRR891268", help=(
         """A reference set of peak metrics to plot. The default value is "SRR891268", """
@@ -369,8 +377,9 @@ def calculate_fragment_length_distance(metrics, reference_distribution, max_frag
 
     nonreference_cdf = make_cdf(metrics['fragment_length_counts'])
 
-    diff = map(lambda x: x[0] - x[1], zip(nonreference_cdf, reference_cdf))
-    distance = (abs(max(diff)) > abs(min(diff))) and max(diff) or min(diff)
+    diff = list(map(lambda x: x[0] - x[1], zip(nonreference_cdf, reference_cdf)))
+    if diff:
+        distance = (abs(max(diff)) > abs(min(diff))) and max(diff) or min(diff)
 
     return distance
 
@@ -506,9 +515,47 @@ def prepare_for_viewer(data):
         for numerator, denominator in PERCENTAGES.items():
             key = '{}__{}'.format(numerator, denominator)
             if metrics[denominator] == 0:
-                metrics['percentages'][key] = None
+                if metrics[numerator] == 0:
+                    metrics['percentages'][key] = 0.0
+                else:
+                    metrics['percentages'][key] = None
             else:
-                metrics['percentages'][key] = float(metrics[numerator]) / metrics[denominator] * 100.0;
+                metrics['percentages'][key] = float(metrics[numerator]) / metrics[denominator] * 100.0
+
+
+def load_metrics(data_directory, metrics_filename):
+    logger.info('Adding metrics file {}'.format(metrics_filename))
+    mf = open_maybe_gzipped(metrics_filename)
+    try:
+        contents = mf.read()
+        collection = json.loads(contents)
+        for result in collection:
+            metrics = result['metrics']
+            metrics_filename = os.path.join(data_directory, '{}.json.gz'.format(metrics['name']))
+            metrics['metrics_filename'] = metrics_filename
+            metrics['metrics_url'] = os.path.join('data', os.path.basename(metrics_filename))
+
+            metrics['fragment_length_counts'] = prepare_fragment_length_counts(metrics['fragment_length_counts'], args.maximum_fragment_length)
+
+            return metrics
+    except ValueError as e:
+        logger.error('Could not add metrics file {}: {}'.format(metrics_filename, e))
+
+
+def write_metrics(indent, metrics):
+    output_filename = metrics['metrics_filename']
+    del metrics['metrics_filename']
+
+    logger.info('Writing {} metrics to {}'.format(metrics['name'], output_filename))
+
+    with gzip.open(output_filename, 'wt') as output_file:
+        try:
+            new_json = json.dumps([metrics], output_file, sort_keys=True, indent=indent, ensure_ascii=False).encode('utf-8')
+            output_file.write(new_json)
+        except Exception as e:
+            print('Could not write file {}: {}'.format(output_filename, e), file=sys.stderr)
+
+    return metrics
 
 
 if __name__ == '__main__':
@@ -517,6 +564,13 @@ if __name__ == '__main__':
     loglevel = args.verbose and logging.DEBUG or logging.INFO
     logging.basicConfig(level=loglevel, format=LOGGING_FORMAT)
     logger = logging.getLogger(PROGRAM)
+
+    if args.concurrency > 1:
+        logger.info('Using {:d} concurrent processes to transform ataqv output files'.format(args.concurrency))
+
+    pool = None
+    if args.concurrency > 1:
+        pool = multiprocessing.Pool(processes=args.concurrency, initializer=worker_init)
 
     if os.path.exists(args.directory):
         if not args.force:
@@ -530,35 +584,19 @@ if __name__ == '__main__':
             logger.error('Error: metrics file {} not found'.format(metrics_filename))
             sys.exit(1)
 
-    logger.info('Copying web visualizer template directory to {}'.format(args.directory))
+    logger.info('Copying web visualizer template directory {} to {}'.format(args.template_directory, args.directory))
     shutil.copytree(args.template_directory, args.directory)
 
     data_directory = os.path.join(args.directory, 'data')
     logger.info('Creating data directory {}'.format(data_directory))
-    os.makedirs(data_directory, 0755)
+    os.makedirs(data_directory, 0o0755)
 
     configuration = {'description': args.description or '', 'metrics': {}}
 
-    for metrics_filename in args.metrics:
-        logger.info('Adding metrics file {}'.format(metrics_filename))
-        mf = open_maybe_gzipped(metrics_filename)
-        try:
-            collection = json.load(mf)
-            for result in collection:
-                metrics = result['metrics']
-                name = metrics['name']
-
-                metrics_filename = os.path.join(data_directory, '{}.json.gz'.format(metrics['name']))
-                metrics['metrics_filename'] = metrics_filename
-                metrics['metrics_url'] = os.path.join('data', os.path.basename(metrics_filename))
-
-                metrics['fragment_length_counts'] = prepare_fragment_length_counts(metrics['fragment_length_counts'], args.maximum_fragment_length)
-
-                configuration['metrics'][name] = metrics
-
-        except ValueError as e:
-            logger.error('Could not add metrics file {}: {}'.format(metrics_filename, e))
-            continue
+    loader = functools.partial(load_metrics, data_directory)
+    loaded_metrics = pool and pool.imap(loader, args.metrics, args.concurrency) or (loader(metrics_filename) for metrics_filename in args.metrics)
+    for metrics in loaded_metrics:
+        configuration['metrics'][metrics['name']] = metrics
 
     if args.reference == 'calculate':
         logger.info('Constructing a reference fragment length distribution from your input.')
@@ -571,20 +609,17 @@ if __name__ == '__main__':
     add_reference_peak_metrics(configuration, args.peak_reference)
 
     indent = args.indent and 1 or None
-    for name, metrics in sorted(configuration['metrics'].items()):
-        logger.info('Writing {} metrics to {}'.format(name, metrics['metrics_filename']))
 
-        with gzip.open(metrics['metrics_filename'], 'w', 9) as data_file:
-            del metrics['metrics_filename']
+    metrics = (metrics for name, metrics in sorted(configuration['metrics'].items()))
+    writer = functools.partial(write_metrics, indent)
+    written_metrics = pool and pool.imap(writer, metrics, args.concurrency) or (writer(m) for m in metrics)
+    for metrics in written_metrics:
+        configuration['metrics'][metrics['name']] = metrics
 
-            json.dump([metrics], data_file, sort_keys=True, indent=indent)
-
-        configuration['metrics'][name] = metrics
-
-    logger.info('Adding viewer-specific metrics...'.format(name))
+    logger.info('Adding viewer-specific metrics...')
     prepare_for_viewer(configuration['metrics'])
 
     data_filename = os.path.join(args.directory, 'js/configuration.js')
     logger.info('Writing data for ataqv viewer to {}'.format(data_filename))
     with open(data_filename, 'w') as data_file:
-        data_file.write('ataqv.configure({});'.format(json.dumps(configuration, sort_keys=True, indent=indent, separators=[',', ':'], cls=DecimalEncoder)))
+        data_file.write('ataqv.configure({});'.format(json.dumps(configuration, sort_keys=True, indent=indent, separators=[',', ':'], cls=DecimalEncoder, ensure_ascii=False).encode('utf-8')))

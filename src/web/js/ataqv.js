@@ -16,6 +16,7 @@ var ataqv = (function() {
     let legendItemState = new Map();
     let dispatch = d3.dispatch('legendChange', 'plotItemInspect', 'sampleInspect');
     let tooltip = d3.select('#tooltip');
+    let tooltipTimer = null;
 
     function localStorageAvailable() {
         try {
@@ -29,11 +30,91 @@ var ataqv = (function() {
         }
     }
 
+    function copyStylesInline(destinationNode, sourceNode) {
+        var containerElements = ['svg','g'];
+        for (var cd = 0; cd < destinationNode.childNodes.length; cd++) {
+            var child = destinationNode.childNodes[cd];
+            if (containerElements.indexOf(child.tagName) != -1) {
+                copyStylesInline(child, sourceNode.childNodes[cd]);
+                continue;
+            }
+            var style = sourceNode.childNodes[cd].currentStyle || window.getComputedStyle(sourceNode.childNodes[cd]);
+            if (style == 'undefined' || style == null) continue;
+            for (var st = 0; st < style.length; st++){
+                child.style.setProperty(style[st], style.getPropertyValue(style[st]));
+            }
+        }
+    }
+
+    function copyPlotForExport(svgElement, colorFunction) {
+        let copy = svgElement.cloneNode(true);
+        copyStylesInline(copy, svgElement);
+        copy.style.background = '#222';
+
+        let d3copy = d3.select(copy);
+
+        let copyWidth = d3copy.attr('width');
+        let copyHeight = d3copy.attr('height') * 2;
+        d3copy
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr('viewBox', '0 0 ' + copyWidth + ' ' + copyHeight)
+            .attr('height', copyHeight);
+
+        d3copy
+            .insert('rect', ':first-child')
+            .attr('fill', '#222')
+            .attr('height', copyHeight)
+            .attr('width', copyWidth);
+
+        let plotItems = querySelectorAll(['.plotItem'], copy);
+
+        let maxExperimentLength = plotItems.map(function(i) {return i.getAttribute('data-experiment').length;}).reduce(function (a, b) {return a > b ? a : b;});
+
+        let legendItemWidth = maxExperimentLength * 15;
+        let legendItemsPerLine = Math.floor((copyWidth - 40)/ legendItemWidth);
+
+        let plotItemIndex = 0;
+        let lineItemIndex = 0;
+        let lineCount = 0;
+        for (let plotItem of plotItems) {
+            if (lineItemIndex > legendItemsPerLine) {
+                lineCount += 1;
+                lineItemIndex = 0;
+            }
+            let sampleColor = colorFunction(plotItem.getAttribute('data-sample'));
+            d3copy
+                .append('text')
+                .attr('class', 'label')
+                .attr('x', 20 + lineItemIndex * legendItemWidth)
+                .attr('y', (copyHeight * 0.5) + (15 * lineCount))
+                .style('text-anchor', 'left')
+                .style('font-size', '0.75rem')
+                .attr('fill', sampleColor)
+                .attr('font-family', "'Source Sans Pro', sans-serif")
+                .text(plotItem.getAttribute('data-experiment'));
+            plotItemIndex++;
+            lineItemIndex++;
+        }
+        return copy;
+    }
+
+    function triggerDownload (imgURI, fileName) {
+        var evt = new MouseEvent('click', {
+            view: window,
+            bubbles: false,
+            cancelable: true
+        });
+        var a = document.getElementById('exportDownload');
+        a.setAttribute('download', fileName);
+        a.setAttribute('href', imgURI);
+        a.dispatchEvent(evt);
+    }
+
     function showTooltip() {
         let cx = d3.event.clientX + 10;
         let cy = d3.event.clientY - 28;
         let px = d3.event.pageX + 10;
-        let py = d3.event.pageY - 28;
+        let py = d3.event.pageY - 96;
 
         tooltip.style('z-index', 99999).style('display', 'block');
 
@@ -49,19 +130,22 @@ var ataqv = (function() {
         }
 
         if ((document.documentElement.clientHeight - cy) < tooltipHeight) {
-            py -= tooltipHeight - 20;
+            py = document.documentElement.clientHeight - tooltipHeight - 96;
         }
 
         tooltip.style('left', px + 'px').style('top', py + 'px');
         tooltip.transition().duration(200).style('opacity', 1);
+
+        clearTimeout(tooltipTimer);
+        tooltipTimer = setTimeout(hideTooltip, 10000);
     }
 
     function hideTooltip(d, i) {
         if (d3.event) {
             d3.event.target.classList.remove('opaque');
-            tooltip.transition().duration(100).style('opacity', 0);
-            tooltip.style('z-index', -99999);
         }
+        tooltip.transition().duration(100).style('opacity', 0);
+        tooltip.style('z-index', -99999);
     }
 
     function hideHelp() {
@@ -286,10 +370,20 @@ var ataqv = (function() {
             let experimentID = this;
             let experiment = configuration.metrics[experimentID];
             if (experiment) {
+                let plotItems = querySelectorAll('.plotItem[data-experiment="' + experimentID + '"]');
+                let firstPlotItem = plotItems && plotItems[0];
+                let sample = firstPlotItem && firstPlotItem.getAttribute('data-sample');
+
+                d3.selectAll('.legendItem').classed('highlight', false);
+                if (sample) {
+                    d3.selectAll('.legendItem[data-sample="' + sample + '"]').classed('highlight', true);
+                }
+
                 d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
                 d3.selectAll('.plotItem[data-experiment="' + experimentID + '"]').classed('highlight', true).raise();
             } else {
                 d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
+                d3.selectAll('.legendItem').classed('unhighlight', false).classed('highlight', false);
             }
 
             showTooltip();
@@ -494,7 +588,7 @@ var ataqv = (function() {
             let xValue = function(d) {return d.x;};  // data -> value
             let xScale = d3.scaleLinear().range([0, width]);  // value -> display
             let xMap = function(d) {return xScale(xValue(d));};  // data -> display
-            let xAxis = d3.axisBottom(xScale).tickSize(-height);
+            let xAxis = d3.axisBottom(xScale).tickSize(-height).tickPadding(5);
 
             // setup y
             let yValue = function(d) { return d.y;}; // data -> value
@@ -538,11 +632,11 @@ var ataqv = (function() {
 
             yAxisG.append('text')
                 .attr('class', 'label')
-                .attr('transform', 'rotate(-90), translate(0, -20)')
+                .attr('transform', 'rotate(-90) translate(0, -20)')
                 .attr('x', height * -0.5)
                 .attr('y', -50)
                 .style('text-anchor', 'middle')
-                .style('border', '1px solid #f00')
+                .attr('font-family', "'Source Sans Pro', sans-serif")
                 .text(yAxisLabel);
 
             yAxisG.selectAll('text.label').call(wrapY, height, height * -0.5);
@@ -558,6 +652,7 @@ var ataqv = (function() {
                 .attr('x', width * 0.5)
                 .attr('y', 60)
                 .style('text-anchor', 'middle')
+                .attr('font-family', "'Source Sans Pro', sans-serif")
                 .text('Distance from reference fragment length distribution');
 
             if (d3.min(data, xValue) < 0) {
@@ -637,6 +732,65 @@ var ataqv = (function() {
             }
 
             container.querySelector('.reset').addEventListener('click', reset, true);
+
+            function exportPNG() {
+                let plotTitle = container.querySelector('h2').innerText;
+                let fileName = plotTitle + '.png';
+                let svgElement = plotElement.querySelector('.plotRoot');
+                let copy = copyPlotForExport(svgElement, color);
+
+                let canvas = document.getElementById('exportCanvas')
+                let svgBox = svgElement.getBBox();
+                let svgWidth = svgBox.width;
+                let svgHeight = svgBox.height;
+                canvas.width = svgWidth * 4;
+                canvas.height = (svgHeight * 1.25) * 4;
+
+                var ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                var data = (new XMLSerializer()).serializeToString(copy);
+                var DOMURL = window.URL || window.webkitURL || window;
+                var img = new Image();
+                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                var url = DOMURL.createObjectURL(svgBlob);
+                img.onload = function () {
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    DOMURL.revokeObjectURL(url);
+                    if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob)
+                    {
+                        var blob = canvas.msToBlob();
+                        navigator.msSaveOrOpenBlob(blob, fileName);
+                    }
+                    else {
+                        var imgURI = canvas
+                            .toDataURL("image/png")
+                            .replace("image/png", "image/octet-stream");
+                        triggerDownload(imgURI, fileName);
+                    }
+                };
+                img.src = url;
+            }
+
+            d3.select(container).select('.exportPNG').on('click', exportPNG);
+
+            function exportSVG() {
+                let plotTitle = container.querySelector('h2').innerText;
+                let fileName = plotTitle + '.svg';
+                let svgElement = plotElement.querySelector('.plotRoot');
+
+                let copy = copyPlotForExport(svgElement, color);
+
+                var DOMURL = window.URL || window.webkitURL || window;
+                var data = (new XMLSerializer()).serializeToString(copy);
+                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                var url = DOMURL.createObjectURL(svgBlob);
+                triggerDownload(url, fileName);
+            }
+
+            d3.select(container).select('.exportSVG').on('click', exportSVG);
+
             d3.select(container).select('.helpOpener').on('click', function() {
                 let helpID = this.dataset.helpid;
                 showHelp(helpID);
@@ -699,7 +853,7 @@ var ataqv = (function() {
             let xValue = function(d) {return d.x;};
             let xScale = d3.scaleLinear().range([0, width]).domain([data.xMin, data.xMax]);
             let xMap = function(d) {return xScale(xValue(d));};
-            let xAxis = d3.axisBottom(xScale).tickSize(-height);
+            let xAxis = d3.axisBottom(xScale).tickSize(-height).tickPadding(10);
 
             // setup y
             let yValue = function(d) { return d.y;};
@@ -741,7 +895,9 @@ var ataqv = (function() {
                 .attr('class', 'label')
                 .attr('x', width * 0.5)
                 .attr('y', 60)
+                .attr('fill', '#eee')
                 .style('text-anchor', 'middle')
+                .attr('font-family', "'Source Sans Pro', sans-serif")
                 .text(data.xLabel);
 
             // y-axis
@@ -751,9 +907,9 @@ var ataqv = (function() {
 
             yAxisG.append('text')
                 .attr('class', 'label')
-                .attr('transform', 'rotate(-90), translate(0, -' + (margin.left - 20) + ')')
+                .attr('transform', 'rotate(-90) translate(0, -' + (margin.left - 20) + ')')
                 .style('text-anchor', 'middle')
-                .style('border', '1px solid #f00')
+                .attr('font-family', "'Source Sans Pro', sans-serif")
                 .text(data.yLabel);
 
             yAxisG.selectAll('text.label').call(wrapY, height, height * -0.5);
@@ -866,8 +1022,66 @@ var ataqv = (function() {
                     .duration(500)
                     .call(zoom.transform, d3.zoomIdentity);
             }
-
             d3.select(container).select('.reset').on('click', reset);
+
+            function exportPNG() {
+                let plotTitle = container.querySelector('h2').innerText;
+                let fileName = plotTitle + '.png';
+                let svgElement = plotElement.querySelector('.plotRoot');
+                let copy = copyPlotForExport(svgElement, color);
+
+                let canvas = document.getElementById('exportCanvas')
+                let svgBox = svgElement.getBBox();
+                let svgWidth = svgBox.width;
+                let svgHeight = svgBox.height;
+                canvas.width = svgWidth * 4;
+                canvas.height = (svgHeight * 1.25) * 4;
+
+                var ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                var data = (new XMLSerializer()).serializeToString(copy);
+                var DOMURL = window.URL || window.webkitURL || window;
+                var img = new Image();
+                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                var url = DOMURL.createObjectURL(svgBlob);
+                img.onload = function () {
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    DOMURL.revokeObjectURL(url);
+                    if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob)
+                    {
+                        var blob = canvas.msToBlob();
+                        navigator.msSaveOrOpenBlob(blob, fileName);
+                    }
+                    else {
+                        var imgURI = canvas
+                            .toDataURL("image/png")
+                            .replace("image/png", "image/octet-stream");
+                        triggerDownload(imgURI, fileName);
+                    }
+                };
+                img.src = url;
+            }
+
+            d3.select(container).select('.exportPNG').on('click', exportPNG);
+
+            function exportSVG() {
+                let plotTitle = container.querySelector('h2').innerText;
+                let fileName = plotTitle + '.svg';
+                let svgElement = plotElement.querySelector('.plotRoot');
+
+                let copy = copyPlotForExport(svgElement, color);
+
+                var DOMURL = window.URL || window.webkitURL || window;
+                var data = (new XMLSerializer()).serializeToString(copy);
+                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                var url = DOMURL.createObjectURL(svgBlob);
+                triggerDownload(url, fileName);
+            }
+
+            d3.select(container).select('.exportSVG').on('click', exportSVG);
+
             d3.select(container).select('.helpOpener').on('click', function() {
                 let helpID = this.dataset.helpid;
                 showHelp(helpID);
@@ -924,7 +1138,7 @@ var ataqv = (function() {
                     sum += fractionOfReadCount;
 
                     if (fl % resolution == 0) {
-                        let mean = sum/resolution;
+                        let mean = sum / resolution;
                         if (mean > result.yMax) {
                             result.yMax = mean;
                         }
@@ -946,7 +1160,7 @@ var ataqv = (function() {
                 sum += fractionOfReadCount;
 
                 if (fl % resolution == 0) {
-                    let mean = sum/resolution;
+                    let mean = sum / resolution;
                     if (mean > result.yMax) {
                         result.yMax = mean;
                     }
@@ -1287,7 +1501,6 @@ var ataqv = (function() {
                 data: values,
                 columns: columns,
                 order: order,
-                responsive: true,
                 stateSave: true
             });
         }
@@ -1361,12 +1574,19 @@ var ataqv = (function() {
                 }
             }
         }
-        color.domain([...samples.keys()].sort());
+        let sampleIDs = [...samples.keys()].sort()
+
+        color.domain(sampleIDs);
+
+        let maxSampleIDLength = sampleIDs.reduce(function (a, b) { return a.length > b.length ? a.length : b.length; });
+
         let listContainer = document.getElementById('plotSampleList');
         let list = listContainer.querySelector('nav');
         let sampleList = document.createElement('ul');
-        for (let sampleID of [...samples.keys()].sort()) {
+        document.getElementById('sampleCount').innerHTML = '(' + sampleIDs.length + ')';
+        for (let sampleID of sampleIDs) {
             let legendItem = document.createElement('li');
+            legendItem.style.flexBasis = (maxSampleIDLength + 2) + 'em';
             legendItem.classList.add('legendItem');
             legendItem.dataset.sample = sampleID;
 
@@ -1423,6 +1643,9 @@ var ataqv = (function() {
     }
 
     function initialize() {
+        var bannerHeight = document.getElementById('banner').offsetHeight;
+        document.getElementById('main').style.marginTop = (bannerHeight + 20) + 'px';
+
         if (configuration.description) {
             document.getElementById('description').innerHTML = configuration.description;
         }

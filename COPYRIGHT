@@ -239,3 +239,8 @@ Incorporated in the United States and/or other countries.
 
 Font Awesome was made by Dave Gandy, for which we thank him. It truly
 is awesome.
+
+The export of the web viewer plots uses code from
+https://stackoverflow.com/a/44769098, which according to the Stack
+Overflow terms of service is licensed under CC BY-SA 3.0
+(https://creativecommons.org/licenses/by-sa/3.0/).

@@ -12,6 +12,7 @@
 
         <script src="js/d3.min.js"></script>
         <script src="js/datatables.min.js"></script>
+
         <script src="js/ataqv.js" defer></script>
         <script src="js/configuration.js" defer></script>
     </head>
@@ -65,7 +66,7 @@
                     <div id="plotTabContent">
                         <div id="plotSampleList">
                             <div>
-                                <h2>Samples</h2>
+                                <h2>Samples<span id="sampleCount"></span></h2>
                                 <div class="controls horizontal">
                                     <button class="showall">Show all</button>
                                     <button class="hideall">Hide all</button>
@@ -89,12 +90,14 @@
                                             <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
                                             <p>Mouse over items in the sample list at the top of the page to highlight samples. Click them to toggle sample visibility.</p>
 
-                                            <p>The dashed red line is the reference fragment length distribution. You can toggle it on and off.</p>
+                                            <p>The dashed red line is the reference fragment length distribution (<span class="fragment_length_reference_source"></span>). You can toggle it on and off.</p>
                                             <p>You can smooth the lines to make it easier to compare experiments, or make the plot more responsive if you have a lot of data. By default, smoothing is set to 10. For the most accurate plot, choose a smoothing value of one.</p>
 
                                         </div>
                                         <div class="controls">
                                             <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="exportSVG" title="Export SVG"><i class="fa fa-save"></i></button>
+                                            <button class="exportPNG" title="Export PNG"><i class="fa fa-file-image-o"></i></button>
                                             <button class="helpOpener" data-helpid="fragmentLengthPlotHelp"><i class="fa fa-info-circle"></i></button>
                                         </div>
                                     </div>
@@ -139,6 +142,8 @@
                                         </div>
                                         <div class="controls">
                                             <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="exportSVG" title="Export SVG"><i class="fa fa-save"></i></button>
+                                            <button class="exportPNG" title="Export PNG"><i class="fa fa-file-image-o"></i></button>
                                             <button class="helpOpener" data-helpid="fragmentLengthDistancePlotHelp"><i class="fa fa-info-circle"></i></button>
                                         </div>
                                     </div>
@@ -176,6 +181,8 @@
                                         </div>
                                         <div class="controls">
                                             <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="exportSVG" title="Export SVG"><i class="fa fa-save"></i></button>
+                                            <button class="exportPNG" title="Export PNG"><i class="fa fa-file-image-o"></i></button>
                                             <button class="helpOpener" data-helpid="tssEnrichmentPlotHelp"><i class="fa fa-info-circle"></i></button>
                                         </div>
                                     </div>
@@ -204,6 +211,8 @@
                                         </div>
                                         <div class="controls">
                                             <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="exportSVG" title="Export SVG"><i class="fa fa-save"></i></button>
+                                            <button class="exportPNG" title="Export PNG"><i class="fa fa-file-image-o"></i></button>
                                             <button class="helpOpener" data-helpid="peakReadCountsPlotHelp"><i class="fa fa-info-circle"></i></button>
                                         </div>
                                     </div>
@@ -235,6 +244,8 @@
                                         </div>
                                         <div class="controls">
                                             <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="exportSVG" title="Export SVG"><i class="fa fa-save"></i></button>
+                                            <button class="exportPNG" title="Export PNG"><i class="fa fa-file-image-o"></i></button>
                                             <button class="helpOpener" data-helpid="peakTerritoryPlotHelp"><i class="fa fa-info-circle"></i></button>
                                         </div>
                                     </div>
@@ -263,6 +274,8 @@
                                         </div>
                                         <div class="controls">
                                             <button class="reset" title="Reset plot zoom"><i class="fa fa-home"></i></button>
+                                            <button class="exportSVG" title="Export SVG"><i class="fa fa-save"></i></button>
+                                            <button class="exportPNG" title="Export PNG"><i class="fa fa-file-image-o"></i></button>
                                             <button class="helpOpener" data-helpid="mapqPlotHelp"><i class="fa fa-info-circle"></i></button>
                                         </div>
                                     </div>
@@ -276,7 +289,7 @@
                         </div>
                     </div>
                     <div class="footer">
-                        Plots made with <a href="https://github.com/ParkerLab/ataqv/">ataqv</a>, from <a href="https://theparkerlab.org">the Parker lab</a> at <a href="http://umich.edu/">the University of Michigan</a>
+                        Plots made with <a href="https://github.com/ParkerLab/ataqv/">ataqv</a>, from <a href="http://theparkerlab.org">the Parker lab</a> at <a href="http://umich.edu/">the University of Michigan</a>
                     </div>
                 </div>
             </div>
@@ -513,7 +526,7 @@
                         </table>
                     </div>
                     <div class="footer">
-                        Metrics produced with <a href="https://github.com/ParkerLab/ataqv/">ataqv</a>, from <a href="https://theparkerlab.org">the Parker lab</a> at <a href="http://umich.edu/">the University of Michigan</a>
+                        Metrics produced with <a href="https://github.com/ParkerLab/ataqv/">ataqv</a>, from <a href="http://theparkerlab.org">the Parker lab</a> at <a href="http://umich.edu/">the University of Michigan</a>
                     </div>
                 </div>
             </div>
@@ -546,7 +559,7 @@
                         </tbody>
                     </table>
                     <div class="footer">
-                        Experiments measured with <a href="https://github.com/ParkerLab/ataqv/">ataqv</a>, from <a href="https://theparkerlab.org">the Parker lab</a> at <a href="http://umich.edu/">the University of Michigan</a>
+                        Experiments measured with <a href="https://github.com/ParkerLab/ataqv/">ataqv</a>, from <a href="http://theparkerlab.org">the Parker lab</a> at <a href="http://umich.edu/">the University of Michigan</a>
                     </div>
                 </div>
             </div>
@@ -574,6 +587,8 @@
                 <p>You can search the experiment list by entering text in the Search box.</p>
             </div>
         </div>
+        <canvas id="exportCanvas" width="1280" height="720"></canvas>
+        <a id="exportDownload" target="_blank"></a>
         <script>
             function initialize() {
                 ataqv.initialize();

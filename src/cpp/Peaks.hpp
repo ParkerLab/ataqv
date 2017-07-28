@@ -64,7 +64,7 @@ public:
     void determine_top_peaks();
     bool empty();
     ReferencePeakCollection* get_reference_peaks(const std::string& reference_name);
-    void record_alignment(const Feature& aligment, bool is_hqaa, bool is_properly_paired_and_mapped, bool is_duplicate);
+    void record_alignment(const Feature& aligment, bool is_hqaa, bool is_duplicate);
     std::vector<Peak> list_peaks();
     std::vector<Peak> list_peaks_by_overlapping_hqaa_descending();
     std::vector<Peak> list_peaks_by_size_descending();

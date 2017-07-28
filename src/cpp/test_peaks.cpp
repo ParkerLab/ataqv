@@ -120,7 +120,7 @@ TEST_CASE("Peak HQAA counting", "peaks/hqaa") {
     REQUIRE_FALSE(tree.empty());
 
     Feature hqaa1("chr1", 125, 175, "hqaa1");
-    tree.record_alignment(hqaa1, true, true, false);
+    tree.record_alignment(hqaa1, true, false);
 
     ReferencePeakCollection chr1 = *tree.get_reference_peaks("chr1");
     chr1.sort();

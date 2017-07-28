@@ -122,30 +122,33 @@ ReferencePeakCollection* PeakTree::get_reference_peaks(const std::string& refere
 }
 
 
-void PeakTree::record_alignment(const Feature& alignment, bool is_hqaa, bool is_properly_paired_and_mapped, bool is_duplicate) {
+void PeakTree::record_alignment(const Feature& alignment, bool is_hqaa, bool is_duplicate) {
+    bool alignment_overlaps_peak = false;
     ReferencePeakCollection* rpc = get_reference_peaks(alignment.reference);
     if (rpc->overlaps(alignment)) {
-        if (is_hqaa) {
-            hqaa_in_peaks++;
-            auto peak = std::lower_bound(rpc->peaks.begin(), rpc->peaks.end(), alignment, feature_overlap_comparator);
-            auto end = std::upper_bound(peak, rpc->peaks.end(), alignment, feature_overlap_comparator);
+        auto peak = std::lower_bound(rpc->peaks.begin(), rpc->peaks.end(), alignment, feature_overlap_comparator);
+        auto end = std::upper_bound(peak, rpc->peaks.end(), alignment, feature_overlap_comparator);
 
-            for (; peak != end; peak++) {
-                if (peak->overlaps(alignment)) {
+        for (; peak != end; peak++) {
+            if (peak->overlaps(alignment)) {
+                alignment_overlaps_peak = true;
+
+                if (is_hqaa) {
                     peak->overlapping_hqaa++;
-                } else {
-                    break;
+                    hqaa_in_peaks++;
                 }
+            } else {
+                break;
             }
         }
+    }
 
-        if (is_properly_paired_and_mapped) {
-            ppm_in_peaks++;
-            if (is_duplicate) {
-                duplicates_in_peaks++;
-            }
+    if (alignment_overlaps_peak) {
+        ppm_in_peaks++;
+        if (is_duplicate) {
+            duplicates_in_peaks++;
         }
-    } else if (is_properly_paired_and_mapped) {
+    } else {
         ppm_not_in_peaks++;
         if (is_duplicate) {
             duplicates_not_in_peaks++;

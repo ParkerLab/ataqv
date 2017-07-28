@@ -86,12 +86,12 @@ bool Feature::overlaps(const Feature& other) const {
     return
         reference == other.reference && (
             (
-                (start <= other.start && other.start <= end) ||
-                (start <= other.end && other.end <= end)
+                (start <= other.start && other.start < end) ||
+                (start < other.end && other.end < end)
             ) ||
             (
-                (other.start <= start && start <= other.end) ||
-                (other.start <= end && end <= other.end)
+                (other.start <= start && start < other.end) ||
+                (other.start < end && end < other.end)
             )
         );
 }
