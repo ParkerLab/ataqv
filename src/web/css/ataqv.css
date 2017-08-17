@@ -107,10 +107,6 @@ li {
     visibility: hidden;
 }
 
-.visible {
-    visibility: visible;
-}
-
 .footer {
     padding: 1em;
     text-align: right;
@@ -121,40 +117,49 @@ li {
 
 .help {
     position: fixed;
-    z-index: 9999;
-    opacity: 1;
+    z-index: 9999999;
     left: -9999rem;
     top: -9999rem;
     width: 50vw;
-    border: 1px solid #444;
+    background: #f90;
     border-radius: 1rem;
-    background: #fff;
     color: #444;
     box-shadow: 0 0 20px 4px rgba(0, 0, 0, 0.5);
 }
 
-.help h2 {
+.help .header {
     border-top-left-radius: 1rem;
     border-top-right-radius: 1rem;
     display: flex;
-    background: #f90;
-    padding: 1em;
+    padding: 0.5em 0.75em 0.25em 0.75em;
     color: #fff;
 }
 
-.help h2 .cleaner {
+.help .header .cleaner {
     background: transparent;
     border: none;
     box-shadow: none;
     color: #fff;
+    padding: 0;
 }
 
-.help h2 > span {
+.help .header > span {
     flex: 1;
 }
 
+.help .content {
+    background: #fff;
+    padding: 1em;
+    border-bottom-left-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+}
+
+.help a {
+    color: #039;
+}
+
 .help p {
-    margin: 1em;
+    margin: 0 0 1em 0;
 }
 
 .visibleHelp {
@@ -515,7 +520,7 @@ table.dataTable thead th.sorting_desc::after {
     display: block;
     opacity: 0;
     flex-direction: row;
-    padding: 1em;
+    padding: 0 1em;
     height: 100%;
 }
 
@@ -564,7 +569,7 @@ td:last-child *[data-hovertext]:hover::after,
 #banner {
     position: fixed;
     top: 0;
-    z-index: 99999;
+    z-index: 9999;
     width: 100%;
     padding: 1.5em 0.5em 0 0.5em;
     background: #000;
@@ -619,26 +624,45 @@ td:last-child *[data-hovertext]:hover::after,
 
 #tooltip {
     display: none;
-    opacity: 0;
-    position: absolute;
-    max-width: 600px;
+    top: 0;
+    left: 0;
+    position: fixed;
+    height: 100vh;
+    width: 100vw;
     border: none;
-    border-radius: 0.5rem;
+    /* border-radius: 0.5rem; */
     background: #fff;
     color: #333;
-    font-size: 0.75em;
 }
 
 #tooltip h3 {
     background: #f90;
-    border-top-left-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
+    /* border-top-left-radius: 0.5rem; */
+    /* border-top-right-radius: 0.5rem; */
     padding: 0.5em;
+    display: flex;
+}
+
+#tooltip h3 > span {
+    flex: 1;
+}
+
+#tooltip h3 .cleaner {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #fff;
+}
+
+#tooltip .content {
+    max-height: 40vh;
+    overflow-y: auto;
 }
 
 #tooltip table {
     margin: 1em;
     width: auto;
+    overflow-y: auto;
 }
 
 #tooltip tbody tr {
@@ -665,7 +689,7 @@ td:last-child *[data-hovertext]:hover::after,
 #status {
     position: absolute;
     top: 0;
-    z-index: 99999;
+    z-index: 999;
     left: -99999em;
     height: 100vh;
     width: 100%;
@@ -733,6 +757,15 @@ td:last-child *[data-hovertext]:hover::after,
 
 #plotSampleList > div * {
     flex: 0 1 content;
+}
+
+#plotSampleList h2 {
+    display: flex;
+}
+
+#plotSampleList h2 > .controls {
+    font-size: 0.9rem;
+    margin: 0.2em 0 0 1em;
 }
 
 #plotSampleList > nav {
@@ -830,19 +863,6 @@ td:last-child *[data-hovertext]:hover::after,
     fill: #eee;
 }
 
-.plotItem {
-    opacity: 0.75;
-}
-
-.unhighlight {
-    opacity: 0.25;
-}
-
-.highlight {
-    visibility: visible;
-    opacity: 1;
-}
-
 .legendItem.highlight {
     color: rgba(255, 255, 0, 1) !important;
 }
@@ -913,7 +933,7 @@ td:last-child *[data-hovertext]:hover::after,
     text-transform: uppercase;
 }
 
-.legend {
+#legend {
     color: #fff;
     margin: 0 1em 0 2em;
     position: relative;
@@ -925,7 +945,7 @@ td:last-child *[data-hovertext]:hover::after,
     -webkit-user-select: none;
 }
 
-.legend > ul {
+#legend > ul {
     list-style: none;
     margin: 0 2em;
     display: flex;
@@ -933,14 +953,14 @@ td:last-child *[data-hovertext]:hover::after,
     flex-wrap: wrap;
 }
 
-.legend li {
+#legend li {
     position: relative;
     flex: 0 1 50%;
     display: flex;
     cursor: pointer;
 }
 
-.legend li.targetHidden {
+#legend li.targetHidden {
     font-weight: 600;
     opacity: 0.4;
     visibility: visible;
@@ -963,8 +983,25 @@ td:last-child *[data-hovertext]:hover::after,
         flex: 0 1 45%;
     }
 
-    .legend li {
+    #legend li {
         flex-basis: 25%;
+    }
+
+    #tooltip {
+        top: 25vh;
+        left: 25vw;
+        height: auto;
+        width: auto;
+        min-height: 25vh;
+        max-height: 75vh;
+        min-width: 25vw;
+        max-width: 50vw;
+        border-radius: 0.5rem;
+    }
+
+    #tooltip h3 {
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
     }
 }
 
@@ -1043,11 +1080,11 @@ td:last-child *[data-hovertext]:hover::after,
         height: 30%;
     }
 
-    .legend {
+    #legend {
         font-size: 1em;
     }
 
-    .legend li {
+    #legend li {
         opacity: 1;
     }
 }

@@ -19,6 +19,10 @@ import sys
 import textwrap
 
 
+if sys.version_info > (3,):
+    long = int
+
+
 LOGGING_FORMAT = '%(message)s'
 PROGRAM = 'mkarv'
 PROGRAM_VERSION = '{{VERSION}}'
@@ -550,7 +554,7 @@ def write_metrics(indent, metrics):
 
     with gzip.open(output_filename, 'wt') as output_file:
         try:
-            new_json = json.dumps([metrics], output_file, sort_keys=True, indent=indent, ensure_ascii=False).encode('utf-8')
+            new_json = json.dumps([metrics], output_file, sort_keys=True, indent=indent, ensure_ascii=False)
             output_file.write(new_json)
         except Exception as e:
             print('Could not write file {}: {}'.format(output_filename, e), file=sys.stderr)
@@ -594,7 +598,7 @@ if __name__ == '__main__':
     configuration = {'description': args.description or '', 'metrics': {}}
 
     loader = functools.partial(load_metrics, data_directory)
-    loaded_metrics = pool and pool.imap(loader, args.metrics, args.concurrency) or (loader(metrics_filename) for metrics_filename in args.metrics)
+    loaded_metrics = pool and pool.imap(loader, args.metrics) or (loader(metrics_filename) for metrics_filename in args.metrics)
     for metrics in loaded_metrics:
         configuration['metrics'][metrics['name']] = metrics
 
@@ -622,4 +626,4 @@ if __name__ == '__main__':
     data_filename = os.path.join(args.directory, 'js/configuration.js')
     logger.info('Writing data for ataqv viewer to {}'.format(data_filename))
     with open(data_filename, 'w') as data_file:
-        data_file.write('ataqv.configure({});'.format(json.dumps(configuration, sort_keys=True, indent=indent, separators=[',', ':'], cls=DecimalEncoder, ensure_ascii=False).encode('utf-8')))
+        data_file.write('ataqv.configure({});'.format(json.dumps(configuration, sort_keys=True, indent=indent, separators=[',', ':'], cls=DecimalEncoder, ensure_ascii=False)))

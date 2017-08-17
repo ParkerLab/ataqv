@@ -1,3 +1,9 @@
+ataqv (0.9.5-1) unstable; urgency=low
+
+  * Speed up viewer; add plot search
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Fri, 18 Aug 2018 09:30:00 -0500
+
 ataqv (0.9.4-1) unstable; urgency=low
 
   * Fixes for Mac, newer HTSlib.
