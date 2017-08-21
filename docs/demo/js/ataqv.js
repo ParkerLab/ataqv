@@ -8,15 +8,66 @@
 
 'use strict;'
 
-var ataqv = (function() {
-    let consoleEnabled = false;
+let ataqv = (function() {
+    let consoleEnabled = true;
 
     let configuration = {};
+
+    let plotPalette = [
+        // blue, green, purple, yellow-or-brown
+        "#6baed6",
+        "#74c476",
+        "#9e9ac8",
+        "#fe9929",
+
+        "#2171b5",
+        "#238b45",
+        "#6a51a3",
+        "#cc4c02",
+
+        "#4292c6",
+        "#41ab5d",
+        "#807dba",
+        "#ec7014",
+
+        "#9ecae1",
+        "#a1d99b",
+        "#bcbddc",
+        "#fec44f",
+
+        "#c6dbef",
+        "#c7e9c0",
+        "#dadaeb",
+        "#fee391",
+
+        "#deebf7",
+        "#e5f5e0",
+        "#efedf5",
+        "#fff7bc",
+
+        "#08306b",
+        "#00441b",
+        "#3f007d",
+        "#662506",
+
+        "#08519c",
+        "#006d2c",
+        "#54278f",
+        "#993404",
+
+    ];
+
     let plots = {};
     let legendItemState = new Map();
     let dispatch = d3.dispatch('legendChange', 'plotItemInspect', 'sampleInspect');
     let tooltip = d3.select('#tooltip');
-    let tooltipTimer = null;
+
+    let highlightCache = null;
+    let highlightedExperimentID = null;
+    let highlightedSample = null;
+
+    let plotAdjustmentRequested = false;
+    let plotQuery = null;
 
     function localStorageAvailable() {
         try {
@@ -31,121 +82,130 @@ var ataqv = (function() {
     }
 
     function copyStylesInline(destinationNode, sourceNode) {
-        var containerElements = ['svg','g'];
-        for (var cd = 0; cd < destinationNode.childNodes.length; cd++) {
-            var child = destinationNode.childNodes[cd];
+        let containerElements = ['svg','g'];
+        for (let cd = 0; cd < destinationNode.childNodes.length; cd++) {
+            let child = destinationNode.childNodes[cd];
             if (containerElements.indexOf(child.tagName) != -1) {
                 copyStylesInline(child, sourceNode.childNodes[cd]);
                 continue;
             }
-            var style = sourceNode.childNodes[cd].currentStyle || window.getComputedStyle(sourceNode.childNodes[cd]);
+            let style = sourceNode.childNodes[cd].currentStyle || window.getComputedStyle(sourceNode.childNodes[cd]);
             if (style == 'undefined' || style == null) continue;
-            for (var st = 0; st < style.length; st++){
+            for (let st = 0; st < style.length; st++){
                 child.style.setProperty(style[st], style.getPropertyValue(style[st]));
             }
         }
     }
 
-    function copyPlotForExport(svgElement, colorFunction) {
-        let copy = svgElement.cloneNode(true);
-        copyStylesInline(copy, svgElement);
-        copy.style.background = '#222';
+    function copyPlotForExport(svgElement, colorFunction, plotTitle) {
+        let clone = svgElement.cloneNode(true);
+        copyStylesInline(clone, svgElement);
+        clone.style.background = '#222';
 
-        let d3copy = d3.select(copy);
+        let d3Clone = d3.select(clone);
 
-        let copyWidth = d3copy.attr('width');
-        let copyHeight = d3copy.attr('height') * 2;
-        d3copy
-            .attr("preserveAspectRatio", "xMinYMin meet")
-            .attr('viewBox', '0 0 ' + copyWidth + ' ' + copyHeight)
-            .attr('height', copyHeight);
+        let titleHeight = 30;
 
-        d3copy
+        let cloneWidth = Number.parseInt(d3Clone.attr('width'));
+        let cloneHeight = Number.parseInt(d3Clone.attr('height'));
+
+        let main = d3Clone.select('g:first-child');
+        let oldTransform = main.attr('transform');
+        let transformTokens = oldTransform.match(/translate\((\d+),(\d+)\)/);
+        let yTranslate = (transformTokens.length === 3) ? Number.parseInt(transformTokens[2]) : 15;
+        let newTransform = `translate(${transformTokens[1]}, ${yTranslate + titleHeight})`;
+        main.attr('transform', newTransform);
+        cloneHeight += yTranslate + titleHeight;
+
+        d3Clone
+            .insert('text', ':first-child')
+            .attr('id', 'plotTitle')
+            .attr('x', cloneWidth * 0.5)
+            .attr('y', 20)
+            .style('text-anchor', 'middle')
+            .style('font-size', '16px')
+            .attr('fill', '#fff')
+            .attr('font-family', "'Source Sans Pro', sans-serif")
+            .text(plotTitle);
+
+        let legendItems = querySelectorAll('.legendItem:not(.targetHidden)')
+            .sort(function(a, b) {
+                let aSample = a.getAttribute('data-sample');
+                let bSample = b.getAttribute('data-sample');
+                if (aSample < bSample) {
+                    return -1;
+                }
+                if (aSample > bSample) {
+                    return 1;
+                }
+
+                return 0;
+            });
+
+        let maxSampleLength = legendItems.map(function(i) {return i.getAttribute('data-sample').length;}).reduce(function (a, b) {return a > b ? a : b;});
+
+        let legendItemWidth = maxSampleLength * 15;
+        let legendItemsPerLine = Math.floor((cloneWidth - 40)/ legendItemWidth);
+        let legendHeight = cloneHeight + (15 * Math.ceil(legendItems.length / legendItemsPerLine));
+
+        let plotHeight = cloneHeight;
+        cloneHeight += legendHeight;
+
+        d3Clone
             .insert('rect', ':first-child')
             .attr('fill', '#222')
-            .attr('height', copyHeight)
-            .attr('width', copyWidth);
+            .attr('height', cloneHeight)
+            .attr('width', cloneWidth);
 
-        let plotItems = querySelectorAll(['.plotItem'], copy);
+        d3Clone
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr('viewBox', '0 0 ' + cloneWidth + ' ' + cloneHeight)
+            .attr('height', cloneHeight);
 
-        let maxExperimentLength = plotItems.map(function(i) {return i.getAttribute('data-experiment').length;}).reduce(function (a, b) {return a > b ? a : b;});
-
-        let legendItemWidth = maxExperimentLength * 15;
-        let legendItemsPerLine = Math.floor((copyWidth - 40)/ legendItemWidth);
-
-        let plotItemIndex = 0;
+        let legendItemIndex = 0;
         let lineItemIndex = 0;
         let lineCount = 0;
-        for (let plotItem of plotItems) {
+        for (let legendItem of legendItems) {
             if (lineItemIndex > legendItemsPerLine) {
                 lineCount += 1;
                 lineItemIndex = 0;
             }
-            let sampleColor = colorFunction(plotItem.getAttribute('data-sample'));
-            d3copy
+            let sampleColor = colorFunction(legendItem.getAttribute('data-sample'));
+            d3Clone
                 .append('text')
                 .attr('class', 'label')
                 .attr('x', 20 + lineItemIndex * legendItemWidth)
-                .attr('y', (copyHeight * 0.5) + (15 * lineCount))
+                .attr('y', plotHeight + (15 * lineCount))
                 .style('text-anchor', 'left')
                 .style('font-size', '0.75rem')
                 .attr('fill', sampleColor)
                 .attr('font-family', "'Source Sans Pro', sans-serif")
-                .text(plotItem.getAttribute('data-experiment'));
-            plotItemIndex++;
+                .text(legendItem.getAttribute('data-sample'));
+            legendItemIndex++;
             lineItemIndex++;
         }
-        return copy;
+        return clone;
     }
 
     function triggerDownload (imgURI, fileName) {
-        var evt = new MouseEvent('click', {
+        let evt = new MouseEvent('click', {
             view: window,
             bubbles: false,
             cancelable: true
         });
-        var a = document.getElementById('exportDownload');
+        let a = document.getElementById('exportDownload');
         a.setAttribute('download', fileName);
         a.setAttribute('href', imgURI);
         a.dispatchEvent(evt);
     }
 
-    function showTooltip() {
-        let cx = d3.event.clientX + 10;
-        let cy = d3.event.clientY - 28;
-        let px = d3.event.pageX + 10;
-        let py = d3.event.pageY - 96;
-
+    function showTooltip(header, content) {
+        tooltip.html(`<h3><span>${header}</span><button id="tooltipCloser" class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h3><div class="content">${content}</content>`);
         tooltip.style('z-index', 99999).style('display', 'block');
-
-        let tooltipBounds = tooltip.node().getBoundingClientRect();
-        let tooltipHeight = tooltipBounds.height;
-        let tooltipWidth = tooltipBounds.width;
-
-        d3.select(d3.event.target).raise();
-        d3.event.target.classList.add('opaque');
-
-        if ((document.documentElement.clientWidth - cx) < tooltipWidth) {
-            px -= tooltipWidth + 20;
-        }
-
-        if ((document.documentElement.clientHeight - cy) < tooltipHeight) {
-            py = document.documentElement.clientHeight - tooltipHeight - 96;
-        }
-
-        tooltip.style('left', px + 'px').style('top', py + 'px');
-        tooltip.transition().duration(200).style('opacity', 1);
-
-        clearTimeout(tooltipTimer);
-        tooltipTimer = setTimeout(hideTooltip, 10000);
     }
 
     function hideTooltip(d, i) {
-        if (d3.event) {
-            d3.event.target.classList.remove('opaque');
-        }
-        tooltip.transition().duration(100).style('opacity', 0);
-        tooltip.style('z-index', -99999);
+        tooltip.style('z-index', -99999).style('display', 'none');
     }
 
     function hideHelp() {
@@ -340,6 +400,12 @@ var ataqv = (function() {
             hideHelp();
         }, true);
 
+        document.getElementById('tooltip').addEventListener('click', function(evt) {
+            if (evt.target.classList.contains('cleaner') || closest(evt.target, 'cleaner')) {
+                hideTooltip();
+            }
+        }, true);
+
         for (let helpOpener of querySelectorAll(['.helpOpener'])) {
             helpOpener.addEventListener('click', function(evt) {
                 evt.preventDefault();
@@ -359,7 +425,7 @@ var ataqv = (function() {
             }
 
             switch (evt.keyCode) {
-            case 27: hideHelp(); break;
+            case 27: hideHelp(); hideTooltip(); break;
             case 69: activateTab('experimentTab'); break;
             case 84: activateTab('tableTab'); break;
             case 80: activateTab('plotTab'); break;
@@ -367,28 +433,88 @@ var ataqv = (function() {
         });
 
         dispatch.on('plotItemInspect' , function() {
-            let experimentID = this;
-            let experiment = configuration.metrics[experimentID];
-            if (experiment) {
-                let plotItems = querySelectorAll('.plotItem[data-experiment="' + experimentID + '"]');
-                let firstPlotItem = plotItems && plotItems[0];
-                let sample = firstPlotItem && firstPlotItem.getAttribute('data-sample');
+            highlightedExperimentID = this.experimentID || null;
+            highlightedSample = this.sample || null;
 
-                d3.selectAll('.legendItem').classed('highlight', false);
-                if (sample) {
-                    d3.selectAll('.legendItem[data-sample="' + sample + '"]').classed('highlight', true);
-                }
-
-                d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
-                d3.selectAll('.plotItem[data-experiment="' + experimentID + '"]').classed('highlight', true).raise();
-            } else {
-                d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
-                d3.selectAll('.legendItem').classed('unhighlight', false).classed('highlight', false);
-            }
-
-            showTooltip();
+            requestAnimationFrame(highlightPlotItem);
         });
 
+        document.getElementById('plotSearch').addEventListener('change', handlePlotSearchInput);
+        document.getElementById('plotSearch').addEventListener('keyup', handlePlotSearchInput);
+
+    }
+
+    function highlightPlotItem() {
+        if (highlightedExperimentID) {
+            for (let highlightedItem of querySelectorAll(['#plotTab .plotItem.highlight, #plotTab .legendItem.highlight'])) {
+                highlightedItem.classList.remove('highlight');
+            }
+
+            for (let plotItem of highlightCache.plotItems[highlightedExperimentID]) {
+                plotItem.classed('highlight', true);
+                plotItem.raise()
+            }
+
+            for (let legendItem of highlightCache.legendItems[highlightedSample]) {
+                legendItem.classed('highlight', true);
+            }
+        } else {
+            d3.selectAll('.plotItem, .legendItem').classed('highlight', false);
+        }
+    }
+
+    function adjustPlotItemVisibility() {
+        plotAdjustmentRequested = false;
+        if (plotQuery) {
+            let visibleSamples = [];
+            for (let [sample, selected]of legendItemState) {
+                if (selected) {
+                    visibleSamples.push(sample);
+                }
+            }
+
+            let selectors = ['sample', 'experiment', 'description'].map(function(a) {return `.plotItem[data-${a}*="${plotQuery}" i]`;});
+
+            for (let plotItem of querySelectorAll(['.plotItem'])) {
+                plotItem.classList.add('hidden');
+            }
+
+            let matchingPlotItems = querySelectorAll(selectors, document.getElementById('plotTab'));
+            for (let plotItem of matchingPlotItems) {
+                if (visibleSamples.indexOf(plotItem.getAttribute('data-sample')) != -1) {
+                    plotItem.classList.remove('hidden');
+                }
+            }
+        } else {
+            for (let [sample, selected] of legendItemState) {
+                d3.selectAll('.plotItem[data-sample="' + sample + '"]').classed('hidden', !selected);
+                d3.selectAll('.legendItem[data-sample="' + sample + '"]').classed('targetHidden', !selected);
+            }
+        }
+    }
+
+    function setPlotSearchFilter() {
+        let changed = false;
+        let query = document.getElementById('plotSearch').value;
+        if (!query || query === '' && plotQuery) {
+            changed = true;
+            plotQuery = null;
+        } else if (plotQuery === null || query != plotQuery.source) {
+            changed = true;
+            plotQuery = query.trim();
+            document.getElementById('plotSearch').value = plotQuery;
+        }
+        if (changed) {
+            if (!plotAdjustmentRequested) {
+                plotAdjustmentRequested = true;
+                requestAnimationFrame(adjustPlotItemVisibility);
+            }
+        }
+    }
+
+    function handlePlotSearchInput(evt) {
+        evt.stopPropagation();
+        window.setTimeout(setPlotSearchFilter, 100);
     }
 
     function listExperiments() {
@@ -495,8 +621,8 @@ var ataqv = (function() {
 
     function changeSampleVisibility() {
         for (let [sample, selected] of legendItemState) {
-            d3.selectAll('.plotItem[data-sample="' + sample + '"]').classed('hidden', !selected);
             d3.selectAll('.legendItem[data-sample="' + sample + '"]').classed('targetHidden', !selected);
+            adjustPlotItemVisibility();
         }
     }
 
@@ -518,9 +644,9 @@ var ataqv = (function() {
 
     function makeFragmentLengthDistancePlot() {
         let containerID = 'fragmentLengthDistancePlot';
-        let container = document.getElementById(containerID);
+        let plotFunction = function() {
+            let container = document.getElementById(containerID);
 
-        return function() {
             let plotElement = container.querySelector('.plot');
             plotElement.innerHTML = '';
 
@@ -598,7 +724,7 @@ var ataqv = (function() {
 
             // setup fill color
             let cValue = function(d) { return d.sample;};
-            let color = d3.scaleOrdinal(d3.schemeCategory20c);
+            let color = d3.scaleOrdinal(plotPalette);
             color.domain([...samples.keys()].sort());
 
             let limit = Math.max(Math.abs(d3.min(data, xValue)), Math.abs(d3.max(data, xValue))) * 1.05;
@@ -670,7 +796,8 @@ var ataqv = (function() {
             dots.selectAll('.dot')
                 .data(data)
                 .enter().append('circle')
-                .attr('class', function(d) {
+                .attr('id', function(d) {return `${containerID}-${d.experimentID}`})
+                .attr('class', function(d, i) {
                     let classes = 'dot plotItem';
                     if (!legendItemState.get(d.sample)) {
                         classes += ' hidden';
@@ -679,27 +806,30 @@ var ataqv = (function() {
                 })
                 .attr('data-sample', function(d) {return d.sample;})
                 .attr('data-experiment', function(d) {return d.experimentID;})
+                .attr('data-description', function(d) {return d.description;})
                 .attr('r', 5.5)
                 .attr('cx', xMap)
                 .attr('cy', yMap)
                 .style('fill', function(d) { return color(cValue(d));})
                 .on('click', function(d) {
-                    d3.select(d3.event.target).lower();
+                    // d3.select(d3.event.target).lower();
+                    showTooltip(
+                        `Library ${d.experimentID}`,
+                        `<table><tbody>
+                         <tr><th>Library</th><td>${d.library}</td></tr>
+                         <tr><th>Sample</th><td>${d.sample}</td></tr>
+                         <tr><th>Description</th><td>${d.description}</td></tr>
+                         <tr><th>${yAxisLabel}</th><td>${formatNumberForLocale(d.y)}</td></tr>
+                         <tr><th>Distance</th><td>${d3.format('.10g')(d.x)}</td></tr>
+                         </tbody></table>`
+                    );
                 })
                 .on('mouseover', function(d) {
-                    tooltip.html(
-                        '<h3>Library ' + d.experimentID + '</h3>' +
-                            '<table><tbody>' +
-                            '<tr><th>Library</th><td>' + d.library + '</td></tr>' +
-                            '<tr><th>Sample</th><td>' + d.sample + '</td></tr>' +
-                            '<tr><th>Description</th><td>' + d.description + '</td></tr>' +
-                            '<tr><th>' + yAxisLabel + '</th><td>' + formatNumberForLocale(d.y) + '</td></tr>' +
-                            '<tr><th>Distance</th><td>' + d3.format('.10g')(d.x) + '</td></tr>' +
-                            '</tbody></table>'
-                    );
-                    dispatch.call('plotItemInspect', d.experimentID);
+                    dispatch.call('plotItemInspect', d);
                 })
-                .on('mouseout', function() {tooltip.html(''); dispatch.call('plotItemInspect', null);});
+                .on('mouseout', function() {dispatch.call('plotItemInspect', null);});
+
+            dots.selectAll('.dot').each(function(d, i) {d3.select(this).append('title').text(d.experimentID);});
 
             function zoomed() {
                 let transform = d3.event.transform;
@@ -737,7 +867,7 @@ var ataqv = (function() {
                 let plotTitle = container.querySelector('h2').innerText;
                 let fileName = plotTitle + '.png';
                 let svgElement = plotElement.querySelector('.plotRoot');
-                let copy = copyPlotForExport(svgElement, color);
+                let copy = copyPlotForExport(svgElement, color, plotTitle);
 
                 let canvas = document.getElementById('exportCanvas')
                 let svgBox = svgElement.getBBox();
@@ -746,13 +876,13 @@ var ataqv = (function() {
                 canvas.width = svgWidth * 4;
                 canvas.height = (svgHeight * 1.25) * 4;
 
-                var ctx = canvas.getContext("2d");
+                let ctx = canvas.getContext("2d");
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                var data = (new XMLSerializer()).serializeToString(copy);
-                var DOMURL = window.URL || window.webkitURL || window;
-                var img = new Image();
-                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
-                var url = DOMURL.createObjectURL(svgBlob);
+                let data = (new XMLSerializer()).serializeToString(copy);
+                let DOMURL = window.URL || window.webkitURL || window;
+                let img = new Image();
+                let svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                let url = DOMURL.createObjectURL(svgBlob);
                 img.onload = function () {
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -760,11 +890,11 @@ var ataqv = (function() {
                     DOMURL.revokeObjectURL(url);
                     if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob)
                     {
-                        var blob = canvas.msToBlob();
+                        let blob = canvas.msToBlob();
                         navigator.msSaveOrOpenBlob(blob, fileName);
                     }
                     else {
-                        var imgURI = canvas
+                        let imgURI = canvas
                             .toDataURL("image/png")
                             .replace("image/png", "image/octet-stream");
                         triggerDownload(imgURI, fileName);
@@ -780,12 +910,12 @@ var ataqv = (function() {
                 let fileName = plotTitle + '.svg';
                 let svgElement = plotElement.querySelector('.plotRoot');
 
-                let copy = copyPlotForExport(svgElement, color);
+                let copy = copyPlotForExport(svgElement, color, plotTitle);
 
-                var DOMURL = window.URL || window.webkitURL || window;
-                var data = (new XMLSerializer()).serializeToString(copy);
-                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
-                var url = DOMURL.createObjectURL(svgBlob);
+                let DOMURL = window.URL || window.webkitURL || window;
+                let data = (new XMLSerializer()).serializeToString(copy);
+                let svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                let url = DOMURL.createObjectURL(svgBlob);
                 triggerDownload(url, fileName);
             }
 
@@ -797,6 +927,8 @@ var ataqv = (function() {
             });
 
         };
+        plotFunction.containerID = containerID;
+        return plotFunction;
     }
 
     plots.plotFragmentLengthDistance = makeFragmentLengthDistancePlot();
@@ -818,9 +950,10 @@ var ataqv = (function() {
         //    xLabel -- the label for the x axis
         //    yLabel -- the label for the y axis
         //
-        let container = document.getElementById(containerID);
 
-        return function() {
+        let plotFunction = function() {
+            let container = document.getElementById(containerID);
+
             let plotElement = container.querySelector('.plot');
             plotElement.innerHTML = '';
 
@@ -867,7 +1000,7 @@ var ataqv = (function() {
             let yMap = function(d) { return yScale(yValue(d));};
             let yAxis = d3.axisLeft(yScale).tickSize(-width).ticks(5);
 
-            let color = d3.scaleOrdinal(d3.schemeCategory20c);
+            let color = d3.scaleOrdinal(plotPalette);
             color.domain([...samples.keys()].sort());
 
             let svg = d3.select(plotElement).append('svg')
@@ -948,9 +1081,9 @@ var ataqv = (function() {
 
             for (let experimentID of experimentIDs) {
                 let datum = data.series[experimentID];
-
                 plot.append('path')
                     .datum(datum.line)
+                    .attr('id', `${containerID}-${datum.experimentID}`)
                     .attr('class', function(d) {
                         let classes = 'line plotItem';
                         if (!legendItemState.get(datum.sample)) {
@@ -960,14 +1093,15 @@ var ataqv = (function() {
                     })
                     .attr('data-sample', datum.sample)
                     .attr('data-experiment', datum.experimentID)
+                    .attr('data-description', function(d) {return datum.description;})
                     .attr('d', line)
                     .style('fill', 'none')
                     .style('stroke', color(datum.sample))
-                    .on('click', function(d) {
-                        d3.select(d3.event.target).lower();
-                    })
+
+                    .on('click', makeClickHandler(datum))
                     .on('mouseover', makeMouseoverHandler(datum))
-                    .on('mouseout', handleMouseout);
+                    .on('mouseout', handleMouseout)
+                    .append('title').text(datum.experimentID);
             }
 
             let referenceToggle = container.querySelector('.referenceToggle');
@@ -986,36 +1120,28 @@ var ataqv = (function() {
                     });
             }
 
+            function makeClickHandler(d) {
+                return function() {
+                    showTooltip(
+                        `Library ${d.experimentID}`,
+                        `<table><tbody>
+                            <tr><th>Library</th><td>${d.library}</td></tr>
+                            <tr><th>Sample</th><td>${d.sample}</td></tr>
+                            <tr><th>Description</th><td>${d.description}</td></tr>
+                            </tbody></table>`
+                    );
+                }
+            }
+
             function makeMouseoverHandler(d) {
                 return function() {
-                    tooltip.html(
-                        '<h3>Library ' + d.experimentID + '</h3>' +
-                            '<table><tbody>' +
-                            '<tr><th>Library</th><td>' + d.library + '</td></tr>' +
-                            '<tr><th>Sample</th><td>' + d.sample + '</td></tr>' +
-                            '<tr><th>Description</th><td>' + d.description + '</td></tr>' +
-                            '</tbody></table>'
-                    );
-                    dispatch.call('plotItemInspect', d.experimentID);
+                    dispatch.call('plotItemInspect', d);
                 };
             }
 
             function handleMouseout() {
-                tooltip.html('');
                 dispatch.call('plotItemInspect', null);
             }
-
-            dispatch.on('plotItemInspect.' + containerID, function() {
-                let experimentID = this;
-                let experiment = configuration.metrics[experimentID];
-                if (experiment) {
-                    d3.selectAll('.plotItem').classed('unhighlight', true).classed('highlight', false);
-                    d3.selectAll('.plotItem[data-experiment="' + experimentID + '"]').classed('highlight', true).raise();
-                } else {
-                    d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
-                }
-                d3.selectAll('.reference').raise();
-            });
 
             function reset() {
                 svg.transition()
@@ -1028,7 +1154,7 @@ var ataqv = (function() {
                 let plotTitle = container.querySelector('h2').innerText;
                 let fileName = plotTitle + '.png';
                 let svgElement = plotElement.querySelector('.plotRoot');
-                let copy = copyPlotForExport(svgElement, color);
+                let copy = copyPlotForExport(svgElement, color, plotTitle);
 
                 let canvas = document.getElementById('exportCanvas')
                 let svgBox = svgElement.getBBox();
@@ -1037,13 +1163,13 @@ var ataqv = (function() {
                 canvas.width = svgWidth * 4;
                 canvas.height = (svgHeight * 1.25) * 4;
 
-                var ctx = canvas.getContext("2d");
+                let ctx = canvas.getContext("2d");
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                var data = (new XMLSerializer()).serializeToString(copy);
-                var DOMURL = window.URL || window.webkitURL || window;
-                var img = new Image();
-                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
-                var url = DOMURL.createObjectURL(svgBlob);
+                let data = (new XMLSerializer()).serializeToString(copy);
+                let DOMURL = window.URL || window.webkitURL || window;
+                let img = new Image();
+                let svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                let url = DOMURL.createObjectURL(svgBlob);
                 img.onload = function () {
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1051,11 +1177,11 @@ var ataqv = (function() {
                     DOMURL.revokeObjectURL(url);
                     if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob)
                     {
-                        var blob = canvas.msToBlob();
+                        let blob = canvas.msToBlob();
                         navigator.msSaveOrOpenBlob(blob, fileName);
                     }
                     else {
-                        var imgURI = canvas
+                        let imgURI = canvas
                             .toDataURL("image/png")
                             .replace("image/png", "image/octet-stream");
                         triggerDownload(imgURI, fileName);
@@ -1071,12 +1197,12 @@ var ataqv = (function() {
                 let fileName = plotTitle + '.svg';
                 let svgElement = plotElement.querySelector('.plotRoot');
 
-                let copy = copyPlotForExport(svgElement, color);
+                let copy = copyPlotForExport(svgElement, color, plotTitle);
 
-                var DOMURL = window.URL || window.webkitURL || window;
-                var data = (new XMLSerializer()).serializeToString(copy);
-                var svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
-                var url = DOMURL.createObjectURL(svgBlob);
+                let DOMURL = window.URL || window.webkitURL || window;
+                let data = (new XMLSerializer()).serializeToString(copy);
+                let svgBlob = new Blob([data], {type: "image/svg+xml;charset=utf-8"});
+                let url = DOMURL.createObjectURL(svgBlob);
                 triggerDownload(url, fileName);
             }
 
@@ -1086,7 +1212,9 @@ var ataqv = (function() {
                 let helpID = this.dataset.helpid;
                 showHelp(helpID);
             });
-        };
+        }
+        plotFunction.containerID = containerID;
+        return plotFunction;
     }
 
     plots.plotFragmentLength = makeLinePlot(
@@ -1510,6 +1638,8 @@ var ataqv = (function() {
         for (let plotConfigurationSelect of querySelectorAll('.plot-configuration')) {
             plotConfigurationSelect.addEventListener('change', function() {
                 plots[this.dataset.plot]();
+                buildHighlightCache();
+                adjustPlotItemVisibility();
             }, true);
         }
 
@@ -1546,17 +1676,46 @@ var ataqv = (function() {
         }, 100);
     }
 
+    function buildHighlightCache() {
+        highlightCache = {
+            'legendItems': {},
+            'plotItems': {}
+        }
+
+        d3.selectAll('.legendItem')
+            .each(function() {
+                let sample = this.getAttribute('data-sample');
+                if (highlightCache.legendItems[sample]) {
+                    highlightCache.legendItems[sample].push(d3.select(this));
+                } else {
+                    highlightCache.legendItems[sample] = [d3.select(this)];
+                }
+            });
+
+        d3.selectAll('.plotItem')
+            .each(function() {
+                let experimentID = this.getAttribute('data-experiment');
+                if (highlightCache.plotItems[experimentID]) {
+                    highlightCache.plotItems[experimentID].push(d3.select(this));
+                } else {
+                    highlightCache.plotItems[experimentID] = [d3.select(this)];
+                }
+            });
+    }
+
     function populatePlots() {
         plots.plotFragmentLengthDistance();
         plots.plotFragmentLength();
         plots.plotTSSEnrichment();
-        plots.plotMapq();
         plots.plotPeakReadCounts();
         plots.plotPeakTerritory();
+        plots.plotMapq();
+        buildHighlightCache();
+        requestAnimationFrame(setPlotSearchFilter);
     }
 
     function populateSampleList() {
-        let color = d3.scaleOrdinal(d3.schemeCategory20c);
+        let color = d3.scaleOrdinal(plotPalette);
 
         let samples = new Map();
         let experimentIDs = Object.keys(configuration.metrics).sort();
@@ -1633,17 +1792,16 @@ var ataqv = (function() {
             let sample = String(this);
             let s = samples.get(sample);
             if (s) {
-                d3.selectAll('.plotItem').classed('unhighlight', true);
                 d3.selectAll('.plotItem[data-sample="' + sample + '"]').raise().classed('highlight', true);
             } else {
-                d3.selectAll('.plotItem').classed('unhighlight', false).classed('highlight', false);
+                d3.selectAll('.plotItem').classed('highlight', false);
             }
             d3.selectAll('.reference').raise();
         });
     }
 
     function initialize() {
-        var bannerHeight = document.getElementById('banner').offsetHeight;
+        let bannerHeight = document.getElementById('banner').offsetHeight;
         document.getElementById('main').style.marginTop = (bannerHeight + 20) + 'px';
 
         if (configuration.description) {
