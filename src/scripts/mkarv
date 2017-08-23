@@ -554,7 +554,7 @@ def write_metrics(indent, metrics):
 
     with gzip.open(output_filename, 'wt') as output_file:
         try:
-            new_json = json.dumps([metrics], output_file, sort_keys=True, indent=indent, ensure_ascii=False)
+            new_json = json.dumps([metrics], sort_keys=True, indent=indent, ensure_ascii=False)
             output_file.write(new_json)
         except Exception as e:
             print('Could not write file {}: {}'.format(output_filename, e), file=sys.stderr)
