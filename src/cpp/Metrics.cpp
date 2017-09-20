@@ -57,18 +57,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
     excluded_region_filenames(excluded_region_filenames)
 {
 
-    std::map<std::string, int> default_references = {
-        {"human", 22},
-        {"mouse", 19},
-        {"rat", 20}
-    };
-
-    for (auto r : default_references) {
-        for (int i = 1; i <= r.second; i++) {
-            autosomal_references[r.first][std::to_string(i)] = 1;
-            autosomal_references[r.first]["chr" + std::to_string(i)] = 1;
-        }
-    }
+    make_default_autosomal_references();
 
     if (!autosomal_reference_filename.empty()) {
         load_autosomal_references();
@@ -132,6 +121,45 @@ std::string MetricsCollector::autosomal_reference_string(std::string separator) 
         }
     }
     return ss.str();
+}
+
+
+//
+// Set up default autosomal references for common organisms
+//
+void MetricsCollector::make_default_autosomal_references() {
+    // Normal, predictable, sensible chromosome names :^)
+    std::map<std::string, int> default_references = {
+        {"human", 22},
+        {"mouse", 19},
+        {"rat", 20}
+    };
+
+    for (auto r : default_references) {
+        for (int i = 1; i <= r.second; i++) {
+            autosomal_references[r.first][std::to_string(i)] = 1;
+            autosomal_references[r.first]["chr" + std::to_string(i)] = 1;
+        }
+    }
+
+    // Fly
+    std::vector<std::string> fly_chromosomes = {"2L", "2R", "3L", "3R", "4"};
+    for (auto c : fly_chromosomes) {
+        autosomal_references["fly"][c] = 1;
+        autosomal_references["fly"]["chr" + c] = 1;
+    }
+
+    // Worm
+    for (int i = 1; i < 6; i++) {
+        autosomal_references["worm"][integer_to_roman(i)] = 1;
+        autosomal_references["worm"]["chr" + integer_to_roman(i)] = 1;
+    }
+
+    // Yeast
+    for (int i = 1; i < 17; i++) {
+        autosomal_references["yeast"][integer_to_roman(i)] = 1;
+        autosomal_references["yeast"]["chr" + integer_to_roman(i)] = 1;
+    }
 }
 
 

@@ -63,8 +63,8 @@ void print_usage() {
               << "Usage:" << std::endl << std::endl << "ataqv [options] organism alignment-file" << std::endl << std::endl
               << "where:" << std::endl
               << "    organism is the subject of the experiment, which determines the list of autosomes"  << std::endl
-              << "    (see Reference Genome Configuration below)"  << std::endl  << std::endl
-              << "    alignment-file is a BAM file with duplicate reads marked" << std::endl
+              << "    (see \"Reference Genome Configuration\" below)."  << std::endl  << std::endl
+              << "    alignment-file is a BAM file with duplicate reads marked." << std::endl
 
               << std::endl
 
@@ -156,7 +156,7 @@ void print_usage() {
               << std::endl;
 
     for (const auto &it : collector.autosomal_references) {
-        bool (*sort_function_ptr)(const std::string&, const std::string&) = sort_strings_numerically;
+        bool (*sort_function_ptr)(const std::string&, const std::string&) = sort_strings_with_roman_numerals;
         std::set<std::string, bool(*)(const std::string&, const std::string&)> autosomal_references(sort_function_ptr);
         for (const auto& rit : it.second) {
             autosomal_references.insert(rit.first.substr(rit.first.find_first_not_of("chr")));
@@ -167,20 +167,22 @@ void print_usage() {
             std::cout << rit << ' ';
         }
         std::cout << std::endl;
-
     }
 
     std::cout << std::endl
-              << "    The default autosomal reference lists contain both bare numbers (\"1\") and" << std::endl
-              << "    \"chr\" prefixes (\"chr1\"). If you need a different set of autosomes, you can"  << std::endl
+              << "    The default autosomal reference lists contain names with \"chr\" prefixes" << std::endl
+              << "    (\"chr1\") and without (\"1\"). If you need a different set of autosomes, you can"  << std::endl
               << "    supply a list with --autosomal-reference-file." << std::endl << std::endl
 
               << "--autosomal-reference-file \"file name\"" << std::endl
               << "    A file containing autosomal reference names, one per line. The names must match" << std::endl
-              << "    the reference names in the alignment file exactly." << std::endl  << std::endl
+              << "    the reference names in the alignment file exactly, or the metrics based on counts" <<std::endl
+              << "    of autosomal alignments will be wrong." << std::endl  << std::endl
 
               << "--mitochondrial-reference-name \"name\"" << std::endl
-              << "    The reference name for mitochondrial DNA in your alignment file." << std::endl << std::endl;
+              << "    If the reference name for mitochondrial DNA in your alignment file is not \"chrM\",." << std::endl
+              << "    use this option to supply the correct name. Again, if this name is wrong, all the"<< std::endl
+              << "    measurements involving mitochondrial alignments will be wrong." << std::endl << std::endl;
 }
 
 
@@ -197,7 +199,7 @@ void print_error(T t)
 
 
 template<typename T, typename... Args>
-void print_error(T t, Args... args) // recursive variadic function
+void print_error(T t, Args... args)
 {
     print_error(t);
     print_error(args...) ;
@@ -380,7 +382,7 @@ int main(int argc, char **argv) {
 
         collector.load_alignments();
 
-        std::cout << collector << std::endl;  // Print the stats
+        std::cout << collector << std::endl;  // Print the metrics
 
         std::cout << "Writing JSON metrics to " << metrics_filename << std::endl << std::flush;
         *metrics_file << std::setw(2) << collector.to_json();

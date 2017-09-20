@@ -266,3 +266,23 @@ TEST_CASE("Test Utils::wrap", "[utils/wrap]" ) {
     }
 
 }
+
+TEST_CASE("Test Utils::integer_to_roman", "[utils/integer_to_roman]" ) {
+    REQUIRE("MMXVII" == integer_to_roman(2017));
+    REQUIRE("MMMMCMXCIX" == integer_to_roman(4999));
+    REQUIRE("MMMMMMMMMMMMCCCXLV" == integer_to_roman(12345));
+}
+
+TEST_CASE("Test Utils::sort_strings_of_roman_numerals", "[utils/sort_strings_of_roman_numerals]" ) {
+    std::vector<std::string> subject = {"IV", "III", "XI", "IX", "II", "I", "C"};
+    std::vector<std::string> expected = {"I", "II", "III", "IV", "IX", "XI", "C"};
+    std::sort(subject.begin(), subject.end(), sort_strings_with_roman_numerals);
+    REQUIRE(expected == subject);
+}
+
+TEST_CASE("Test Utils::sort_strings_with_roman_numerals", "[utils/sort_strings_with_roman_numerals]" ) {
+    std::vector<std::string> subject = {"010", "", "10", "01", "1", "chrIV", "chrIII", "chrXI", "chrIX", "chrII", "chrI", "chrC", "chr1", "chrY"};
+    std::vector<std::string> expected = {"", "01", "1", "010", "10", "chr1", "chrI", "chrII", "chrIII", "chrIV", "chrIX", "chrXI", "chrC", "chrY"};
+    std::sort(subject.begin(), subject.end(), sort_strings_with_roman_numerals);
+    REQUIRE(expected == subject);
+}

@@ -533,6 +533,8 @@ def load_metrics(data_directory, metrics_filename):
     try:
         contents = mf.read()
         collection = json.loads(contents)
+
+        all_metrics_from_file = []
         for result in collection:
             metrics = result['metrics']
             metrics_filename = os.path.join(data_directory, '{}.json.gz'.format(metrics['name']))
@@ -541,7 +543,9 @@ def load_metrics(data_directory, metrics_filename):
 
             metrics['fragment_length_counts'] = prepare_fragment_length_counts(metrics['fragment_length_counts'], args.maximum_fragment_length)
 
-            return metrics
+            all_metrics_from_file.append(metrics)
+
+        return all_metrics_from_file
     except ValueError as e:
         logger.error('Could not add metrics file {}: {}'.format(metrics_filename, e))
 
@@ -599,8 +603,10 @@ if __name__ == '__main__':
 
     loader = functools.partial(load_metrics, data_directory)
     loaded_metrics = pool and pool.imap(loader, args.metrics) or (loader(metrics_filename) for metrics_filename in args.metrics)
-    for metrics in loaded_metrics:
-        configuration['metrics'][metrics['name']] = metrics
+
+    for metrics_list in loaded_metrics:
+        for metrics in metrics_list:
+            configuration['metrics'][metrics['name']] = metrics
 
     if args.reference == 'calculate':
         logger.info('Constructing a reference fragment length distribution from your input.')
@@ -616,7 +622,7 @@ if __name__ == '__main__':
 
     metrics = (metrics for name, metrics in sorted(configuration['metrics'].items()))
     writer = functools.partial(write_metrics, indent)
-    written_metrics = pool and pool.imap(writer, metrics, args.concurrency) or (writer(m) for m in metrics)
+    written_metrics = pool and pool.imap(writer, metrics) or (writer(m) for m in metrics)
     for metrics in written_metrics:
         configuration['metrics'][metrics['name']] = metrics
 

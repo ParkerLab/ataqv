@@ -332,6 +332,7 @@ let ataqv = (function() {
 
     function activateTab(tabID) {
         hideHelp();
+        hideTooltip();
         document.getElementById('help').dataset.helpid = tabID + 'Help';
         let tablist = document.getElementById('tabs');
         for (let t of querySelectorAll(['.tab'], tablist)) {
@@ -1627,7 +1628,18 @@ let ataqv = (function() {
 
             $('#' + table.id).DataTable({
                 data: values,
+                buttons: [
+                    {
+                        extend: 'csv',
+                        filename: table.getAttribute('data-export')
+                    },
+                    {
+                        extend: 'excel',
+                        filename: table.getAttribute('data-export')
+                    },
+                ],
                 columns: columns,
+                dom: 'Bfrtlpi',
                 order: order,
                 stateSave: true
             });

@@ -34,6 +34,7 @@ class Metrics;
 //
 class MetricsCollector {
 private:
+    void make_default_autosomal_references();
     void load_autosomal_references();
     void load_excluded_regions();
 
@@ -53,7 +54,7 @@ public:
 
     // For each organism, the autosomal chromosomes that we'll
     // consider when recording fragment lengths or overlap with peaks.
-    std::unordered_map<std::string, std::unordered_map<std::string, int>> autosomal_references;
+    std::map<std::string, std::unordered_map<std::string, int>, numeric_string_comparator> autosomal_references;
 
     std::string peak_filename = "auto";
 

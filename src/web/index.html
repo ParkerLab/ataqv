@@ -11,7 +11,9 @@
         <link rel="stylesheet" href="css/ataqv.css">
 
         <script src="js/d3.min.js"></script>
+        <script src="js/jszip.min.js"></script>
         <script src="js/datatables.min.js"></script>
+        <script src="js/datatables.buttons.min.js"></script>
 
         <script src="js/ataqv.js" defer></script>
         <script src="js/configuration.js" defer></script>
@@ -319,7 +321,7 @@
                 <div id="tables">
                     <div class="tableContainer">
                         <h2>Quality Indicators</h2>
-                        <table id="indicators" class="data" width="100%">
+                        <table id="indicators" class="data" width="100%" data-export="QualityIndicators">
                             <thead>
                                 <tr>
                                     <th data-metric="name" class="name" data-order="0:asc" data-priority="1">
@@ -364,7 +366,7 @@
 
                     <div class="tableContainer">
                         <h2>Read Mapping Metrics</h2>
-                        <table id="summary" class="data" width="100%">
+                        <table id="summary" class="data" width="100%" data-export="ReadMappingMetrics">
                             <thead>
                                 <tr>
                                     <th data-metric="name" class="name" data-order="0:asc" data-priority="1">
@@ -406,7 +408,7 @@
 
                     <div class="tableContainer">
                         <h2>Unmapped Read Metrics</h2>
-                        <table id="basic_problems" class="data" width="100%">
+                        <table id="basic_problems" class="data" width="100%" data-export="UnmappedReadMetrics">
                             <thead>
                                 <tr>
                                     <th data-metric="name" class="name" data-order="0:asc" data-priority="1">
@@ -442,7 +444,7 @@
 
                     <div class="tableContainer">
                         <h2>Aberrant Mapping Metrics</h2>
-                        <table id="other_problems" class="data" width="100%">
+                        <table id="other_problems" class="data" width="100%" data-export="AberrantMappingMetrics">
                             <thead>
                                 <tr>
                                     <th data-metric="name" class="name" rowspan="2" data-order="0:asc" data-priority="1">
@@ -459,22 +461,22 @@
 
                                 <tr>
                                     <th data-metric="percentages.rf_reads__total_reads" data-priority="1">
-                                        <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand.">RF</span>
+                                        <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand.">RF</span>
                                     </th>
                                     <th data-metric="percentages.ff_reads__total_reads" data-priority="1">
-                                        <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand.">FF</span>
+                                        <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand.">FF</span>
                                     </th>
                                     <th data-metric="percentages.rr_reads__total_reads" data-priority="1">
-                                        <span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand.">RR</span>
+                                        <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand.">RR</span>
                                     </th>
                                     <th data-metric="percentages.reads_with_mate_mapped_to_different_reference__total_reads" data-priority="1">
-                                        <span data-hovertext="Each read of the pair mapped to a different reference (chromosome).">on different chromosomes</span>
+                                        <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="Each read of the pair mapped to a different reference (chromosome).">on different chromosomes</span>
                                     </th>
                                     <th data-metric="percentages.reads_with_mate_too_distant__total_reads" data-priority="1">
-                                        <span data-hovertext="The reads of the pair aligned to locations that are too far apart to be plausible, given the fragment lengths in the dataset.">too far from mate</span>
+                                        <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="The reads of the pair aligned to locations that are too far apart to be plausible, given the fragment lengths in the dataset.">too far from mate</span>
                                     </th>
                                     <th data-metric="percentages.reads_mapped_and_paired_but_improperly__total_reads" data-priority="1">
-                                        <span data-hovertext="We don't know why these are not marked properly paired and mapped. Sorry. You can have ataqv log problematic reads, so you can try to diagnose them. Let us know what you find.">just not properly</span>
+                                        <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="We don't know why these are not marked properly paired and mapped. Sorry. You can have ataqv log problematic reads, so you can try to diagnose them. Let us know what you find.">just not properly</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -485,7 +487,7 @@
 
                     <div class="tableContainer">
                         <h2>Reference Mapping Metrics</h2>
-                        <table id="reference" class="data" width="100%">
+                        <table id="reference" class="data" width="100%" data-export="ReferenceMappingMetrics">
                             <thead>
                                 <tr>
                                     <th data-metric="name" class="name" rowspan="2" data-order="0:asc" data-priority="1">
@@ -503,16 +505,16 @@
 
                                 <tr>
                                     <th data-metric="percentages.total_autosomal_reads__total_reads" data-priority="1">
-                                        <span data-hovertext="The number of reads aligned to autosomes, as a percentage of all reads.">% of all reads</span>
+                                        <span class="for-export">Autosomal, </span><span data-hovertext="The number of reads aligned to autosomes, as a percentage of all reads.">% of all reads</span>
                                     </th>
                                     <th data-metric="percentages.duplicate_autosomal_reads__total_autosomal_reads" data-priority="1">
-                                        <span data-hovertext="The percentage of reads aligned to autosomes that were duplicates.">Duplicates (% of autosomal alignments)</span>
+                                        <span class="for-export">Autosomal, </span><span data-hovertext="The percentage of reads aligned to autosomes that were duplicates.">Duplicates (% of autosomal alignments)</span>
                                     </th>
                                     <th data-metric="percentages.total_mitochondrial_reads__total_reads" data-priority="1">
-                                        <span data-hovertext="The number of reads aligned to the mitochondrial reference, as a percentage of all reads.">% of all reads</span>
+                                        <span class="for-export">Mitochondrial, </span><span data-hovertext="The number of reads aligned to the mitochondrial reference, as a percentage of all reads.">% of all reads</span>
                                     </th>
                                     <th data-metric="percentages.duplicate_mitochondrial_reads__total_mitochondrial_reads" data-priority="1">
-                                        <span data-hovertext="The percentage of reads mapped to the mitochondrial reference that were duplicates.">Duplicates&nbsp;(% of mitochondrial alignments)</span>
+                                        <span class="for-export">Mitochondrial, </span><span data-hovertext="The percentage of reads mapped to the mitochondrial reference that were duplicates.">Duplicates&nbsp;(% of mitochondrial alignments)</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -523,7 +525,7 @@
 
                     <div class="tableContainer">
                         <h2>Peak Metrics</h2>
-                        <table id="peaks" class="data" width="100%">
+                        <table id="peaks" class="data" width="100%" data-export="PeakMetrics">
                             <thead>
                                 <tr>
                                     <th data-metric="name" class="name" data-order="0:asc" data-priority="1">

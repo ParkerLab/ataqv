@@ -1,5 +1,5 @@
-#ifndef UTIL_HPP
-#define UTIL_HPP
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include <ctime>
 #include <string>
@@ -39,4 +39,9 @@ std::string slice(const std::string& s, size_t start, size_t end = std::string::
 
 std::string wrap(const std::string& s, size_t length = 72, size_t indent=0);
 
-#endif  // UTIL_HPP
+std::string integer_to_roman(int i);
+int roman_to_integer(const std::string& roman);
+bool is_roman_numeral(std::string s);
+bool sort_strings_with_roman_numerals(const std::string& s1, const std::string& s2);
+
+#endif  // UTILS_HPP

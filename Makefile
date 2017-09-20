@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 0.9.5
+VERSION = 1.0.0
 
 #
 # PATHS
@@ -205,9 +205,8 @@ install-ataqv: $(BUILD_DIR)/ataqv
 	install -m 0755 build/ataqv $(DESTDIR)$(prefix)/bin
 
 install-scripts: $(SCRIPTS)
-	for f in $^; do sed -e 's/{{VERSION}}/$(VERSION)/g' $$f > $(BUILD_DIR)/$$(basename $$f); done
 	install -d -m 0755 $(DESTDIR)$(prefix)/bin
-	install -m 0755 $^ $(DESTDIR)$(prefix)/bin
+	for f in $^; do sed -e 's/{{VERSION}}/$(VERSION)/g' $$f > $(BUILD_DIR)/$$(basename $$f); install -m 0755 $(BUILD_DIR)/$$(basename $$f) $(DESTDIR)$(prefix)/bin; done
 
 install-web: $(WEB_DIR)
 	install -d -m 0755 $(DESTDIR)$(prefix)/share/ataqv/web

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <ctime>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 
@@ -207,4 +208,99 @@ std::string wrap(const std::string& s, size_t length, size_t indent) {
         result.push_back('\n');
     }
     return result;
+}
+
+
+// Roman numerals.  #bioinfirmatics
+
+std::vector<std::pair<std::string, int>> roman_to_integer_conversions = {
+    {"M", 1000},
+    {"CM", 900},
+    {"D", 500},
+    {"CD", 400},
+    {"C", 100},
+    {"XC", 90},
+    {"X", 50},
+    {"XL", 40},
+    {"X", 10},
+    {"IX", 9},
+    {"V", 5},
+    {"IV", 4},
+    {"I", 1}
+};
+
+std::string integer_to_roman(int i) {
+    std::string roman;
+    for (auto t : roman_to_integer_conversions) {
+        while (i >= t.second) {
+            roman += t.first;
+            i -= t.second;
+        }
+    }
+    return roman;
+}
+
+int roman_to_integer(const std::string& roman) {
+    int integer = 0;
+    int p = 0;
+    for (auto t : roman_to_integer_conversions) {
+        int rnl = t.first.length();
+        while (roman.substr(p, rnl) == t.first) {
+            integer += t.second;
+            p += rnl;
+        }
+    }
+    return integer;
+}
+
+bool is_roman_numeral(std::string s) {
+    return roman_to_integer(s) > 0;
+}
+
+bool sort_strings_with_roman_numerals(const std::string& s1, const std::string& s2) {
+    if (s1 == s2) {
+        return false;
+    }
+
+    if (s1.empty()) {
+        if (s2.empty()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    std::string digits = "0123456789CDILMVX";
+
+    std::vector<std::string> tokens1 = split(s1, digits, true);
+    std::vector<std::string> tokens2 = split(s2, digits, true);
+
+    for (int i = 0, l1 = tokens1.size(), l2 = tokens2.size(); i < l1; i++) {
+        if (i >= l2) {
+            return false;
+        }
+
+        std::string t1 = tokens1[i];
+        std::string t2 = tokens2[i];
+
+        if (is_roman_numeral(t1) && is_roman_numeral(t2)) {
+            int d1 = roman_to_integer(t1);
+            int d2 = roman_to_integer(t2);
+            if (d1 != d2) {
+                return d1 < d2;
+            }
+        } else if (is_only_digits(t1) && is_only_digits(t2)) {
+            unsigned long long int d1 = std::stol(t1);
+            unsigned long long int d2 = std::stol(t2);
+            if (d1 != d2) {
+                return d1 < d2;
+            }
+        } else {
+            if (t1 != t2) {
+                return t1 < t2;
+            }
+        }
+    }
+
+    return s1 < s2;
 }
