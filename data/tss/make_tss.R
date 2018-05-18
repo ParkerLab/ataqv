@@ -14,7 +14,7 @@ opts <- parse_args(option_parser)
 
 suppressPackageStartupMessages(library('dplyr'))
 
-transcripts <- read.table(opts$ucsc_refgene, head = T, as.is = T, sep = '\t', ) %>%
+transcripts <- read.table(opts$ucsc_refgene, head = T, as.is = T, sep = '\t') %>%
   dplyr::select(name, chrom, txStart, txEnd, strand, name2, score) %>%
   dplyr::rename(transcript = name, gene = name2)
 
@@ -55,7 +55,20 @@ if (!is.null(opts$include_genes)) {
   tss <- tss[toupper(tss$gene) %in% toupper(genes_to_include$V1),]
 }
 
-tss <- unique(tss[,c('chrom', 'tss_start', 'tss_end')])
-tss <- tss[order(tss$chrom, tss$tss_start),]
+tss <- unique(tss[,c('chrom', 'tss_start', 'tss_end', 'gene', 'score', 'strand')])
+
+# eliminate redundant TSS, so that at a given position and strand, there is no more than one TSS
+tss$id <- with(tss, paste(chrom, tss_start, strand, sep = ':'))
+number_unique <- length(unique(tss$id))
+number_tss_at_position <- table(tss$id)
+redundant <- names(number_tss_at_position[number_tss_at_position>1])
+tss$keep <- T
+for(i in redundant) {
+  tss$keep[tss$id==i] <- c(T, rep(F, sum(tss$id==i)-1))
+}
+stopifnot(sum(tss$keep)==number_unique) # sanity check
+
+tss <- tss[tss$keep,c('chrom', 'tss_start', 'tss_end', 'gene', 'score', 'strand')]
+tss <- tss[order(tss$chrom, tss$tss_start, tss$strand),]
 
 write.table(x = tss, file = opts$out, quote = F, append = F, sep = "\t", row.names = F, col.names = F)
