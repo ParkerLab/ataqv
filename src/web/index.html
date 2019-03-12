@@ -188,7 +188,7 @@
                                         <div id="tssEnrichmentPlotHelp" class="help">
                                             <h2 class="header"><span>Plot help: TSS enrichment</span><button class="cleaner"><i class="fa fa-times-circle"></i><span></span></button></h2>
                                             <div class="content">
-                                                <p>This plot shows mean enrichment of transposition events around transcription start sites, calculated per the <a target="_blank" href="https://www.encodeproject.org/data-standards/terms/#enrichment">ENCODE ATAC-seq data standards</a>.</p>
+                                                <p>This plot shows enrichment of fragments around transcription start sites (TSS), calculated by computing the coverage (using fragments) +/- 1 kb around all TSS, and normalizing by the average coverage in the two outermost 100-bp windows (from -1000 to -900 and 900 to 1000 bp from the TSS).</p>
                                                 <p>Mouse over any line to see its experiment ID.</p>
                                                 <p>Click any line to see experiment details.</p>
                                                 <p>Double click or use the mouse wheel or trackpad scroll to zoom. Click and drag to pan.</p>
@@ -343,7 +343,7 @@
                                         <span data-hovertext="FLDD (fragment length distribution distance), the distance of the experiment's fragment length distribution to a reference distribution. Negative distance should be associated with under-transposition, positive distance should be associated with over-transposition.">FLDD</span>
                                     </th>
                                     <th data-metric="tss_enrichment" data-priority="1">
-                                        <span data-hovertext="The TSS enrichment score, calculated per ENCODE ATAC-seq data standards.">TSS enrichment</span>
+                                        <span data-hovertext="The TSS enrichment score, calculated by computing the coverage (using fragments) +/- 1 kb around all TSS, and normalizing by the average coverage in the two outermost 100-bp windows (from -1000 to -900 and 900 to 1000 bp from the TSS).">TSS enrichment</span>
                                     </th>
 
                                     <th data-metric="duplicate_fraction_in_peaks" data-priority="1">
