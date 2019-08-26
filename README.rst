@@ -233,9 +233,21 @@ output, and writes complete metrics to the JSON file named with the
 The JSON output can be incorporated into a web application that
 presents tables and plots of the metrics, and makes it easy to compare
 results across samples or experiments. Use the ``mkarv`` script to
-create a local instance of the result viewer. A web server is not
+create a local instance of the result viewer (run ``mkarv -h`` for complete instructions). A web server is not
 required, though you can use one to publish your result viewer
 instance.
+
+Given several BAM files (mapped to hg19) and accompanying broadPeak files (along with hg19 TSS files and blacklist), an example workflow might be::
+
+  $ # first, run ataqv on each bam file to generate JSON files as well as human-readable output
+  $ ataqv --peak-file /lab/work/porchard/atacseq/macs2/sample_1_peaks.broadPeak --name sample_1 --metrics-file /lab/work/porchard/atacseq/ataqv/sample_1.ataqv.json.gz --excluded-region-file /lab/work/porchard/atacseq/data/mappability/hg19.blacklist.bed.gz --tss-file /lab/work/porchard/atacseq/data/tss/hg19.tss.refseq.bed.gz --ignore-read-groups human /lab/work/porchard/atacseq/mark_duplicates/sample_1.md.bam > /lab/work/porchard/atacseq/ataqv/sample_1.ataqv.out
+  $ ataqv --peak-file /lab/work/porchard/atacseq/macs2/sample_2_peaks.broadPeak --name sample_2 --metrics-file /lab/work/porchard/atacseq/ataqv/sample_2.ataqv.json.gz --excluded-region-file /lab/work/porchard/atacseq/data/mappability/hg19.blacklist.bed.gz --tss-file /lab/work/porchard/atacseq/data/tss/hg19.tss.refseq.bed.gz --ignore-read-groups human /lab/work/porchard/atacseq/mark_duplicates/sample_2.md.bam > /lab/work/porchard/atacseq/ataqv/sample_2.ataqv.out
+  $ ataqv --peak-file /lab/work/porchard/atacseq/macs2/sample_3_peaks.broadPeak --name sample_3 --metrics-file /lab/work/porchard/atacseq/ataqv/sample_3.ataqv.json.gz --excluded-region-file /lab/work/porchard/atacseq/data/mappability/hg19.blacklist.bed.gz --tss-file /lab/work/porchard/atacseq/data/tss/hg19.tss.refseq.bed.gz --ignore-read-groups human /lab/work/porchard/atacseq/mark_duplicates/sample_3.md.bam > /lab/work/porchard/atacseq/ataqv/sample_3.ataqv.out
+  $
+  $ # run mkarv on the JSON files to generate the interactive web viewer (in this case, SRR891268 will be used as the reference sample in the viewer):
+  $ mkarv my_fantastic_experiment /lab/work/porchard/atacseq/ataqv/sample_1.ataqv.json.gz /lab/work/porchard/atacseq/ataqv/sample_2.ataqv.json.gz /lab/work/porchard/atacseq/ataqv/sample_3.ataqv.json.gz
+  $
+  $ # to see the viewer, open the file my_fantastic_experiment/index.html in your web browser
 
 Example
 =======
