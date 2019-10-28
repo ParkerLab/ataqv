@@ -1,3 +1,11 @@
+ataqv (1.1.0-1) unstable; urgency=low
+
+  * Add HQAA chromosome read counts.
+
+  * Add max fraction autosomal reads from single chromosome metric.
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Mon, 28 Oct 2019 10:30:00 -0500
+
 ataqv (1.0.0-1) unstable; urgency=low
 
   * Fix omitted metrics bug introduced with concurrency. If an ataqv

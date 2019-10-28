@@ -781,6 +781,7 @@ void Metrics::add_alignment(const bam_hdr_t* header, const bam1_t* record) {
                             // size and peak statistics
                             if (is_hqaa(header, record)) {
                                 hqaa++;
+				chromosome_counts[reference_name]++;
 
                                 // record proper pairs' fragment lengths
                                 fragment_length_counts[fragment_length]++;
@@ -1284,6 +1285,28 @@ nlohmann::json Metrics::to_json() {
         fragment_length_counts_json.push_back(flc);
     }
 
+    unsigned long long int max_autosome_counts = 0;
+    unsigned long long int total_autosome_counts = 0;
+    nlohmann::json chromosome_counts_json;
+
+    for (auto it : chromosome_counts) {
+	std::string chromosome = it.first;
+        unsigned long long int reads_from_chromosome = it.second;
+	nlohmann::json cc;
+	cc.push_back(chromosome);
+	cc.push_back(reads_from_chromosome);
+	chromosome_counts_json.push_back(cc);
+
+        if (is_autosomal(chromosome)) {
+		total_autosome_counts += reads_from_chromosome;
+		if (reads_from_chromosome > max_autosome_counts) {
+			max_autosome_counts = reads_from_chromosome;
+		}
+	}
+    }
+
+    long double max_fraction_reads_from_single_autosome = total_autosome_counts == 0 ? std::nan("") : max_autosome_counts / (long double) total_autosome_counts;
+
     std::vector<std::string> mapq_counts_fields = {"mapq", "read_count"};
 
     nlohmann::json mapq_counts_json;
@@ -1426,13 +1449,14 @@ nlohmann::json Metrics::to_json() {
              {"total_peak_territory", peaks.total_peak_territory},
              {"hqaa_overlapping_peaks_percent", percentage(hqaa_overlapping_peaks, hqaa)},
              {"tss_coverage", tss_coverage_vec},
-             {"tss_enrichment", tss_enrichment}
+             {"tss_enrichment", tss_enrichment},
+             {"chromosome_counts", chromosome_counts_json},
+             {"max_fraction_reads_from_single_autosome", max_fraction_reads_from_single_autosome}
          }
         }
     };
     return result;
 }
-
 
 //
 // Produce text version of all of a collector's Metrics

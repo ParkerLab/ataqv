@@ -169,6 +169,7 @@
                                                     <option value="duplicate_autosomal_reads">Autosomal duplicates (%)</option>
                                                     <option value="short_mononucleosomal_ratio">Short-to-mononucleosomal ratio</option>
                                                     <option value="tss_enrichment">TSS enrichment</option>
+                                                    <option value="max_fraction_reads_from_single_autosome">Maximum fraction of reads from a single autosome</option>
                                                     <option value="duplicate_fraction_in_peaks">Duplicate fraction in peaks</option>
                                                     <option value="duplicate_fraction_not_in_peaks">Duplicate fraction outside of peaks</option>
                                                     <option value="peak_duplicate_ratio">Peak duplicate ratio</option>
@@ -345,7 +346,9 @@
                                     <th data-metric="tss_enrichment" data-priority="1">
                                         <span data-hovertext="The TSS enrichment score, calculated by computing the coverage (using fragments) +/- 1 kb around all TSS, and normalizing by the average coverage in the two outermost 100-bp windows (from -1000 to -900 and 900 to 1000 bp from the TSS).">TSS enrichment</span>
                                     </th>
-
+                                    <th data-metric="max_fraction_reads_from_single_autosome" data-priority="1">
+                                        <span data-hovertext="The fraction of HQAA reads derived from the autosome with the greatest number of HQAA reads. Ideally, this should be approximately equal to the length of the longest autosome divided by the summed length of all autosomes. Outliers in this metric may reflect abnormal karyotypes or, in the case of single-cell/single-nucleus data, it may indicate that DNA from another source is being assigned to that cell/nucleus.">Max. fraction HQAA from one autosome</span>
+                                    </th>
                                     <th data-metric="duplicate_fraction_in_peaks" data-priority="1">
                                         <span data-hovertext="The fraction of properly paired reads that mapped within peaks and were marked as duplicates.">Duplicate fraction in peaks</span>
                                     </th>

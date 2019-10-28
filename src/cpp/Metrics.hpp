@@ -181,6 +181,8 @@ public:
 
     std::map<int, unsigned long long int> fragment_length_counts = {};
 
+    std::map<std::string, unsigned long long int> chromosome_counts = {};
+
     unsigned long long int hqaa_short_count = 0;
     unsigned long long int hqaa_mononucleosomal_count = 0;
 

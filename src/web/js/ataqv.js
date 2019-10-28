@@ -660,6 +660,7 @@ let ataqv = (function() {
                 switch(yAxisSource) {
                 case 'short_mononucleosomal_ratio':
                 case 'tss_enrichment':
+                case 'max_fraction_reads_from_single_autosome':
                 case 'duplicate_fraction_in_peaks':
                 case 'duplicate_fraction_not_in_peaks':
                 case 'peak_duplicate_ratio':
