@@ -91,8 +91,11 @@ public:
     std::string configuration_string() const;
     bool is_autosomal(const std::string &reference_name);
     bool is_mitochondrial(const std::string& reference_name);
+    bool is_hqaa(const bam_hdr_t* header, const bam1_t* record);
     void load_tss();
     void load_alignments();
+    std::map<std::string,std::map<int, unsigned long long int>> get_tss_coverage_for_reference(const std::string &reference, const int extension);
+    void calculate_tss_coverage();
     nlohmann::json to_json();
 };
 
@@ -201,7 +204,6 @@ public:
     void add_alignment(const bam_hdr_t* header, const bam1_t* record);
     std::string configuration_string() const;
     void add_tss_coverage(const Feature& fragment);
-    std::map<int, unsigned long long int> get_tss_coverage_for_reference(const std::string &reference, const int extension);
     void calculate_tss_metrics();
     std::map<int, unsigned long long int> calculate_tss_metric_for_reference(const std::string &reference, const int extension, FeatureTree &fragment_tree);
 
