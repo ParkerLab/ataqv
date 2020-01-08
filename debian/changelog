@@ -1,3 +1,15 @@
+ataqv (1.1.1-1) unstable; urgency=low
+
+  * Speed up TSS coverage/enrichment calculations when multiple read
+    groups are present
+
+  * TSS coverage/enrichment was previously (incorrectly) the same
+    for all read groups in the bam file. That's no longer the case.
+
+  * Fix indentation.
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Mon, 28 Oct 2019 10:30:00 -0500
+
 ataqv (1.1.0-1) unstable; urgency=low
 
   * Add HQAA chromosome read counts.

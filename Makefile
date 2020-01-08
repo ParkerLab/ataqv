@@ -38,7 +38,7 @@ MODULEFILE_PATH = $(MODULEFILES_ROOT)/ataqv/$(VERSION)
 CPPFLAGS = -pedantic -Wall -Wextra -Wwrite-strings -Wstrict-overflow -fno-strict-aliasing -fPIC $(INCLUDES)
 CXXFLAGS = -std=c++11 -pthread -O3 -g $(CPPFLAGS)
 CXXFLAGS_DEV = -std=c++11 -pthread -O3 -g $(CPPFLAGS)
-CXXFLAGS_STATIC = -std=c++11 -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -static -static-libgcc -static-libstdc++ $(CPPFLAGS)
+CXXFLAGS_STATIC = -std=c++11 -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -static -static-libgcc -static-libstdc++ -I$(HTSLIB_STATIC_DIR) $(CPPFLAGS)
 
 #
 # Try to locate dependencies using environment variables
@@ -100,7 +100,7 @@ endif
 
 LDLIBS = $(BOOST_LIBS) $(HTS_LIBS) -lz -lncurses -lpthread
 HTSLIB_STATIC_DIR = $(HOME)/sw/bio/htslib/htslib
-LDLIBS_STATIC = -L$(HTSLIB_STATIC_DIR) $(LDLIBS) -ltinfo -lrt
+LDLIBS_STATIC = -L$(HTSLIB_STATIC_DIR) $(LDLIBS) -lbz2 -llzma -ltinfo -lrt
 
 #
 # Architecture flags
@@ -142,18 +142,19 @@ dist-static: checkdirs $(BUILD_DIR)/ataqv-static
 	cd $(BUILD_DIR) && tar czf ataqv-$(VERSION).$(shell uname -m).$(shell uname -s).tar.gz ataqv-$(VERSION)
 
 deb:
-	(make clean && cd .. && tar czf ataqv_$(VERSION).orig.tar.gz --exclude .git ataqv)
-	debuild
+	(cd .. && tar czf ataqv_$(VERSION).orig.tar.gz --exclude .git --exclude build ataqv)
+	debuild -uc -us
 
-deb-static: deb
-	make static
+deb-static: deb static
 	install -m 0755 $(BUILD_DIR)/ataqv-static debian/ataqv/usr/bin/ataqv
 	sed -i '/Depends: /d' debian/ataqv/DEBIAN/control
 	dh_builddeb
 
-rpm: ../ataqv_$(VERSION)-1_amd64.deb
+rpm: deb
 	(cd .. && alien -r ataqv_$(VERSION)-1_amd64.deb)
 
+rpm-static: deb-static
+	(cd .. && alien -r ataqv_$(VERSION)-1_amd64.deb)
 
 checkdirs: $(BUILD_DIR) $(TEST_DIR)
 
@@ -181,7 +182,7 @@ $(CPP_DIR)/Version.hpp: Makefile
 	@echo >>$@
 	@echo '#define VERSION "$(VERSION)"' >>$@
 
-test: checkdirs $(TEST_DIR)/run_ataqv_tests
+test: checkdirs $(CPP_DIR)/Version.hpp $(TEST_DIR)/run_ataqv_tests
 	@cp testdata/* $(TEST_DIR)
 	@cd $(TEST_DIR) && ./run_ataqv_tests -i
 	@cd $(TEST_DIR) && lcov --no-external --quiet --capture --derive-func-data --directory $(CPP_DIR) --directory . --output-file ataqv.info && lcov --remove ataqv.info $(CPP_DIR)/catch.hpp --output-file ataqv.info && lcov --remove ataqv.info $(CPP_DIR)/json.hpp --output-file ataqv.info && genhtml ataqv.info -o ataqv
@@ -193,7 +194,7 @@ $(TEST_DIR)/%.o: $(CPP_DIR)/%.cpp $(SRC_HPP)
 	$(CXX)  $(CXXFLAGS_DEV) -fprofile-arcs -ftest-coverage -o $@ -c $<
 
 clean:
-	@rm -rf $(BUILD_DIR) $(TEST_DIR)
+	@rm -rf $(BUILD_DIR) $(TEST_DIR ) $(CPP_DIR)/Version.hpp
 	@test -x dh_clean && dh_clean || true
 
 install: checkdirs install-ataqv install-scripts install-web

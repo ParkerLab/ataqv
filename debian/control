@@ -2,7 +2,7 @@ Source: ataqv
 Section: science
 Priority: optional
 Maintainer: Parker Lab Software <parkerlab-software@umich.edu>
-Build-Depends: debhelper (>= 9), libboost-all-dev(>= 1.47), libhts-dev (>= 1.0), libncurses5-dev (>= 5.9), libstdc++-4.9-dev | libstdc++-5-dev | libstdc++-6-dev, libtinfo-dev (>= 5.9), zlib1g-dev (>= 1:1.1.4), lcov
+Build-Depends: debhelper (>= 9), libboost-all-dev(>= 1.47), libhts-dev (>= 1.0), libncurses5-dev (>= 5.9), libstdc++-4.9-dev | libstdc++-5-dev | libstdc++-6-dev | libstdc++-8-dev, libtinfo-dev (>= 5.9), zlib1g-dev (>= 1:1.1.4), lcov
 Standards-Version: 3.9.8
 Homepage: https://github.com/ParkerLab/ataqv/
 Vcs-Git: https://github.com/ParkerLab/ataqv.git
