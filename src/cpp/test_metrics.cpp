@@ -156,7 +156,7 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
 
     REQUIRE(metrics->peaks.size() == 37276);
 
-    REQUIRE(metrics->tss_enrichment == Approx(4.119850));
+    REQUIRE(metrics->tss_enrichment == Approx(6.0));
 
     nlohmann::json j = collector.to_json();
     unsigned long long int total_reads = j[0]["metrics"]["total_reads"];

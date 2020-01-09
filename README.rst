@@ -66,10 +66,10 @@ Binary packages (Linux only)
 ============================
 
 We provide several Linux binary packages under `recent releases on
-Github`_. Install ``.deb`` or ``.rpm`` files with ``dpkg`` or ``yum``,
-or download and extract the ``ataqv-x.x.x.tar.gz`` file and add the
-full path to the resulting ``ataqv-x.x.x/bin`` subdirectory to your
-PATH environment variable.
+Github`_. Install ``.deb`` files with ``dpkg``, ``.rpm`` files with
+``dnf`` or ``yum``, or download and extract the ``ataqv-x.x.x.tar.gz``
+file and add the full path to the resulting ``ataqv-x.x.x/bin``
+subdirectory to your PATH environment variable.
 
 Homebrew (Mac or Linux)
 =======================
@@ -178,26 +178,6 @@ can install to the modules tree by defining the ``MODULES_ROOT`` and
 
 And then you should be able to run ``module load ataqv`` to have
 everything available in your environment.
-
-You can create a distribution tarball with::
-
-  make dist
-
-It will create a .tar.gz file in the ``build`` subdirectory of the
-source tree. Extract that anywhere and add the ``bin`` subdirectory to
-your PATH environment variable. To use the distribution on another
-machine, that machine must have the same shared libraries as your
-build machine. If that's not possible, you can try to build a static
-distribution with::
-
-  make dist-static
-
-However, static compilation has only been tried on Linux (RHEL 6;
-Debian testing (Stretch) and unstable), and it may not work at all on
-your distribution. You will almost certainly need HTSlib built without
-cURL support, as some of the library dependencies are not available as
-shared libraries. Supply the path to your custom HTSlib with ``make
-HTSLIB_STATIC_DIR=/path static``.
 
 *****
 Usage
