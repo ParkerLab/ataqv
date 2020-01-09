@@ -2,7 +2,6 @@
 build
 testing
 README.html
-src/cpp/Version.hpp
 debian/ataqv.substvars
 debian/ataqv/
 debian/debhelper-build-stamp
