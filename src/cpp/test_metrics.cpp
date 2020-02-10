@@ -63,7 +63,7 @@ TEST_CASE("MetricsCollector::test_supplied_references", "[metrics/test_supplied_
         *out << "I\nII\nIII\n";
     }
 
-    MetricsCollector collector("Test collector", "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", "test.bam", autosomal_reference_file, "M", "", "", 1000, true);
+    MetricsCollector collector("Test collector", "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", "test.bam", autosomal_reference_file, "M", "", "", 1000, true, false);
 
     std::remove(autosomal_reference_file.c_str());
 
@@ -92,7 +92,7 @@ TEST_CASE("Metrics::load_alignments with no excluded regions", "[metrics/load_al
     std::string alignment_file_name("SRR891275.bam");
     std::string peak_file_name("SRR891275.peaks.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", true);
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", true, false);
 
     collector.load_alignments();
 
@@ -108,7 +108,7 @@ TEST_CASE("Metrics::load_alignments", "[metrics/load_alignments]") {
     std::string peak_file_name("test.peaks.gz");
     std::string tss_file_name("hg19.tss.refseq.bed.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, tss_file_name, 1000, true, 1, false, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, tss_file_name, 1000, true, 1, false, true, false, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
 
     collector.load_alignments();
 
@@ -183,7 +183,7 @@ TEST_CASE("Metrics::ignore_read_groups", "[metrics/ignore_read_groups]") {
     std::string alignment_file_name("test.bam");
     std::string peak_file_name("test.peaks.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", 1000, true, 1, true, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", 1000, true, 1, true, true, false, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
 
     collector.load_alignments();
 
@@ -244,7 +244,7 @@ TEST_CASE("Metrics::missing_peak_file", "[metrics/missing_peak_file]") {
     std::string alignment_file_name("test.bam");
     std::string peak_file_name("notthere.peaks.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", 1000, true, 1, true, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, "", 1000, true, 1, true, true, false, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
     REQUIRE_THROWS_AS(collector.load_alignments(), FileException);
 }
 
@@ -254,6 +254,6 @@ TEST_CASE("Metrics::missing_tss_file", "[metrics/missing_ss_file]") {
     std::string peak_file_name("test.peaks.gz");
     std::string tss_file_name("notthere.bed.gz");
 
-    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, tss_file_name, 1000, true, 1, true, true, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
+    MetricsCollector collector(name, "human", "a collector for unit tests", "a library of brutal tests?", "https://theparkerlab.org", alignment_file_name, "", "chrM", peak_file_name, tss_file_name, 1000, true, 1, true, true, false, {"exclude.dac.bed.gz", "exclude.duke.bed.gz"});
     REQUIRE_THROWS_AS(collector.load_alignments(), FileException);
 }

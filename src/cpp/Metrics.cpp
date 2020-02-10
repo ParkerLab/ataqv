@@ -37,6 +37,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
                                    const int thread_limit,
                                    bool ignore_read_groups,
                                    bool log_problematic_reads,
+                                   bool less_redundant,
                                    const std::vector<std::string>& excluded_region_filenames) :
     metrics({}),
     name(name),
@@ -54,6 +55,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
     thread_limit(thread_limit),
     ignore_read_groups(ignore_read_groups),
     log_problematic_reads(log_problematic_reads),
+    less_redundant(less_redundant),
     excluded_region_filenames(excluded_region_filenames)
 {
 
@@ -425,7 +427,7 @@ void MetricsCollector::load_alignments() {
 }
 
 
-Metrics::Metrics(MetricsCollector* collector, const std::string& name): collector(collector), name(name), peaks(), log_problematic_reads(collector->log_problematic_reads) {
+Metrics::Metrics(MetricsCollector* collector, const std::string& name): collector(collector), name(name), peaks(), log_problematic_reads(collector->log_problematic_reads), less_redundant(collector->less_redundant) {
 
     if (log_problematic_reads) {
         try {
@@ -1252,11 +1254,13 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
        << std::endl
 
        << "  Aberrant Mapping Metrics" << std::endl
-       << "  ------------------------" << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  RF reads: " << m.rf_reads << percentage_string(m.rf_reads, m.total_reads, 6) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  FF reads: " << m.ff_reads << percentage_string(m.ff_reads, m.total_reads, 6) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  RR reads: " << m.rr_reads << percentage_string(m.rr_reads, m.total_reads, 6) << std::endl
-       << std::setfill(' ') << std::left << std::setw(40) << "  Reads that paired and mapped but..." << std::endl
+       << "  ------------------------" << std::endl;
+    if (!m.less_redundant) {
+        os << std::setfill(' ') << std::left << std::setw(40) << "  RF reads: " << m.rf_reads << percentage_string(m.rf_reads, m.total_reads, 6) << std::endl
+           << std::setfill(' ') << std::left << std::setw(40) << "  FF reads: " << m.ff_reads << percentage_string(m.ff_reads, m.total_reads, 6) << std::endl
+           << std::setfill(' ') << std::left << std::setw(40) << "  RR reads: " << m.rr_reads << percentage_string(m.rr_reads, m.total_reads, 6) << std::endl;
+    }
+    os << std::setfill(' ') << std::left << std::setw(40) << "  Reads that paired and mapped but..." << std::endl
        << std::setfill(' ') << std::left << std::setw(40) << "    on different chromosomes: " << m.reads_with_mate_mapped_to_different_reference << percentage_string(m.reads_with_mate_mapped_to_different_reference, m.total_reads) << std::endl
        << std::setfill(' ') << std::left << std::setw(40) << "    probably too far from their mates: " << m.reads_with_mate_too_distant << percentage_string(m.reads_with_mate_too_distant, m.total_reads) << " (longest proper fragment seems to be " << m.maximum_proper_pair_fragment_size << ")" << std::endl
        << std::setfill(' ') << std::left << std::setw(40) << "    just not properly: " << m.reads_mapped_and_paired_but_improperly << percentage_string(m.reads_mapped_and_paired_but_improperly, m.total_reads) << std::endl
@@ -1264,19 +1268,25 @@ std::ostream& operator<<(std::ostream& os, const Metrics& m) {
        << std::endl
 
        << "  Autosomal/Mitochondrial Metrics" << std::endl
-       << "  -------------------------------" << std::endl
-       << "  Total autosomal reads: " << m.total_autosomal_reads << percentage_string(m.total_autosomal_reads, m.total_reads, 3,  " (", "% of all reads)") << std::endl
-       << "  Total mitochondrial reads: " << m.total_mitochondrial_reads << percentage_string(m.total_mitochondrial_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl
-       << "  Duplicate autosomal reads: " << m.duplicate_autosomal_reads << percentage_string(m.duplicate_autosomal_reads, m.total_autosomal_reads, 3, " (", "% of all autosomal reads)") << std::endl
-       << "  Duplicate mitochondrial reads: " << m.duplicate_mitochondrial_reads << percentage_string(m.duplicate_mitochondrial_reads, m.total_mitochondrial_reads, 3, " (", "% of all mitochondrial reads)") << std::endl << std::endl
+       << "  -------------------------------" << std::endl;
+    if (!m.less_redundant) {
+       os << "  Total autosomal reads: " << m.total_autosomal_reads << percentage_string(m.total_autosomal_reads, m.total_reads, 3,  " (", "% of all reads)") << std::endl;
+    }
+       os << "  Total mitochondrial reads: " << m.total_mitochondrial_reads << percentage_string(m.total_mitochondrial_reads, m.total_reads, 3, " (", "% of all reads)") << std::endl
+       << "  Duplicate autosomal reads: " << m.duplicate_autosomal_reads << percentage_string(m.duplicate_autosomal_reads, m.total_autosomal_reads, 3, " (", "% of all autosomal reads)") << std::endl;
+    if (!m.less_redundant) {
+       os << "  Duplicate mitochondrial reads: " << m.duplicate_mitochondrial_reads << percentage_string(m.duplicate_mitochondrial_reads, m.total_mitochondrial_reads, 3, " (", "% of all mitochondrial reads)") << std::endl << std::endl;
+    }
 
-       << std::endl
+    os << std::endl
 
        << "  Mapping Quality" << std::endl
-       << "  ---------------" << std::endl
-       << "  Mean MAPQ: " << std::fixed << m.mean_mapq() << std::endl
-       << "  Median MAPQ: " << std::fixed << m.median_mapq() << std::endl
-       << "  Reads with MAPQ >=..." << std::endl;
+       << "  ---------------" << std::endl;
+    if (!m.less_redundant) {
+       os << "  Mean MAPQ: " << std::fixed << m.mean_mapq() << std::endl
+       << "  Median MAPQ: " << std::fixed << m.median_mapq() << std::endl;
+    }
+    os << "  Reads with MAPQ >=..." << std::endl;
 
     for (int threshold = 5; threshold <= 30; threshold += 5) {
         unsigned long long int count = 0;

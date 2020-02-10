@@ -66,6 +66,7 @@ public:
     int thread_limit = 1;
     bool ignore_read_groups = false;
     bool log_problematic_reads = false;
+    bool less_redundant = false;
 
     std::vector<std::string> excluded_region_filenames = {};
     std::vector<Feature> excluded_regions = {};
@@ -85,6 +86,7 @@ public:
                      const int thread_limit = 1,
                      bool ignore_read_groups = false,
                      bool log_problematic_reads = false,
+                     bool less_redundant = false,
                      const std::vector<std::string>& excluded_region_filenames = {});
 
     std::string autosomal_reference_string(std::string separator = ", ") const;
@@ -198,6 +200,7 @@ public:
     bool log_problematic_reads = false;
     bool peaks_requested = false;
     bool tss_requested = false;
+    bool less_redundant = false;
 
     Metrics(MetricsCollector* collector, const std::string& name = nullptr);
 

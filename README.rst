@@ -203,8 +203,59 @@ for the output.
 Running
 =======
 
-The main program is ataqv. Run ``ataqv --help`` for complete
-instructions.
+The main program is ataqv, which is run as follows::
+  
+  ataqv [options] organism alignment-file
+  
+  where:
+      organism is the subject of the experiment, which determines the list of autosomes
+      (see "Reference Genome Configuration" below).
+  
+      alignment-file is a BAM file with duplicate reads marked.
+  
+  Basic options
+  -------------
+  
+  --help: show this usage message.
+  --verbose: show more details and progress updates.
+  --version: print the version of the program.
+  --threads <n>: the maximum number of threads to use (right now, only for calculating TSS enrichment).
+  
+  Optional Input
+  --------------
+  
+  --peak-file "file name"
+      A BED file of peaks called for alignments in the BAM file. Specify "auto" to use the
+      BAM file name with ".peaks" appended, or if the BAM file contains read groups, to
+      assume each read group has a peak file whose name is the read group ID with ".peaks"
+      appended. If you specify a single filename instead of "auto" with read groups, the 
+      same peaks will be used for all reads -- be sure this is what you want.
+  
+  --tss-file "file name"
+      A BED file of transcription start sites for the experiment organism. If supplied,
+      a TSS enrichment score will be calculated according to the ENCODE data standards.
+      This calculation requires that the BAM file of alignments be indexed.
+  
+  --tss-extension "size"
+      If a TSS enrichment score is requested, it will be calculated for a region of 
+      "size" bases to either side of transcription start sites. The default is 1000bp.
+  
+  --excluded-region-file "file name"
+      A BED file containing excluded regions. Peaks or TSS overlapping these will be ignored.
+      May be given multiple times.
+  
+  Output
+  ------
+  
+  --metrics-file "file name"
+      The JSON file to which metrics will be written. The default filename will be based on
+      the BAM file, with the suffix ".ataqv.json".
+  
+  --log-problematic-reads
+      If given, problematic reads will be logged to a file per read group, with names
+      derived from the read group IDs, with ".problems" appended. If no read groups
+      are found, the reads will be written to one file named after the BAM file.
+
 
 When run, ataqv prints a human-readable summary to its standard
 output, and writes complete metrics to the JSON file named with the

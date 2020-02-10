@@ -256,6 +256,7 @@ def parse_arguments():
     parser.add_argument('-d', '--description', help='A description for the viewer instance.')
     parser.add_argument('-f', '--force', action='store_true', help='Overwrite the output directory if it exists.')
     parser.add_argument('-i', '--indent', action='store_true', help='If indent is given, JSON output will be pretty-printed and indented.')
+    parser.add_argument('-l', '--less-redundant', action='store_true', help='Produce a viewer with fewer metrics (metrics that are expected to be largely redundant will not be displayed.')
     parser.add_argument('-m', '--maximum-fragment-length', type=int, default=1000, help='The maximum fragment length for which the distance to the reference fragment length count distribution will be measured.')
 
     parser.add_argument('-p', '--peak-reference', default="SRR891268", help=(
@@ -599,7 +600,7 @@ if __name__ == '__main__':
     logger.info('Creating data directory {}'.format(data_directory))
     os.makedirs(data_directory, 0o0755)
 
-    configuration = {'description': args.description or '', 'metrics': {}}
+    configuration = {'description': args.description or '', 'metrics': {}, 'less_redundant': args.less_redundant}
 
     loader = functools.partial(load_metrics, data_directory)
     loaded_metrics = pool and pool.imap(loader, args.metrics) or (loader(metrics_filename) for metrics_filename in args.metrics)

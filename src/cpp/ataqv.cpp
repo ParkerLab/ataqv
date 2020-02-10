@@ -38,6 +38,7 @@ enum {
 
     OPT_METRICS_FILE,
     OPT_LOG_PROBLEMATIC_READS,
+    OPT_LESS_REDUNDANT,
 
     OPT_NAME,
     OPT_IGNORE_READ_GROUPS,
@@ -111,7 +112,10 @@ void print_usage() {
               << "--log-problematic-reads" << std::endl
               << "    If given, problematic reads will be logged to a file per read group, with names" << std::endl
               << "    derived from the read group IDs, with \".problems\" appended. If no read groups" << std::endl
-              << "    are found, the reads will be written to one file named after the BAM file." << std::endl
+              << "    are found, the reads will be written to one file named after the BAM file." << std::endl << std::endl
+
+	      << "--less-redundant" << std::endl
+              << "    If given, output a subset of metrics that should be less redundant. If this flag is used, the same flag should be passed to mkarv when making the viewer." << std::endl
 
               << std::endl
 
@@ -212,6 +216,7 @@ int main(int argc, char **argv) {
     bool verbose = false;
     int thread_limit = 1;
     bool log_problematic_reads = false;
+    bool less_redundant = false;
 
     std::string name;
     bool ignore_read_groups = false;
@@ -238,6 +243,7 @@ int main(int argc, char **argv) {
         {"version", no_argument, nullptr, OPT_VERSION},
         {"threads", required_argument, nullptr, OPT_THREADS},
         {"log-problematic-reads", no_argument, nullptr, OPT_LOG_PROBLEMATIC_READS},
+        {"less-redundant", no_argument, nullptr, OPT_LESS_REDUNDANT},
         {"name", required_argument, nullptr, OPT_NAME},
         {"ignore-read-groups", no_argument, nullptr, OPT_IGNORE_READ_GROUPS},
         {"description", required_argument, nullptr, OPT_DESCRIPTION},
@@ -270,6 +276,9 @@ int main(int argc, char **argv) {
             break;
         case OPT_LOG_PROBLEMATIC_READS:
             log_problematic_reads = true;
+            break;
+	case OPT_LESS_REDUNDANT:
+            less_redundant = true;
             break;
         case OPT_NAME:
             name = optarg;
@@ -355,6 +364,7 @@ int main(int argc, char **argv) {
             thread_limit,
             ignore_read_groups,
             log_problematic_reads,
+            less_redundant,
             excluded_region_filenames);
 
         // if the filename for the metrics output wasn't specified,

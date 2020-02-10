@@ -1588,6 +1588,9 @@ let ataqv = (function() {
 
             for (let headerCell of querySelectorAll(['th[data-metric]'], table)) {
                 let key = headerCell.dataset.metric;
+		    if (configuration.less_redundant && headerCell.className == 'redundant') {
+			continue;
+		    }
                 keys.push(key);
 
                 let col = {
@@ -1831,6 +1834,11 @@ let ataqv = (function() {
         }
 
         loadExperiments();
+
+	if (configuration.less_redundant) {
+	    d3.selectAll('.redundant').style("display", "none");
+	    $('[colspan=2]').attr("colspan", "1");
+	}
     }
 
     function configure(conf) {

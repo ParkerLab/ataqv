@@ -170,9 +170,9 @@
                                                     <option value="short_mononucleosomal_ratio">Short-to-mononucleosomal ratio</option>
                                                     <option value="tss_enrichment">TSS enrichment</option>
                                                     <option value="max_fraction_reads_from_single_autosome">Maximum fraction of reads from a single autosome</option>
-                                                    <option value="duplicate_fraction_in_peaks">Duplicate fraction in peaks</option>
-                                                    <option value="duplicate_fraction_not_in_peaks">Duplicate fraction outside of peaks</option>
-                                                    <option value="peak_duplicate_ratio">Peak duplicate ratio</option>
+                                                    <option class="redundant" value="duplicate_fraction_in_peaks">Duplicate fraction in peaks</option>
+                                                    <option class="redundant" value="duplicate_fraction_not_in_peaks">Duplicate fraction outside of peaks</option>
+                                                    <option class="redundant" value="peak_duplicate_ratio">Peak duplicate ratio</option>
                                                 </select>
                                             </label>
                                         </div>
@@ -349,16 +349,16 @@
                                     <th data-metric="max_fraction_reads_from_single_autosome" data-priority="1">
                                         <span data-hovertext="The fraction of HQAA reads derived from the autosome with the greatest number of HQAA reads. Ideally, this should be approximately equal to the length of the longest autosome divided by the summed length of all autosomes. Outliers in this metric may reflect abnormal karyotypes or, in the case of single-cell/single-nucleus data, it may indicate that DNA from another source is being assigned to that cell/nucleus.">Max. fraction HQAA from one autosome</span>
                                     </th>
-                                    <th data-metric="duplicate_fraction_in_peaks" data-priority="1">
+                                    <th class="redundant" data-metric="duplicate_fraction_in_peaks" data-priority="1">
                                         <span data-hovertext="The fraction of properly paired reads that mapped within peaks and were marked as duplicates.">Duplicate fraction in peaks</span>
                                     </th>
 
-                                    <th data-metric="duplicate_fraction_not_in_peaks" data-priority="1">
+                                    <th class="redundant" data-metric="duplicate_fraction_not_in_peaks" data-priority="1">
                                         <span data-hovertext="The fraction of properly paired reads that mapped outside of peaks and were marked as duplicates.">Duplicate fraction outside of peaks</span>
                                     </th>
 
-                                    <th data-metric="peak_duplicate_ratio" data-priority="1">
-                                        <span data-hovertext="The ratio of the fraction of properly paired reads that mapped outside of peaks and were marked as duplicates to the fraction of properly paired reads that mapped within peaks and were marked as duplicates.">Peak duplicate ratio</span>
+                                    <th class="redundant" data-metric="peak_duplicate_ratio" data-priority="1">
+                                        <span class="redundant" data-hovertext="The ratio of the fraction of properly paired reads that mapped outside of peaks and were marked as duplicates to the fraction of properly paired reads that mapped within peaks and were marked as duplicates.">Peak duplicate ratio</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -396,10 +396,10 @@
                                     <th data-metric="percentages.duplicate_reads__total_reads" data-priority="1">
                                         <span data-hovertext="Duplicate alignments as a percentage of total reads.">Duplicate&nbsp;(%)</span>
                                     </th>
-                                    <th data-metric="mean_mapq" data-priority="1">
+                                    <th class="redundant" data-metric="mean_mapq" data-priority="1">
                                         <span data-hovertext="The mean mapping quality of the experiment's reads.">Mean mapping quality</span>
                                     </th>
-                                    <th data-metric="median_mapq" data-metrictype="integer" data-priority="1">
+                                    <th class="redundant" data-metric="median_mapq" data-metrictype="integer" data-priority="1">
                                         <span data-hovertext="The median mapping quality of the experiment's reads.">Median mapping quality</span>
                                     </th>
                                 </tr>
@@ -463,13 +463,13 @@
                                 </tr>
 
                                 <tr>
-                                    <th data-metric="percentages.rf_reads__total_reads" data-priority="1">
+                                    <th class="redundant" data-metric="percentages.rf_reads__total_reads" data-priority="1">
                                         <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RF, where the smaller coordinate was on the reverse strand and the larger on the forward strand.">RF</span>
                                     </th>
-                                    <th data-metric="percentages.ff_reads__total_reads" data-priority="1">
+                                    <th class="redundant" data-metric="percentages.ff_reads__total_reads" data-priority="1">
                                         <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented FF, where both reads mapped on the forward strand.">FF</span>
                                     </th>
-                                    <th data-metric="percentages.rr_reads__total_reads" data-priority="1">
+                                    <th class="redundant" data-metric="percentages.rr_reads__total_reads" data-priority="1">
                                         <span class="for-export">Of all reads, the percentage that paired and mapped but </span><span data-hovertext="The reads of a proper pair should point toward each other, with the end mapped to the smaller coordinate on the forward strand and the other end on the reverse strand -- FR orientation. These reads were in pairs oriented RR, where both reads mapped on the reverse strand.">RR</span>
                                     </th>
                                     <th data-metric="percentages.reads_with_mate_mapped_to_different_reference__total_reads" data-priority="1">
@@ -507,7 +507,7 @@
                                 </tr>
 
                                 <tr>
-                                    <th data-metric="percentages.total_autosomal_reads__total_reads" data-priority="1">
+                                    <th class="redundant" data-metric="percentages.total_autosomal_reads__total_reads" data-priority="1">
                                         <span class="for-export">Autosomal, </span><span data-hovertext="The number of reads aligned to autosomes, as a percentage of all reads.">% of all reads</span>
                                     </th>
                                     <th data-metric="percentages.duplicate_autosomal_reads__total_autosomal_reads" data-priority="1">
@@ -516,7 +516,7 @@
                                     <th data-metric="percentages.total_mitochondrial_reads__total_reads" data-priority="1">
                                         <span class="for-export">Mitochondrial, </span><span data-hovertext="The number of reads aligned to the mitochondrial reference, as a percentage of all reads.">% of all reads</span>
                                     </th>
-                                    <th data-metric="percentages.duplicate_mitochondrial_reads__total_mitochondrial_reads" data-priority="1">
+                                    <th class="redundant" data-metric="percentages.duplicate_mitochondrial_reads__total_mitochondrial_reads" data-priority="1">
                                         <span class="for-export">Mitochondrial, </span><span data-hovertext="The percentage of reads mapped to the mitochondrial reference that were duplicates.">Duplicates&nbsp;(% of mitochondrial alignments)</span>
                                     </th>
                                 </tr>
