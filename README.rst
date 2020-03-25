@@ -54,6 +54,12 @@ Help
 If you have questions or suggestions, mail us at
 `parkerlab-software@umich.edu`_, or file a `GitHub issue`_.
 
+****
+Citing
+****
+
+Ataqv is now published in Cell Systems: https://doi.org/10.1016/j.cels.2020.02.009
+
 ***************
 Getting started
 ***************
