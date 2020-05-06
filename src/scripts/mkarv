@@ -286,7 +286,7 @@ def parse_arguments():
         """each line contains a fragment length and count. It may """
     ))
 
-    parser.add_argument('-t', '--template-directory', default=locate_template_directory(sys.argv[0]), help=("""The location of the web app directory template."""))
+    parser.add_argument('-t', '--template-directory', default='auto', help=("""The location of the web app directory template."""))
 
     parser.add_argument('-v', '--verbose', action='store_true', help='Talk more.')
     parser.add_argument('--version', action='version', version=PROGRAM_VERSION)
@@ -569,6 +569,9 @@ def write_metrics(indent, metrics):
 
 if __name__ == '__main__':
     args = parse_arguments()
+
+    if args.template_directory == 'auto':
+        args.template_directory = locate_template_directory(sys.argv[0])
 
     loglevel = args.verbose and logging.DEBUG or logging.INFO
     logging.basicConfig(level=loglevel, format=LOGGING_FORMAT)
