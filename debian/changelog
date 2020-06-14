@@ -1,3 +1,9 @@
+ataqv (1.2.0-1) unstable; urgency=medium
+
+  * Add option to reduce redundant metrics
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Sun, 14 Jun 2020 09:42:17 -0400
+
 ataqv (1.1.1-1) unstable; urgency=low
 
   * Speed up TSS coverage/enrichment calculations when multiple read
