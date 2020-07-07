@@ -2,6 +2,8 @@
 build
 testing
 README.html
+debian/.debhelper
+debian/ataqv.debhelper.log
 debian/ataqv.substvars
 debian/ataqv/
 debian/debhelper-build-stamp
