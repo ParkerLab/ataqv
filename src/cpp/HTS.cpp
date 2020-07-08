@@ -37,7 +37,7 @@ sam_header parse_sam_header(const std::string &header_text) {
             std::stringstream field_stream(field);
             for (std::string field_text; std::getline(field_stream, field_text, '\t');) {
                 std::vector<std::string> splitfield = split(field_text, ":");
-                field_map[splitfield[0]] = splitfield[1];
+                field_map[splitfield[0]] = splitfield.size() > 1 ? splitfield[1] : "";
             }
         }
         header[header_tag].push_back(field_map);

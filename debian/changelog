@@ -1,3 +1,9 @@
+ataqv (1.2.1-1) unstable; urgency=medium
+
+  * Fix parsing of empty BAM header tags
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Wed, 8 Jul 2020 11:30:00 -0400
+
 ataqv (1.2.0-1) unstable; urgency=medium
 
   * Add option to reduce redundant metrics
