@@ -108,7 +108,7 @@ installed via `Homebrew`_ or `Linuxbrew`_.
 On Debian-based Linux distributions, you can install dependencies
 with::
 
-  sudo apt install libboost-all-dev libhts-dev libncurses5-dev libtinfo-dev zlib1g-dev lcov
+  sudo apt install libboost-all-dev libhts-dev ncurses-dev libtinfo-dev zlib1g-dev lcov
 
 and the latest supported option among::
 
