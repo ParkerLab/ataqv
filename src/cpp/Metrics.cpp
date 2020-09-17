@@ -990,8 +990,8 @@ std::map<std::string,std::map<int, unsigned long long int>> MetricsCollector::ge
 
                             if (fragment.overlaps(tss_region)) {
                                 std::string metrics_id = name.empty() ? basename(alignment_filename) : name;
-                                if (!ignore_read_groups) {
-                                    uint8_t* rgaux = bam_aux_get(record, "RG");
+                                uint8_t* rgaux = bam_aux_get(record, "RG");
+                                if (!ignore_read_groups && rgaux) {
                                     metrics_id = bam_aux2Z(rgaux);
                                 }
                                 for (unsigned long long int pos = tss_region.start; pos <= tss_region.end; pos++) {
