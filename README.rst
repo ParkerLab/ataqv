@@ -262,6 +262,63 @@ The main program is ataqv, which is run as follows::
       derived from the read group IDs, with ".problems" appended. If no read groups
       are found, the reads will be written to one file named after the BAM file.
 
+  --less-redundant
+      If given, output a subset of metrics that should be less redundant. If this flag is used,
+      the same flag should be passed to mkarv when making the viewer.
+      
+  Metadata
+  --------
+
+  The following options provide metadata to be included in the metrics JSON file.
+  They make it easier to compare results in the ataqv web interface.
+
+  --name "name"
+    A label to be used for the metrics when there are no read groups. If there are read
+    groups, each will have its metrics named using its ID field. With no read groups and
+    no --name given, your metrics will be named after the alignment file.
+
+  --ignore-read-groups
+    Even if read groups are present in the BAM file, ignore them and combine metrics
+    for all reads under a single sample and library named with the --name option. This
+    also implies that a single peak file will be used for all reads; see the --peak option.
+
+  --description "description"
+    A short description of the experiment.
+
+  --url "URL"
+    A URL for more detail on the experiment (perhaps using a DOI).
+
+  --library-description "description"
+    Use this description for all libraries in the BAM file, instead of using the DS
+    field from each read group.
+
+  Reference Genome Configuration
+  ------------------------------
+
+  ataqv includes lists of autosomes for several organisms:
+
+    Organism  Autosomal References
+     -------  ------------------
+         fly  2R 2L 3R 3L 4
+       human  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22
+       mouse  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+         rat  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+        worm  I II III IV V
+       yeast  I II III IV V VI VII VIII IX X XI XII XIII XIV XV XVI
+
+    The default autosomal reference lists contain names with "chr" prefixes
+    ("chr1") and without ("1"). If you need a different set of autosomes, you can
+    supply a list with --autosomal-reference-file.
+
+  --autosomal-reference-file "file name"
+    A file containing autosomal reference names, one per line. The names must match
+    the reference names in the alignment file exactly, or the metrics based on counts
+    of autosomal alignments will be wrong.
+
+  --mitochondrial-reference-name "name"
+    If the reference name for mitochondrial DNA in your alignment file is not "chrM",.
+    use this option to supply the correct name. Again, if this name is wrong, all the
+    measurements involving mitochondrial alignments will be wrong.
 
 When run, ataqv prints a human-readable summary to its standard
 output, and writes complete metrics to the JSON file named with the
