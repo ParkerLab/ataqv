@@ -43,6 +43,7 @@ public:
 
     std::string name = "";
     std::string organism  = "";
+    std::string nucleus_barcode_tag = "";
     std::string description = "";
     std::string library_description = "";
     std::string url = "";
@@ -65,6 +66,7 @@ public:
     bool verbose = false;
     int thread_limit = 1;
     bool ignore_read_groups = false;
+    bool is_single_nucleus = false;
     bool log_problematic_reads = false;
     bool less_redundant = false;
 
@@ -73,6 +75,7 @@ public:
 
     MetricsCollector(const std::string& name = "",
                      const std::string& organism = "human",
+                     const std::string& nucleus_barcode_tag = "",
                      const std::string& description = "",
                      const std::string& library_description = "",
                      const std::string& url = "",
@@ -85,6 +88,7 @@ public:
                      bool verbose = false,
                      const int thread_limit = 1,
                      bool ignore_read_groups = false,
+                     bool is_single_nucleus = false,
                      bool log_problematic_reads = false,
                      bool less_redundant = false,
                      const std::vector<std::string>& excluded_region_filenames = {});

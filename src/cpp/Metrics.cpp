@@ -24,6 +24,7 @@
 
 MetricsCollector::MetricsCollector(const std::string& name,
                                    const std::string& organism,
+                                   const std::string& nucleus_barcode_tag,
                                    const std::string& description,
                                    const std::string& library_description,
                                    const std::string& url,
@@ -36,12 +37,14 @@ MetricsCollector::MetricsCollector(const std::string& name,
                                    bool verbose,
                                    const int thread_limit,
                                    bool ignore_read_groups,
+                                   bool is_single_nucleus,
                                    bool log_problematic_reads,
                                    bool less_redundant,
                                    const std::vector<std::string>& excluded_region_filenames) :
     metrics({}),
     name(name),
     organism(organism),
+    nucleus_barcode_tag(nucleus_barcode_tag),
     description(description),
     library_description(library_description),
     url(url),
@@ -54,6 +57,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
     verbose(verbose),
     thread_limit(thread_limit),
     ignore_read_groups(ignore_read_groups),
+    is_single_nucleus(is_single_nucleus),
     log_problematic_reads(log_problematic_reads),
     less_redundant(less_redundant),
     excluded_region_filenames(excluded_region_filenames)
@@ -80,7 +84,8 @@ std::string MetricsCollector::configuration_string() const {
 
     cs
         << "Thread limit: " << thread_limit << std::endl
-        << "Ignoring read groups: " << (ignore_read_groups ? "yes" : "no") << std::endl;
+        << "Ignoring read groups: " << (ignore_read_groups ? "yes" : "no") << std::endl
+        << "Is single nucleus: " << (is_single_nucleus ? "yes" : "no") << std::endl;
 
     if (!tss_filename.empty()) {
         cs << "TSS extension: " << tss_extension << std::endl;
@@ -320,7 +325,7 @@ void MetricsCollector::load_alignments() {
 
     try {
         sam_header header = parse_sam_header(alignment_file_header->text);
-        if (!ignore_read_groups && header.count("RG") > 0) {
+        if (!ignore_read_groups && header.count("RG") > 0 && !is_single_nucleus) {
             for (auto read_group : header["RG"]) {
                 std::string read_group_id = read_group["ID"];
                 metrics[read_group_id] = new Metrics(this, read_group_id);
@@ -341,7 +346,7 @@ void MetricsCollector::load_alignments() {
 
                 metrics[read_group_id]->library = library;
             }
-        } else {
+        } else if (ignore_read_groups && !is_single_nucleus) {
             metrics[default_metrics_id] = new Metrics(this, default_metrics_id);
 
             Library library;
@@ -361,22 +366,42 @@ void MetricsCollector::load_alignments() {
             Metrics* m;
 
             uint8_t* rgaux = bam_aux_get(record, "RG");
-            if (!ignore_read_groups && rgaux) {
-                std::string read_group_id = bam_aux2Z(rgaux);
+            uint8_t* bcaux = bam_aux_get(record, nucleus_barcode_tag.c_str());
+            std::string barcode = bcaux ? bam_aux2Z(bcaux) : "no_barcode";
+            std::string read_group_id = rgaux ? bam_aux2Z(rgaux) : default_metrics_id;
+            std::string metrics_id;
 
-                // It can happen that records have RG tags that don't
-                // exist in the file header. If we're not ignoring
-                // read groups altogether, create new Metrics
-                // instances for these rapscallions.
-                try {
-                    m = metrics.at(read_group_id);
-                } catch (std::out_of_range&) {
-                    std::cout << "Adding metrics for read group missing from file header: " << read_group_id << std::endl;
-                    metrics[read_group_id] = new Metrics(this, read_group_id);
-                    m = metrics[read_group_id];
-                }
+            if (!ignore_read_groups && is_single_nucleus) {
+                metrics_id = read_group_id + "-" + barcode;
+            } else if (ignore_read_groups && is_single_nucleus) {
+                metrics_id = barcode;
+            } else if (!ignore_read_groups && !is_single_nucleus) {
+                metrics_id = read_group_id;
             } else {
-                m = metrics[default_metrics_id];
+                metrics_id = default_metrics_id;
+            }
+
+            // If running in single nucleus mode, barcodes
+            // are unknown ahead of time and Metrics must be created
+            // as new barcodes are encountered
+            //
+            // If not running in single nucleus mode,
+            // it can happen that records have RG tags that don't
+            // exist in the file header. If we're not ignoring
+            // read groups altogether, create new Metrics
+            // instances for these rapscallions.
+            try {
+                m = metrics.at(metrics_id);
+            } catch (std::out_of_range&) {
+                if (!ignore_read_groups && !is_single_nucleus) {
+                    std::cout << "Adding metrics for read group missing from file header: " << metrics_id << std::endl;
+                } else if (!ignore_read_groups && is_single_nucleus) {
+                    std::cout << "Adding metrics for read group and barcode: " << read_group_id << ", " << barcode << std::endl;
+                } else if (ignore_read_groups && is_single_nucleus) {
+                    std::cout << "Adding metrics for barcode: " << barcode << std::endl;
+                }
+                metrics[metrics_id] = new Metrics(this, metrics_id);
+                m = metrics[metrics_id];
             }
 
             m->add_alignment(alignment_file_header, record);
@@ -989,11 +1014,21 @@ std::map<std::string,std::map<int, unsigned long long int>> MetricsCollector::ge
                             fragments_seen[qname] = true;
 
                             if (fragment.overlaps(tss_region)) {
-                                std::string metrics_id = name.empty() ? basename(alignment_filename) : name;
+                                std::string default_metrics_id = name.empty() ? basename(alignment_filename) : name;
                                 uint8_t* rgaux = bam_aux_get(record, "RG");
-                                if (!ignore_read_groups && rgaux) {
-                                    metrics_id = bam_aux2Z(rgaux);
+                                uint8_t* bcaux = bam_aux_get(record, nucleus_barcode_tag.c_str());
+                                std::string barcode = bcaux ? bam_aux2Z(bcaux) : "no_barcode";
+                                std::string read_group_id = rgaux ? bam_aux2Z(rgaux) : default_metrics_id;
+                                std::string metrics_id;
+
+                                if (!ignore_read_groups && is_single_nucleus) {
+                                    metrics_id = read_group_id + "-" + barcode;
+                                } else if (ignore_read_groups && is_single_nucleus) {
+                                    metrics_id = barcode;
+                                } else {
+                                    metrics_id = read_group_id;
                                 }
+
                                 for (unsigned long long int pos = tss_region.start; pos <= tss_region.end; pos++) {
                                     if (pos >= fragment.start && pos <= fragment.end) {
                                         int base = tss.is_reverse() ? (tss_region.end - pos) : (pos - tss_region.start);

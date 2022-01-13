@@ -2,7 +2,7 @@
 # VARIABLES
 #
 
-VERSION = 1.2.1
+VERSION = 1.3.0
 
 #
 # PATHS
@@ -143,7 +143,7 @@ dist-static: checkdirs $(BUILD_DIR)/ataqv-static
 
 deb:
 	(cd .. && tar czf ataqv_$(VERSION).orig.tar.gz --exclude .git --exclude build ataqv)
-	debuild -uc -us
+	debuild -uc -us -d
 
 deb-static: deb static
 	install -m 0755 $(BUILD_DIR)/ataqv-static debian/ataqv/usr/bin/ataqv

@@ -1,3 +1,11 @@
+ataqv (1.3.0-1) unstable; urgency=low
+
+  * Add option to use single nucleus barcode tag
+
+  * Use default read group during TSS enrichment calculation if read doesn't have RG tag
+
+ -- Parker Lab Software <parkerlab-software@umich.edu>  Thu, 23 Dec 2021 8:30:00 -0800
+
 ataqv (1.2.1-1) unstable; urgency=medium
 
   * Fix parsing of empty BAM header tags

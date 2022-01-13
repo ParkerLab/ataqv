@@ -282,6 +282,10 @@ The main program is ataqv, which is run as follows::
     for all reads under a single sample and library named with the --name option. This
     also implies that a single peak file will be used for all reads; see the --peak option.
 
+  --nucleus-barcode-tag "nucleus_barcode_tag"
+    Data is single-nucleus, with the barcode stored in this BAM tag.
+    In this case, metrics will be collected per barcode.
+
   --description "description"
     A short description of the experiment.
 

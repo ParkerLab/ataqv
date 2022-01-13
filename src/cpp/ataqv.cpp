@@ -42,6 +42,7 @@ enum {
 
     OPT_NAME,
     OPT_IGNORE_READ_GROUPS,
+    OPT_NUCLEUS_BARCODE_TAG,
     OPT_DESCRIPTION,
     OPT_LIBRARY_DESCRIPTION,
     OPT_URL,
@@ -114,8 +115,9 @@ void print_usage() {
               << "    derived from the read group IDs, with \".problems\" appended. If no read groups" << std::endl
               << "    are found, the reads will be written to one file named after the BAM file." << std::endl << std::endl
 
-	      << "--less-redundant" << std::endl
-              << "    If given, output a subset of metrics that should be less redundant. If this flag is used, the same flag should be passed to mkarv when making the viewer." << std::endl
+              << "--less-redundant" << std::endl
+              << "    If given, output a subset of metrics that should be less redundant. If this flag is used," << std::endl
+              << "    the same flag should be passed to mkarv when making the viewer." << std::endl
 
               << std::endl
 
@@ -134,6 +136,10 @@ void print_usage() {
               << "    Even if read groups are present in the BAM file, ignore them and combine metrics" << std::endl
               << "    for all reads under a single sample and library named with the --name option. This" << std::endl
               << "    also implies that a single peak file will be used for all reads; see the --peak option." << std::endl << std::endl
+
+              << "--nucleus-barcode-tag \"nucleus_barcode_tag\"" << std::endl
+              << "    Data is single-nucleus, with the barcode stored in this BAM tag." << std::endl
+              << "    In this case, metrics will be collected per barcode." << std::endl << std::endl
 
               << "--description \"description\"" << std::endl
               << "    A short description of the experiment." << std::endl << std::endl
@@ -221,6 +227,8 @@ int main(int argc, char **argv) {
     std::string name;
     bool ignore_read_groups = false;
     std::string description;
+    bool is_single_nucleus = false;
+    std::string nucleus_barcode_tag;
     std::string library_description;
     std::string url;
     std::string organism;
@@ -246,6 +254,7 @@ int main(int argc, char **argv) {
         {"less-redundant", no_argument, nullptr, OPT_LESS_REDUNDANT},
         {"name", required_argument, nullptr, OPT_NAME},
         {"ignore-read-groups", no_argument, nullptr, OPT_IGNORE_READ_GROUPS},
+        {"nucleus-barcode-tag", required_argument, nullptr, OPT_NUCLEUS_BARCODE_TAG},
         {"description", required_argument, nullptr, OPT_DESCRIPTION},
         {"library-description", required_argument, nullptr, OPT_LIBRARY_DESCRIPTION},
         {"url", required_argument, nullptr, OPT_URL},
@@ -277,7 +286,7 @@ int main(int argc, char **argv) {
         case OPT_LOG_PROBLEMATIC_READS:
             log_problematic_reads = true;
             break;
-	case OPT_LESS_REDUNDANT:
+        case OPT_LESS_REDUNDANT:
             less_redundant = true;
             break;
         case OPT_NAME:
@@ -285,6 +294,10 @@ int main(int argc, char **argv) {
             break;
         case OPT_IGNORE_READ_GROUPS:
             ignore_read_groups = true;
+            break;
+        case OPT_NUCLEUS_BARCODE_TAG:
+            nucleus_barcode_tag = optarg;
+            is_single_nucleus = true;
             break;
         case OPT_DESCRIPTION:
             description = optarg;
@@ -351,6 +364,7 @@ int main(int argc, char **argv) {
         MetricsCollector collector(
             name,
             organism,
+            nucleus_barcode_tag,
             description,
             library_description,
             url,
@@ -363,6 +377,7 @@ int main(int argc, char **argv) {
             verbose,
             thread_limit,
             ignore_read_groups,
+            is_single_nucleus,
             log_problematic_reads,
             less_redundant,
             excluded_region_filenames);
