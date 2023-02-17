@@ -1025,6 +1025,8 @@ std::map<std::string,std::map<int, unsigned long long int>> MetricsCollector::ge
                                     metrics_id = read_group_id + "-" + barcode;
                                 } else if (ignore_read_groups && is_single_nucleus) {
                                     metrics_id = barcode;
+                                } else if (ignore_read_groups && !is_single_nucleus) {
+                                    metrics_id = default_metrics_id;
                                 } else {
                                     metrics_id = read_group_id;
                                 }
