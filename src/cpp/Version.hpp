@@ -4,4 +4,4 @@
 // Licensed under Version 3 of the GPL or any later version
 //
 
-#define VERSION "1.3.1"
+#define VERSION "1.4.0"

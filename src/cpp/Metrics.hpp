@@ -68,6 +68,7 @@ public:
     bool ignore_read_groups = false;
     bool is_single_nucleus = false;
     bool log_problematic_reads = false;
+    bool output_tss_coverage = true;
     bool less_redundant = false;
 
     std::vector<std::string> excluded_region_filenames = {};
@@ -90,6 +91,7 @@ public:
                      bool ignore_read_groups = false,
                      bool is_single_nucleus = false,
                      bool log_problematic_reads = false,
+                     bool output_tss_coverage = true,
                      bool less_redundant = false,
                      const std::vector<std::string>& excluded_region_filenames = {});
 
@@ -101,8 +103,11 @@ public:
     void load_tss();
     void load_alignments();
     std::map<std::string,std::map<int, unsigned long long int>> get_tss_coverage_for_reference(const std::string &reference, const int extension);
+    std::map<std::string,std::map<std::string, unsigned long long int>> get_tss_coverage_summary_for_reference(const std::string &reference, const int extension);
     void calculate_tss_coverage();
+    void calculate_tss_coverage_summary();
     nlohmann::json to_json();
+    void to_table(boost::shared_ptr<boost::iostreams::filtering_ostream> metrics_table);
 };
 
 
@@ -199,11 +204,14 @@ public:
 
     std::map<int, unsigned long long int> tss_coverage = {};
     std::map<int, double> tss_coverage_scaled = {};
+    unsigned long long int tss_flanking_count = 0; // iterated for each base pair in the TSS flanking region (first and last 100 bp of the TSS extension) that overlaps each read. Used in the TSS enrichment calculation
+    unsigned long long int tss_count = 0; // number of reads that overlap a TSS (the exact base pair)
     double tss_enrichment = 0.0;
 
     bool log_problematic_reads = false;
     bool peaks_requested = false;
     bool tss_requested = false;
+    bool tss_coverage_requested = false;
     bool less_redundant = false;
 
     Metrics(MetricsCollector* collector, const std::string& name = nullptr);
@@ -227,6 +235,7 @@ public:
     bool mapq_at_least(const int& mapq, const bam1_t* record);
     double mean_mapq() const;
     double median_mapq() const;
+    double median_fragment_length() const;
     nlohmann::json to_json();
 };
 

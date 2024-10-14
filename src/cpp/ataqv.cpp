@@ -38,6 +38,7 @@ enum {
 
     OPT_METRICS_FILE,
     OPT_LOG_PROBLEMATIC_READS,
+    OPT_TABULAR_OUTPUT,
     OPT_LESS_REDUNDANT,
 
     OPT_NAME,
@@ -114,6 +115,18 @@ void print_usage() {
               << "    If given, problematic reads will be logged to a file per read group, with names" << std::endl
               << "    derived from the read group IDs, with \".problems\" appended. If no read groups" << std::endl
               << "    are found, the reads will be written to one file named after the BAM file." << std::endl << std::endl
+
+              << "--tabular-output" << std::endl
+              << "    If given, the metrics file output will be a tabular (TSV) text file, not JSON. This " << std::endl
+              << "    output CANNOT be used to generate the HTML report, and excludes several metrics that" << std::endl
+              << "    would otherwise be included in the JSON output (e.g., the full fragment length" << std::endl
+              << "    distribution, the full TSS coverage curve, and the full mapping quality distribution)." << std::endl
+              << "    This option is not recommended when analyzing bulk ATAC-seq data, but may be useful" << std::endl
+              << "    when analyzing single nucleus ATAC-seq data with large numbers of distinct cell" << std::endl
+              << "    barcodes (say, >100k); in such a case this option should substantially reduce memory" << std::endl
+              << "    usage, reduce runtime, and avoid the need to parse a large JSON file in downstream" << std::endl
+              << "    analysis, while still outputting the metrics commonly used to QC single nucleus" << std::endl
+              << "    ATAC-seq data (TSS enrichment, read counts, and mitochondrial read counts, amongst others)." << std::endl << std::endl
 
               << "--less-redundant" << std::endl
               << "    If given, output a subset of metrics that should be less redundant. If this flag is used," << std::endl
@@ -222,6 +235,7 @@ int main(int argc, char **argv) {
     bool verbose = false;
     int thread_limit = 1;
     bool log_problematic_reads = false;
+    bool tabular_output = false;
     bool less_redundant = false;
 
     std::string name;
@@ -251,6 +265,7 @@ int main(int argc, char **argv) {
         {"version", no_argument, nullptr, OPT_VERSION},
         {"threads", required_argument, nullptr, OPT_THREADS},
         {"log-problematic-reads", no_argument, nullptr, OPT_LOG_PROBLEMATIC_READS},
+        {"tabular-output", no_argument, nullptr, OPT_TABULAR_OUTPUT},
         {"less-redundant", no_argument, nullptr, OPT_LESS_REDUNDANT},
         {"name", required_argument, nullptr, OPT_NAME},
         {"ignore-read-groups", no_argument, nullptr, OPT_IGNORE_READ_GROUPS},
@@ -285,6 +300,9 @@ int main(int argc, char **argv) {
             break;
         case OPT_LOG_PROBLEMATIC_READS:
             log_problematic_reads = true;
+            break;
+        case OPT_TABULAR_OUTPUT:
+            tabular_output = true;
             break;
         case OPT_LESS_REDUNDANT:
             less_redundant = true;
@@ -379,6 +397,7 @@ int main(int argc, char **argv) {
             ignore_read_groups,
             is_single_nucleus,
             log_problematic_reads,
+            !tabular_output,
             less_redundant,
             excluded_region_filenames);
 
@@ -409,9 +428,15 @@ int main(int argc, char **argv) {
 
         std::cout << collector << std::endl;  // Print the metrics
 
-        std::cout << "Writing JSON metrics to " << metrics_filename << std::endl << std::flush;
-        *metrics_file << std::setw(2) << collector.to_json();
+        if (!tabular_output) {
+            std::cout << "Writing JSON metrics to " << metrics_filename << std::endl << std::flush;
+            *metrics_file << std::setw(2) << collector.to_json();
+        } else {
+            std::cout << "Writing tabular metrics to " << metrics_filename << std::endl << std::flush;
+            collector.to_table(metrics_file);
+        }
         std::cout << "Metrics written to \"" << metrics_filename << "\"" << std::endl;
+
     } catch (FileException& e) {
         print_error("ERROR: " + std::string(e.what()));
         exit(1);

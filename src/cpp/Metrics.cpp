@@ -39,6 +39,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
                                    bool ignore_read_groups,
                                    bool is_single_nucleus,
                                    bool log_problematic_reads,
+                                   bool output_tss_coverage,
                                    bool less_redundant,
                                    const std::vector<std::string>& excluded_region_filenames) :
     metrics({}),
@@ -59,6 +60,7 @@ MetricsCollector::MetricsCollector(const std::string& name,
     ignore_read_groups(ignore_read_groups),
     is_single_nucleus(is_single_nucleus),
     log_problematic_reads(log_problematic_reads),
+    output_tss_coverage(output_tss_coverage),
     less_redundant(less_redundant),
     excluded_region_filenames(excluded_region_filenames)
 {
@@ -415,7 +417,11 @@ void MetricsCollector::load_alignments() {
             }
         }
 
-        calculate_tss_coverage();
+        if (output_tss_coverage) {
+            calculate_tss_coverage();
+        } else {
+            calculate_tss_coverage_summary();
+        }
 
         for (auto& it : metrics) {
             Metrics* m = it.second;
@@ -475,9 +481,14 @@ Metrics::Metrics(MetricsCollector* collector, const std::string& name): collecto
 
     if (!collector->tss_filename.empty()) {
         tss_requested = true;
-        for (int i = 1; i <= 1 + 2 * collector->tss_extension; i++) {
-            tss_coverage[i] = 0;
+        tss_coverage_requested = collector->output_tss_coverage;
+
+        if (tss_coverage_requested) {
+            for (int i = 1; i <= 1 + 2 * collector->tss_extension; i++) {
+                tss_coverage[i] = 0;
+            }
         }
+
     }
 }
 
@@ -662,6 +673,7 @@ double Metrics::median_mapq() const {
 
     unsigned long long int mapq_index = 0;
     for (auto it : mapq_counts) {
+
         unsigned long long int next_mapq_index = mapq_index + it.second;
         bool median1_here = (mapq_index <= median1 && median1 <= next_mapq_index);
         bool median2_here = (mapq_index <= median2 && median2 <= next_mapq_index);
@@ -675,6 +687,63 @@ double Metrics::median_mapq() const {
             median /= 2;
         }
         mapq_index += it.second;
+    }
+    return median;
+}
+
+
+double Metrics::median_fragment_length() const {
+    double median = 0.0;
+
+    unsigned long long int total_fragments = 0;
+    int max_fragment_length = std::min(1000, std::max(1000, fragment_length_counts.empty() ? 0 : fragment_length_counts.rbegin()->first));
+
+    for (auto it : fragment_length_counts) {
+        if (it.first > max_fragment_length) {
+            continue;
+        }
+        total_fragments += it.second;
+    }
+
+    if (total_fragments == 0) {
+        return median;
+    }
+
+    unsigned long long int median1;
+    unsigned long long int median2;
+
+    // if the number of fragments is even, we need to take the mean of the
+    // two values around the ideal median, but with an odd number of
+    // fragments, we just need the existent median value
+
+    if (total_fragments % 2 == 0) {
+        median1 = ((unsigned long long int)total_fragments / 2) - 1;
+        median2 = (unsigned long long int)total_fragments / 2;
+    } else {
+        median1 = median2 = (unsigned long long int)total_fragments / 2;
+    }
+
+    unsigned long long int index = 0;
+    for (auto it : fragment_length_counts) {
+        if (it.first > max_fragment_length) {
+            continue;
+        }
+        if (it.second == 0) {
+            continue;
+        }
+        unsigned long long int next_index = index + it.second;
+        bool median1_here = (index <= median1 && median1 < next_index);
+        bool median2_here = (index <= median2 && median2 < next_index);
+
+        if (median1_here) {
+            median += it.first;
+        }
+
+        if (median2_here) {
+            median += it.first;
+            median /= 2;
+        }
+        index += it.second;
     }
     return median;
 }
@@ -1153,6 +1222,209 @@ void MetricsCollector::calculate_tss_coverage() {
     }
 }
 
+std::map<std::string,std::map<std::string, unsigned long long int>> MetricsCollector::get_tss_coverage_summary_for_reference(const std::string &reference, const int extension) {
+    std::map<std::string,std::map<std::string, unsigned long long int>> ref_tss_cov = {};
+
+    ReferenceFeatureCollection *tss_collection = tss_tree.get_reference_feature_collection(reference);
+
+    if (!tss_collection->features.empty()) {
+        samFile *alignment_file = nullptr;
+        bam_hdr_t *alignment_file_header = nullptr;
+        hts_idx_t *alignment_file_index = nullptr;
+        bam1_t *record = bam_init1();
+
+        try {
+            if (alignment_filename.empty()) {
+                throw FileException("Alignment file has not been specified.");
+            }
+
+            if ((alignment_file = sam_open(alignment_filename.c_str(), "r")) == nullptr) {
+                throw FileException("Could not open alignment file \"" + alignment_filename + "\".");
+            }
+
+            if ((alignment_file_index = sam_index_load(alignment_file, alignment_filename.c_str())) == nullptr) {
+                throw FileException("Could not open index for alignment file \"" + alignment_filename + "\".");
+            }
+
+            alignment_file_header = sam_hdr_read(alignment_file);
+            if (alignment_file_header == NULL) {
+                throw FileException("Could not read a valid header from alignment file \"" + alignment_filename +  "\".");
+            }
+
+            for (auto tss : tss_collection->features) {
+                std::map<std::string, bool> fragments_seen = {};
+
+                Feature tss_region(tss);
+                tss_region.start = std::max((unsigned long long int)0, tss_region.start - extension);
+                tss_region.end += extension;
+
+                std::stringstream query;
+
+                // The HTSlib iterator starts at the first record starting after the beginning of the region, so
+                // we ask for records further before and after the TSS region, then filter them ourselves
+                query << tss_region.reference << ":" << std::max(tss_region.start - extension * 2, 0ULL) << "-" << (tss_region.end + extension * 2);
+
+                hts_itr_t *alignment_iterator;
+                if ((alignment_iterator = sam_itr_querys(alignment_file_index, alignment_file_header, query.str().c_str())) == nullptr) {
+                    std::cerr <<  "Could not find TSS region " << query.str() << " in your BAM file. Check that your TSS file's chromosome naming scheme matches your reference." << std::endl;
+                    continue;
+                }
+
+                while (sam_itr_next(alignment_file, alignment_iterator, record) >= 0) {
+                    if (is_hqaa(alignment_file_header, record)) {
+                        std::string qname = get_qname(record);
+                        if (fragments_seen.count(qname) == 0) {
+                            Feature fragment;
+                            fragment.reference = reference;
+                            fragment.start = std::min(record->core.pos, record->core.mpos);
+                            fragment.end = fragment.start + abs(record->core.isize);
+                            fragments_seen[qname] = true;
+
+                            if (fragment.overlaps(tss_region)) {
+                                std::string default_metrics_id = name.empty() ? basename(alignment_filename) : name;
+                                uint8_t* rgaux = bam_aux_get(record, "RG");
+                                uint8_t* bcaux = bam_aux_get(record, nucleus_barcode_tag.c_str());
+                                std::string barcode = bcaux ? bam_aux2Z(bcaux) : "no_barcode";
+                                std::string read_group_id = rgaux ? bam_aux2Z(rgaux) : default_metrics_id;
+                                std::string metrics_id;
+
+                                if (!ignore_read_groups && is_single_nucleus) {
+                                    metrics_id = read_group_id + "-" + barcode;
+                                } else if (ignore_read_groups && is_single_nucleus) {
+                                    metrics_id = barcode;
+                                } else if (ignore_read_groups && !is_single_nucleus) {
+                                    metrics_id = default_metrics_id;
+                                } else {
+                                    metrics_id = read_group_id;
+                                }
+
+                                for (unsigned long long int pos = tss_region.start; pos <= tss_region.end; pos++) {
+                                    if (pos >= fragment.start && pos <= fragment.end) {
+                                        int base = tss.is_reverse() ? (tss_region.end - pos) : (pos - tss_region.start);
+                                        int flanking_size = 100; // flanking region used in the eventual TSS enrichment calculation
+                                        if ((base > 0 && base <= flanking_size) || base > (1 + (2 * extension) - flanking_size)) {
+                                            ref_tss_cov[metrics_id]["flanking"]++;
+                                        }
+                                        if (base == (1 + extension)) {
+                                            ref_tss_cov[metrics_id]["tss"]++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            bam_destroy1(record);
+            bam_hdr_destroy(alignment_file_header);
+            hts_idx_destroy(alignment_file_index);
+            if (alignment_file) {
+                hts_close(alignment_file);
+            }
+        } catch (FileException& e) {
+            bam_destroy1(record);
+            bam_hdr_destroy(alignment_file_header);
+            hts_idx_destroy(alignment_file_index);
+            if (alignment_file) {
+                hts_close(alignment_file);
+            }
+            throw;
+        }
+    }
+
+    return ref_tss_cov;
+}
+
+void MetricsCollector::calculate_tss_coverage_summary() {
+
+    if (tss_filename == "") {
+        return;
+    }
+
+    if (verbose) {
+        std::cout << "Calculating TSS coverage summary..." << std::endl;
+    }
+
+    boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
+    boost::chrono::duration<double> duration;
+
+    double number_tss = (double) tss_tree.size();
+    std::map<std::string,unsigned long long int> tss_flanking_count = {};
+    std::map<std::string,unsigned long long int> tss_count = {};
+
+    if (number_tss > 0) {
+        for (auto it: metrics) {
+            std::string metrics_id = it.first;
+            tss_flanking_count[metrics_id] = 0;
+            tss_count[metrics_id] = 0;
+        }
+
+        std::vector<std::future<std::map<std::string,std::map<std::string, unsigned long long int>>>> results = {};
+        int thread_count = 0;
+        for (auto reference : tss_tree.get_references_by_feature_count()) {
+            results.push_back(std::async(std::launch::async, &MetricsCollector::get_tss_coverage_summary_for_reference, this, reference, tss_extension));
+            thread_count++;
+            if (verbose) {
+                std::cout << "Added TSS coverage summary for " << reference << "; thread count=" << thread_count << std::endl;
+            }
+            while (thread_count == thread_limit) {
+                for (auto result = results.begin(); result != results.end(); result++) {
+                    if (!(*result).valid()) {
+                        results.erase(result);
+                        thread_count--;
+                        break;
+                    } else {
+                        std::future_status status = (*result).wait_for(std::chrono::milliseconds(100));
+                        if (status == std::future_status::ready) {
+                            auto ref_cov = (*result).get();
+                            for (auto it: metrics) {
+                                std::string metrics_id = it.first;
+                                tss_flanking_count[metrics_id] += ref_cov[metrics_id]["flanking"];
+                                tss_count[metrics_id] += ref_cov[metrics_id]["tss"];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (verbose) {
+            std::cout << "All TSS jobs started. Waiting for last ones to complete." << std::endl;
+        }
+
+        while (!results.empty()) {
+            for (auto result = results.begin(); result != results.end(); result++) {
+                if (!(*result).valid()) {
+                    results.erase(result);
+                    break;
+                }
+
+                std::future_status status = (*result).wait_for(std::chrono::milliseconds(100));
+                if (status == std::future_status::ready) {
+                    auto ref_cov = (*result).get();
+                    for (auto it: metrics) {
+                        std::string metrics_id = it.first;
+                        tss_flanking_count[metrics_id] += ref_cov[metrics_id]["flanking"];
+                        tss_count[metrics_id] += ref_cov[metrics_id]["tss"];
+                    }
+                }
+            }
+        }
+
+        for (auto it: metrics) {
+            Metrics* m = it.second;
+            m->tss_flanking_count = tss_flanking_count[it.first];
+            m->tss_count = tss_count[it.first];
+        }
+    }
+
+    duration = boost::chrono::high_resolution_clock::now() - start;
+    if (verbose) {
+        std::cout << "Calculated TSS coverage in " << duration << "." << std::endl;
+    }
+}
+
 void Metrics::calculate_tss_metrics() {
 
     if (!tss_requested) {
@@ -1163,41 +1435,52 @@ void Metrics::calculate_tss_metrics() {
         std::cout << "Calculating TSS metrics..." << std::endl;
     }
 
-    double tss_count = (double) collector->tss_tree.size();
+    double number_tss = (double) collector->tss_tree.size();
 
     boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
     boost::chrono::duration<double> duration;
 
-    // calculate the average read depth in each 100bp flank
-    double upstream_flank = 0.0;
-    int index = 0;
-    for (auto position = tss_coverage.begin(); index < 100; index++, position++) {
-        upstream_flank += (position->second / tss_count);
+    if (tss_coverage_requested) {
+
+        // calculate the average read depth in each 100bp flank
+        double upstream_flank = 0.0;
+        int index = 0;
+        for (auto position = tss_coverage.begin(); index < 100; index++, position++) {
+            upstream_flank += (position->second / number_tss);
+        }
+        upstream_flank /= 100.0;
+
+        double downstream_flank = 0.0;
+        index = 0;
+        for (auto position = tss_coverage.rbegin(); index < 100; index++, position++) {
+            downstream_flank += (position->second / number_tss);
+        }
+        downstream_flank /= 100.0;
+
+        // average the two flanks
+        double mean_flank = (upstream_flank + downstream_flank) / 2;
+
+        // scale them to 1
+        double scale = 1 / mean_flank;
+
+        double mean_flank_scaled = (mean_flank * scale);
+
+        // calculate mean enrichment around TSS
+        for (auto pc : tss_coverage) {
+            tss_coverage_scaled[pc.first] = ((pc.second / number_tss) * scale) / mean_flank_scaled;
+        }
+
+        // and finally, take the value at TSS as our canonical enrichment score
+        tss_enrichment = tss_coverage_scaled[collector->tss_extension + 1];
+
+
+    } else {
+
+        double mean_flank = tss_flanking_count / 200.0;
+        tss_enrichment = tss_count / mean_flank;
+
     }
-    upstream_flank /= 100.0;
 
-    double downstream_flank = 0.0;
-    index = 0;
-    for (auto position = tss_coverage.rbegin(); index < 100; index++, position++) {
-        downstream_flank += (position->second / tss_count);
-    }
-    downstream_flank /= 100.0;
-
-    // average the two flanks
-    double mean_flank = (upstream_flank + downstream_flank) / 2;
-
-    // scale them to 1
-    double scale = 1 / mean_flank;
-
-    double mean_flank_scaled = (mean_flank * scale);
-
-    // calculate mean enrichment around TSS
-    for (auto pc : tss_coverage) {
-        tss_coverage_scaled[pc.first] = ((pc.second / tss_count) * scale) / mean_flank_scaled;
-    }
-
-    // and finally, take the value at TSS as our canonical enrichment score
-    tss_enrichment = tss_coverage_scaled[collector->tss_extension + 1];
 
     duration = boost::chrono::high_resolution_clock::now() - start;
     if (collector->verbose) {
@@ -1487,11 +1770,13 @@ nlohmann::json Metrics::to_json() {
     long double short_mononucleosomal_ratio = fraction(hqaa_short_count, hqaa_mononucleosomal_count);
 
     nlohmann::json tss_coverage_vec;
-    for (auto pc : tss_coverage_scaled) {
-        nlohmann::json pair;
-        pair.push_back(pc.first);
-        pair.push_back(pc.second);
-        tss_coverage_vec.push_back(pair);
+    if (tss_coverage_requested) {
+        for (auto pc : tss_coverage_scaled) {
+            nlohmann::json pair;
+            pair.push_back(pc.first);
+            pair.push_back(pc.second);
+            tss_coverage_vec.push_back(pair);
+        }
     }
 
     nlohmann::json result = {
@@ -1549,6 +1834,7 @@ nlohmann::json Metrics::to_json() {
              {"fragment_length_counts_fields", fragment_length_counts_fields},
              {"fragment_length_counts", fragment_length_counts_json},
              {"fragment_length_distance", nullptr},
+             {"median_fragment_length", median_fragment_length()},
              {"mapq_counts_fields", mapq_counts_fields},
              {"mapq_counts", mapq_counts_json},
              {"mean_mapq", mean_mapq()},
@@ -1588,4 +1874,54 @@ nlohmann::json MetricsCollector::to_json() {
         result.push_back(m.second->to_json());
     }
     return result;
+}
+
+void MetricsCollector::to_table(boost::shared_ptr<boost::iostreams::filtering_ostream> metrics_table) {
+    // excludes the following from the json:
+    //  - organism
+    //  - description
+    //  - url
+    //  - library
+    //  - fragment_length_counts_fields
+    //  - fragment_length_counts
+    //  - fragment_length_distance
+    //  - mapq_counts_fields
+    //  - mapq_counts
+    //  - peaks_fields
+    //  - peaks
+    //  - peak_percentiles
+    //  - tss_coverage
+    //  - chromosome_counts
+
+    std::vector<std::string> print_metrics = {"name", "total_reads", "hqaa", "forward_reads", "reverse_reads", "secondary_reads", "supplementary_reads", "duplicate_reads", "paired_reads", "properly_paired_and_mapped_reads", "fr_reads", "ff_reads", "rf_reads", "rr_reads", "first_reads", "second_reads", "forward_mate_reads", "reverse_mate_reads", "unmapped_reads", "unmapped_mate_reads", "qcfailed_reads", "unpaired_reads", "reads_with_mate_mapped_to_different_reference", "reads_mapped_with_zero_quality", "reads_mapped_and_paired_but_improperly", "unclassified_reads", "maximum_proper_pair_fragment_size", "reads_with_mate_too_distant", "total_autosomal_reads", "total_mitochondrial_reads", "duplicate_autosomal_reads", "duplicate_mitochondrial_reads", "hqaa_tf_count", "hqaa_mononucleosomal_count", "short_mononucleosomal_ratio", "hqaa_in_peaks", "duplicates_in_peaks", "duplicates_not_in_peaks", "ppm_in_peaks", "ppm_not_in_peaks", "duplicate_fraction_in_peaks", "duplicate_fraction_not_in_peaks", "peak_duplicate_ratio", "median_fragment_length", "mean_mapq", "median_mapq", "total_peaks", "total_peak_territory", "hqaa_overlapping_peaks_percent", "tss_enrichment", "max_fraction_reads_from_single_autosome"};
+
+    for (unsigned int i = 0; i < print_metrics.size(); i++) {
+        *metrics_table << print_metrics[i];
+        if (i < print_metrics.size() - 1) {
+            *metrics_table << "\t";
+        } else {
+            *metrics_table << std::endl;
+        }
+    }
+
+    for (auto m : metrics) {
+        nlohmann::json result = m.second->to_json();
+
+        auto j = result["metrics"].template get<std::unordered_map<std::string, nlohmann::json>>();
+
+        for (unsigned int i = 0; i < print_metrics.size(); i++) {
+            nlohmann::json value = j[print_metrics[i]];
+            if (value.is_string()) {
+                *metrics_table << value.get<std::string>();
+            } else {
+                *metrics_table << j[print_metrics[i]];
+            }
+            if (i < print_metrics.size() - 1) {
+                *metrics_table << "\t";
+            } else {
+                *metrics_table << std::endl;
+            }
+        }
+    }
+
 }
