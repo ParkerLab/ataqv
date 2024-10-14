@@ -262,6 +262,18 @@ The main program is ataqv, which is run as follows::
       derived from the read group IDs, with ".problems" appended. If no read groups
       are found, the reads will be written to one file named after the BAM file.
 
+  --tabular-output
+      If given, the metrics file output will be a tabular (TSV) text file, not JSON. This
+      output CANNOT be used to generate the HTML report, and excludes several metrics that
+      would otherwise be included in the JSON output (e.g., the full fragment length
+      distribution, the full TSS coverage curve, and the full mapping quality distribution).
+      This option is not recommended when analyzing bulk ATAC-seq data, but may be useful
+      when analyzing single nucleus ATAC-seq data with large numbers of distinct cell
+      barcodes (say, >100k); in such a case this option should substantially reduce memory
+      usage, reduce runtime, and avoid the need to parse a large JSON file in downstream
+      analysis, while still outputting the metrics commonly used to QC single nucleus
+      ATAC-seq data (TSS enrichment, read counts, and mitochondrial read counts, amongst others).
+
   --less-redundant
       If given, output a subset of metrics that should be less redundant. If this flag is used,
       the same flag should be passed to mkarv when making the viewer.
